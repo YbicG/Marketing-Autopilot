@@ -1,4 +1,4 @@
-import { USD } from "@mkt/core/cost";
+import { USD, configuredPurposes, formatMonthlyRange, subscriptionSummary } from "@mkt/core/cost";
 import { getWorkspace } from "@mkt/core/tenancy";
 import { getDb } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
@@ -11,6 +11,7 @@ export default async function WelcomePage() {
   const s = await requireWorkspace();
   const ws = await getWorkspace(getDb(), s.workspaceId);
   const current = Math.round((ws?.monthlyLimitMicros ?? 60 * USD) / USD);
+  const subs = formatMonthlyRange(subscriptionSummary(await configuredPurposes(getDb(), s.workspaceId)));
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-6 px-4">
@@ -22,7 +23,7 @@ export default async function WelcomePage() {
         </p>
       </div>
       <LimitForm initialUsd={current} next="/" />
-      <p className="text-xs text-zinc-500">Subscriptions: $0/mo. Services you connect later show up here.</p>
+      <p className="text-xs text-zinc-500">Subscriptions: {subs}. Services you connect later show up here.</p>
     </main>
   );
 }
