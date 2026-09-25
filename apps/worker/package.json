@@ -1,0 +1,17 @@
+{
+  "name": "@mkt/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@mkt/core": "workspace:*",
+    "@mkt/db": "workspace:*",
+    "bullmq": "^5.81.5",
+    "ioredis": "^5.11.1",
+    "tsx": "^4.23.15"
+  }
+}

@@ -1,0 +1,174 @@
+import { and, eq, inArray, sql } from "drizzle-orm";
+import { schema, uuidv7, type Db } from "@mkt/db";
+import { BudgetExceeded } from "./errors.ts";
+
+const { budgetPeriods, providerCalls, spendLedger } = schema;
+
+export function periodMonth(d = new Date()): string {
+  return d.toISOString().slice(0, 7);
+}
+
+export interface PeriodSpec {
+  scope: "global_month" | "run" | "pat" | "ads";
+  scopeRef?: string;
+  capMicros: number;
+}
+
+/** Get or create the budget rows a call reserves against. Existing caps are left untouched. */
+export async function ensurePeriods(
+  db: Db,
+  workspaceId: string,
+  specs: PeriodSpec[],
+  month = periodMonth(),
+): Promise<string[]> {
+  const ids: string[] = [];
+  for (const s of specs) {
+    const [row] = await db
+      .insert(budgetPeriods)
+      .values({
+        id: uuidv7(),
+        workspaceId,
+        scope: s.scope,
+        scopeRef: s.scopeRef ?? "",
+        periodMonth: month,
+        capMicros: s.capMicros,
+      })
+      .onConflictDoUpdate({
+        target: [budgetPeriods.workspaceId, budgetPeriods.scope, budgetPeriods.scopeRef, budgetPeriods.periodMonth],
+        set: { capMicros: sql`${budgetPeriods.capMicros}` }, // no-op, so RETURNING yields the existing row
+      })
+      .returning({ id: budgetPeriods.id });
+    ids.push(row!.id);
+  }
+  return ids;
+}
+
+export interface ReserveInput {
+  workspaceId: string;
+  budgetPeriodIds: string[];
+  estMicros: number;
+  feature: string;
+  provider: string;
+  requestedModel?: string;
+  runId?: string;
+}
+
+/**
+ * D5: one transaction. A conditional UPDATE on every scope, then the provider_calls and ledger
+ * rows. If any scope lacks headroom, the row count falls short and nothing is written.
+ * Ids are sorted so concurrent multi-scope reservations lock rows in the same order.
+ */
+export async function reserve(db: Db, input: ReserveInput): Promise<string> {
+  const ids = [...new Set(input.budgetPeriodIds)].sort();
+  if (ids.length === 0) throw new Error("reserve() needs at least one budget scope");
+  assertMicros(input.estMicros, "estMicros");
+
+  return db.transaction(async (tx) => {
+    const updated = await tx
+      .update(budgetPeriods)
+      .set({ reservedMicros: sql`${budgetPeriods.reservedMicros} + ${input.estMicros}` })
+      .where(
+        and(
+          inArray(budgetPeriods.id, ids),
+          eq(budgetPeriods.workspaceId, input.workspaceId),
+          sql`${budgetPeriods.spentMicros} + ${budgetPeriods.reservedMicros} + ${input.estMicros} <= ${budgetPeriods.capMicros}`,
+        ),
+      )
+      .returning({ id: budgetPeriods.id, periodMonth: budgetPeriods.periodMonth });
+
+    if (updated.length !== ids.length) {
+      const ok = new Set(updated.map((r) => r.id));
+      const missing = ids.filter((id) => !ok.has(id));
+      const blocked = await tx
+        .select({ scope: budgetPeriods.scope, ref: budgetPeriods.scopeRef })
+        .from(budgetPeriods)
+        .where(inArray(budgetPeriods.id, missing));
+      // Throwing rolls back the partial reservation on the scopes that did have headroom.
+      throw new BudgetExceeded(
+        blocked.length ? blocked.map((b) => (b.ref ? `${b.scope}:${b.ref}` : b.scope)) : ["unknown_scope"],
+        input.estMicros,
+      );
+    }
+
+    const callId = uuidv7();
+    await tx.insert(providerCalls).values({
+      id: callId,
+      workspaceId: input.workspaceId,
+      runId: input.runId,
+      feature: input.feature,
+      provider: input.provider,
+      requestedModel: input.requestedModel,
+      status: "reserved",
+      budgetPeriodIds: ids,
+      estMicros: input.estMicros,
+    });
+    await tx.insert(spendLedger).values({
+      id: uuidv7(),
+      workspaceId: input.workspaceId,
+      providerCallId: callId,
+      kind: "reserve",
+      micros: input.estMicros,
+      periodMonth: updated[0]!.periodMonth,
+    });
+    return callId;
+  });
+}
+
+export interface SettleInput {
+  actualMicros: number;
+  serverToolFeesMicros?: number;
+  servedModel?: string;
+  usage?: Record<string, unknown>;
+  providerRequestId?: string;
+}
+
+/** Release the reservation and record the actual cost, in one transaction. A second settle is a no-op. */
+export async function settle(db: Db, callId: string, s: SettleInput): Promise<void> {
+  await finish(db, callId, "settled", s);
+}
+
+/** The call failed before anything was billed: release only. */
+export async function release(db: Db, callId: string, error?: string): Promise<void> {
+  await finish(db, callId, "released", { actualMicros: 0 }, error);
+}
+
+async function finish(db: Db, callId: string, status: "settled" | "released", s: SettleInput, error?: string) {
+  assertMicros(s.actualMicros, "actualMicros");
+  await db.transaction(async (tx) => {
+    // Claiming the row with a status guard makes a repeated settle or release a no-op.
+    const [call] = await tx
+      .update(providerCalls)
+      .set({
+        status,
+        actualMicros: s.actualMicros,
+        serverToolFeesMicros: s.serverToolFeesMicros ?? 0,
+        servedModel: s.servedModel,
+        usage: s.usage,
+        providerRequestId: s.providerRequestId,
+        error,
+        settledAt: new Date(),
+      })
+      .where(and(eq(providerCalls.id, callId), eq(providerCalls.status, "reserved")))
+      .returning();
+    if (!call) return;
+
+    await tx
+      .update(budgetPeriods)
+      .set({
+        reservedMicros: sql`${budgetPeriods.reservedMicros} - ${call.estMicros}`,
+        spentMicros: sql`${budgetPeriods.spentMicros} + ${s.actualMicros}`,
+      })
+      .where(inArray(budgetPeriods.id, call.budgetPeriodIds));
+
+    const base = { workspaceId: call.workspaceId, providerCallId: callId, periodMonth: periodMonth(call.createdAt) };
+    const rows: (typeof spendLedger.$inferInsert)[] = [
+      { ...base, id: uuidv7(), kind: "release", micros: -call.estMicros },
+    ];
+    if (status === "settled") rows.push({ ...base, id: uuidv7(), kind: "settle", micros: s.actualMicros });
+    await tx.insert(spendLedger).values(rows);
+  });
+}
+
+function assertMicros(n: number, name: string) {
+  if (!Number.isSafeInteger(n) || n < 0) throw new Error(`${name} must be a non-negative integer`);
+}

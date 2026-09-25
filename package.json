@@ -1,0 +1,20 @@
+{
+  "name": "marketing",
+  "private": true,
+  "packageManager": "pnpm@11.21.0",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "check": "pnpm typecheck && pnpm test && pnpm --filter @mkt/web build"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.23.15",
+    "turbo": "^2.11.4",
+    "typescript": "~6.0.3",
+    "vitest": "^4.1.11"
+  }
+}

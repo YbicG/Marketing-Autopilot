@@ -1,0 +1,80 @@
+# Deployed by Dokploy as a Compose service (auto-deploy on push to main).
+# Secrets come from the Dokploy Environment tab. Only `web` joins dokploy-network (Traefik).
+name: mkt
+x-app-env: &app-env
+  NODE_ENV: production
+  DATABASE_URL: postgres://mkt:${POSTGRES_PASSWORD}@postgres:5432/mkt
+  REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+  APP_BASE_URL: ${APP_BASE_URL}
+  BETTER_AUTH_URL: ${APP_BASE_URL}
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+  GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+  GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+  ALLOWED_GITHUB_LOGINS: ${ALLOWED_GITHUB_LOGINS}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+  STORAGE_DRIVER: ${STORAGE_DRIVER:-fs}
+  FS_ROOT: /data
+  PROVIDER_MODE: live
+  SELF_IPS: ${SELF_IPS}
+  MISSED_SLOT_GRACE_MIN: ${MISSED_SLOT_GRACE_MIN:-120}
+
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment: { POSTGRES_USER: mkt, POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}", POSTGRES_DB: mkt }
+    volumes: [pg-data:/var/lib/postgresql]
+    networks: [mkt]
+    mem_limit: 1g
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U mkt"], interval: 5s, retries: 20 }
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # Same settings as docker/redis/redis.conf, passed as flags so no bind mount is needed on Dokploy.
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec", "--maxmemory", "200mb",
+              "--maxmemory-policy", "noeviction", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes: [redis-data:/data]
+    networks: [mkt]
+    mem_limit: 256m
+
+  migrate:
+    build: { context: ., dockerfile: docker/worker.Dockerfile }
+    command: ["pnpm", "--filter", "@mkt/db", "migrate"]
+    environment: *app-env
+    depends_on: { postgres: { condition: service_healthy } }
+    networks: [mkt]
+    restart: "no"
+
+  web:
+    build: { context: ., dockerfile: docker/web.Dockerfile }
+    restart: unless-stopped
+    environment: *app-env
+    depends_on: { migrate: { condition: service_completed_successfully } }
+    volumes: [mkt-data:/data]
+    networks: [mkt, dokploy-network]
+    mem_limit: 1g
+
+  worker:
+    build: { context: ., dockerfile: docker/worker.Dockerfile }
+    restart: unless-stopped
+    environment:
+      <<: *app-env
+      REMOTION_CONCURRENCY: ${REMOTION_CONCURRENCY:-2}
+      WORKER_ROLES: ${WORKER_ROLES:-all}
+    depends_on: { migrate: { condition: service_completed_successfully } }
+    volumes: [mkt-data:/data]
+    networks: [mkt]
+    shm_size: 1gb
+    mem_limit: 5g
+    cpus: 3
+    stop_grace_period: 2m
+
+volumes:
+  pg-data: {}
+  redis-data: {}
+  mkt-data: {}
+
+networks:
+  mkt: {}
+  dokploy-network: { external: true }

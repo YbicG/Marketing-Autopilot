@@ -1,0 +1,26 @@
+{
+  "name": "@mkt/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./config": "./src/config/index.ts",
+    "./cost": "./src/cost/index.ts",
+    "./ai": "./src/ai/index.ts",
+    "./tenancy": "./src/tenancy/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
+    "@mkt/contracts": "workspace:*",
+    "@mkt/db": "workspace:*",
+    "drizzle-orm": "^0.45.3",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8"
+  }
+}
