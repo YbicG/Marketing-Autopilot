@@ -67,7 +67,8 @@ services:
       migrate: { condition: service_completed_successfully }
       smokescreen: { condition: service_started }
     volumes: [mkt-data:/data]
-    networks: [mkt]
+    # mkt-capture: the internal-only network the SyllaCal demo instance joins (D26, M3b).
+    networks: [mkt, mkt-capture]
     shm_size: 1gb
     mem_limit: 5g
     cpus: 3
@@ -88,4 +89,6 @@ volumes:
 
 networks:
   mkt: {}
+  # Fixed name so the demo's compose file can join it as external; created on first deploy.
+  mkt-capture: { name: mkt-capture }
   dokploy-network: { external: true }

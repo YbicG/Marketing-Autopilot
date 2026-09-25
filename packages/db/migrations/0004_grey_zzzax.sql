@@ -1,0 +1,1 @@
+ALTER TABLE "capture_flows" ADD COLUMN "viewport" text DEFAULT 'desktop' NOT NULL;

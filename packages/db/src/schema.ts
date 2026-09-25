@@ -212,7 +212,7 @@ export const generationRuns = pgTable(
       .notNull()
       .references(() => workspaces.id, { onDelete: "cascade" }),
     productId: uuid("product_id"),
-    kind: text("kind", { enum: ["m0_summary", "ingest", "strategy", "dna_regenerate", "package", "refill", "finalize"] }).notNull(),
+    kind: text("kind", { enum: ["m0_summary", "ingest", "strategy", "dna_regenerate", "package", "refill", "finalize", "capture"] }).notNull(),
     status: text("status", { enum: ["queued", "running", "needs_review", "completed", "failed", "canceled", "paused_budget"] }).notNull(),
     input: jsonb("input").$type<Record<string, unknown>>().notNull(),
     result: jsonb("result").$type<Record<string, unknown>>(),
@@ -1038,6 +1038,7 @@ export const captureFlows = pgTable("capture_flows", {
   name: text("name").notNull(),
   steps: jsonb("steps").$type<Record<string, unknown>[]>().notNull(),
   needsLogin: boolean("needs_login").notNull().default(false),
+  viewport: text("viewport", { enum: ["desktop", "mobile"] }).notNull().default("desktop"),
   confirmedAt: ts("confirmed_at"),
   confirmedBy: text("confirmed_by"),
   lastRecordingAssetId: uuid("last_recording_asset_id"),
