@@ -41,6 +41,7 @@ export const FEATURES = {
   "ingest.label_asset": sonnet("low", 2_000),
   "ingest.extract": sonnet("medium", 8_000),
   "ingest.research": sonnet("medium", 16_000),
+  "ingest.research_summary": sonnet("medium", 8_000),
   "dna.gaps": sonnet("low", 2_000),
   "dna.synthesize": sonnet("medium", 12_000),
   "dna.one_liner": opus("medium", 4_000),

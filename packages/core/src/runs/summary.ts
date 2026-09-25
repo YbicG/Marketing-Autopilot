@@ -2,7 +2,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { and, eq, sql } from "drizzle-orm";
 import { ProductSummary, type RunEvent } from "@mkt/contracts";
 import { schema, uuidv7, type Db } from "@mkt/db";
-import { callClaudeText } from "../ai/call.ts";
+import { callClaudeText, StructuredOutputInvalid } from "../ai/call.ts";
 import { ClaudeRefused } from "../ai/stop-reasons.ts";
 import { claudeFormat } from "../ai/structured.ts";
 import type { RateLookup } from "../ai/usage.ts";
@@ -147,7 +147,10 @@ export function describeFailure(err: unknown): { code: string; message: string; 
   }
   if (err instanceof BlockedUrl) return { code: err.code, message: err.message, retryable: false };
   if (err instanceof ClaudeRefused) {
-    return { code: err.code, message: "Claude declined to summarize this page. Needs you: check the link.", retryable: false };
+    return { code: err.code, message: "Claude declined this step. Needs you: check the link and your notes.", retryable: false };
+  }
+  if (err instanceof StructuredOutputInvalid) {
+    return { code: err.code, message: "Claude's answer came back in the wrong shape twice. Try again.", retryable: true };
   }
   return { code: "failed", message: "Something went wrong reading this product. Try again in a minute.", retryable: true };
 }

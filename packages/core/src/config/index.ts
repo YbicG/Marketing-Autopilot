@@ -16,6 +16,10 @@ const Env = z.object({
     .transform((s) => s.split(",").map((x) => x.trim()).filter(Boolean)),
   MISSED_SLOT_GRACE_MIN: z.coerce.number().int().positive().default(120),
   SSRF_ALLOWLIST: z.string().optional(),
+  /** Egress proxy for capture and safe-fetch; unset means direct (dev/tests only). */
+  SMOKESCREEN_URL: z.string().url().optional(),
+  /** Optional, for a higher GitHub REST rate limit; public repos work without it. */
+  GITHUB_TOKEN: z.string().optional(),
 });
 export type Env = z.infer<typeof Env>;
 

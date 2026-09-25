@@ -10,10 +10,13 @@
     "./tenancy": "./src/tenancy/index.ts",
     "./queue": "./src/queue/index.ts",
     "./runs": "./src/runs/index.ts",
-    "./security": "./src/security/index.ts"
+    "./security": "./src/security/index.ts",
+    "./media": "./src/media/index.ts",
+    "./ingest": "./src/ingest/index.ts"
   },
   "scripts": {
     "typecheck": "tsc -p .",
+    "lint": "eslint .",
     "test": "vitest run"
   },
   "dependencies": {

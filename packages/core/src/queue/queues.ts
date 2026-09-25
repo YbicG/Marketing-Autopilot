@@ -1,11 +1,15 @@
 import { Queue, type ConnectionOptions, type JobsOptions } from "bullmq";
 
-/** The 5 queues of §3.3. M0 uses `ingest` only. */
+/** The 5 queues of §3.3. M0–M1 use `ingest` only. */
 export const QUEUE_NAMES = ["ingest", "generate", "render", "publish", "maint"] as const;
 export type QueueName = (typeof QUEUE_NAMES)[number];
 
+/** M1 keeps every run on `ingest` (the strategy call is one Opus call); M2 moves generation to `generate`. */
 export interface IngestJobs {
   "m0.summary": { runId: string };
+  "ingest.run": { runId: string };
+  "strategy.run": { runId: string };
+  "dna.regenerate": { runId: string };
 }
 
 /**
@@ -23,7 +27,7 @@ export function jobDefaults(paid: boolean): JobsOptions {
       };
 }
 
-export const PAID_JOBS = new Set<string>(["m0.summary"]);
+export const PAID_JOBS = new Set<string>(["m0.summary", "ingest.run", "strategy.run", "dna.regenerate"]);
 
 export function ingestQueue(connection: ConnectionOptions): Queue<IngestJobs[keyof IngestJobs], unknown, keyof IngestJobs> {
   return new Queue("ingest", { connection });
