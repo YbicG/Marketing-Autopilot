@@ -126,7 +126,13 @@ export interface PublishText {
  */
 export function publishText(raw: Record<string, unknown>): PublishText {
   // TextVariantBody (post-set.ts) wraps the PostVariant as { schemaVersion, kind, variant }.
-  const body = raw.variant && typeof raw.variant === "object" ? (raw.variant as Record<string, unknown>) : raw;
+  // CarouselVariantBody (carousel-spec.ts) carries its caption as { text, hashtags }.
+  const body =
+    raw.variant && typeof raw.variant === "object"
+      ? (raw.variant as Record<string, unknown>)
+      : raw.caption && typeof raw.caption === "object"
+        ? (raw.caption as Record<string, unknown>)
+        : raw;
   const str = (k: string) => (typeof body[k] === "string" && body[k] ? (body[k] as string) : undefined);
   let parts = Array.isArray(body.parts) ? body.parts.filter((p): p is string => typeof p === "string" && !!p) : [];
   let text = str("text") ?? str("caption") ?? str("body") ?? parts[0] ?? "";

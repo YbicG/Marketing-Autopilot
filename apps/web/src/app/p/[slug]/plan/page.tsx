@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { AngleCard, type FieldMetaMap, type ProductDna } from "@mkt/contracts";
+import { AngleCard, type FieldMetaMap, type ProductDna, type ProductKind } from "@mkt/contracts";
+import { monthSpend } from "@mkt/core/cost";
+import { latestCampaign, packageOptions } from "@mkt/core/engine";
 import { assetsFor, planView, productBySlug, type SourceRef } from "@mkt/core/ingest";
 import { getWorkspace } from "@mkt/core/tenancy";
+import { PLATFORM_NAME } from "@/components/content/status";
 import { SourceLink } from "@/components/source-link";
 import { getDb } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
@@ -64,7 +67,7 @@ export default async function PlanPage({ params }: { params: Promise<{ slug: str
   const { dna, strategy } = view;
 
   const pendingStrategy = view.runs.find((r) => r.kind === "strategy" && (r.status === "queued" || r.status === "running"));
-  const activeRun = view.runs.find((r) => r.kind !== "strategy" && (r.status === "queued" || r.status === "running"));
+  const activeRun = view.runs.find((r) => r.kind !== "strategy" && r.kind !== "package" && r.kind !== "refill" && (r.status === "queued" || r.status === "running"));
   const cards = strategy
     ? (strategy.angles.length
         ? strategy.angles.map((a) => AngleCard.safeParse(a.card))
@@ -171,9 +174,41 @@ export default async function PlanPage({ params }: { params: Promise<{ slug: str
           </>
         )}
 
-        <PlanActions slug={product.slug} hasProfile={!!dna} />
+        <PlanButton workspaceId={s.workspaceId} limitMicros={ws.monthlyLimitMicros} product={product} hasProfile={!!dna} hasAngles={cards.length > 0} />
       </main>
     </>
+  );
+}
+
+/** "Make my campaign · ~$X" (§2.3): tier and platform estimates, what's left of the month, any campaign already made. */
+async function PlanButton({
+  workspaceId,
+  limitMicros,
+  product,
+  hasProfile,
+  hasAngles,
+}: {
+  workspaceId: string;
+  limitMicros: number;
+  product: { id: string; slug: string; kind: string };
+  hasProfile: boolean;
+  hasAngles: boolean;
+}) {
+  const db = getDb();
+  const options = packageOptions(product.kind as ProductKind);
+  const [latest, month] = await Promise.all([latestCampaign(db, workspaceId, product.id), monthSpend(db, workspaceId, limitMicros)]);
+  return (
+    <PlanActions
+      slug={product.slug}
+      hasProfile={hasProfile}
+      hasAngles={hasAngles}
+      campaignHref={latest ? `/p/${encodeURIComponent(product.slug)}/content` : null}
+      choice={{
+        platforms: options.platforms.map((p) => ({ id: p, name: PLATFORM_NAME[p] ?? p })),
+        estimates: options.estimates,
+        leftMicros: Math.max(0, month.capMicros - month.spentMicros - month.reservedMicros),
+      }}
+    />
   );
 }
 

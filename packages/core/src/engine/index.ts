@@ -8,3 +8,6 @@ export * from "./copy.ts";
 export * from "./package.ts";
 export * from "./board.ts";
 export * from "./refill.ts";
+export * from "./slide-checks.ts";
+export * from "./package-options.ts";
+export * from "./editor.ts";

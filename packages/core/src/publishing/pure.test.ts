@@ -231,6 +231,11 @@ describe("time", () => {
 });
 
 describe("publishText", () => {
+  it("reads a swipe post's caption object", () => {
+    const t = publishText({ schemaVersion: 1, kind: "carousel", caption: { text: "Swipe", hashtags: ["study"] }, slides: [] });
+    expect(t.text).toContain("Swipe");
+    expect(t.text).toContain("#study");
+  });
   it("reads the copy factory's TextVariantBody, adding the link token and hashtags", () => {
     const body = {
       schemaVersion: 1,
