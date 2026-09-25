@@ -51,8 +51,16 @@ export const FEATURES = {
   "video.spec": sonnet("medium", 12_000),
   "copy.posts": sonnet("medium", 12_000),
   "copy.carousel": sonnet("medium", 8_000),
+  "copy.rewrite_platform": sonnet("low", 4_000),
+  "copy.bio": sonnet("low", 4_000),
+  "copy.assisted": sonnet("medium", 8_000),
+  "copy.repair": sonnet("low", 8_000),
+  "video.hooks_more": opus("medium", 6_000),
+  "video.change_request": sonnet("medium", 12_000),
+  "capture.flow_plan": sonnet("medium", 8_000),
   "qa.vision": sonnet("low", 4_000),
   "qa.text_judge": sonnet("low", 4_000),
+  "qa.pii_frames": sonnet("low", 4_000),
 } satisfies Record<string, FeatureConfig>;
 
 export type FeatureId = keyof typeof FEATURES;

@@ -38,3 +38,4 @@ minimumReleaseAgeExclude:
   - '@remotion/web-renderer@4.0.528'
   - '@remotion/zod-types@4.0.528'
   - remotion@4.0.528
+  - '@remotion/layout-utils@4.0.528'

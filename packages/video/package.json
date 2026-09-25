@@ -12,11 +12,17 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@mkt/contracts": "workspace:*",
     "@remotion/bundler": "4.0.528",
+    "@remotion/captions": "4.0.528",
+    "@remotion/layout-utils": "4.0.528",
+    "@remotion/player": "4.0.528",
     "@remotion/renderer": "4.0.528",
+    "pdf-lib": "^1.17.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "remotion": "4.0.528"
+    "remotion": "4.0.528",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/node": "^24.13.6",

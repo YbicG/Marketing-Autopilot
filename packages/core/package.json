@@ -12,7 +12,12 @@
     "./runs": "./src/runs/index.ts",
     "./security": "./src/security/index.ts",
     "./media": "./src/media/index.ts",
-    "./ingest": "./src/ingest/index.ts"
+    "./ingest": "./src/ingest/index.ts",
+    "./publishing": "./src/publishing/index.ts",
+    "./engine": "./src/engine/index.ts",
+    "./video": "./src/video/index.ts",
+    "./capture": "./src/capture/index.ts",
+    "./analytics": "./src/analytics/index.ts"
   },
   "scripts": {
     "typecheck": "tsc -p .",
@@ -21,8 +26,11 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",
+    "@aws-sdk/client-s3": "^3.1139.0",
+    "@aws-sdk/s3-request-presigner": "^3.1139.0",
     "@mkt/contracts": "workspace:*",
     "@mkt/db": "workspace:*",
+    "@mkt/providers": "workspace:*",
     "bullmq": "^5.81.5",
     "drizzle-orm": "^0.45.3",
     "ioredis": "^5.11.1",
@@ -30,6 +38,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.8"
+    "@electric-sql/pglite": "^0.5.8",
+    "fast-check": "^4.10.2"
   }
 }

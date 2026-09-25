@@ -16,6 +16,7 @@
     "@mkt/contracts": "workspace:*",
     "@mkt/core": "workspace:*",
     "@mkt/db": "workspace:*",
+    "@mkt/providers": "workspace:*",
     "@mkt/video": "workspace:*",
     "bullmq": "^5.81.5",
     "ioredis": "^5.11.1",
