@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { schema, type Db } from "@mkt/db";
 
-const { contentItems, renders } = schema;
+const { contentItems, generationRuns, renders } = schema;
 
 /**
  * Video deps are per workspace (the ElevenLabs key is vault-first, D19), but render jobs carry only
@@ -14,5 +14,10 @@ export async function workspaceOfRender(db: Db, renderId: string): Promise<strin
 
 export async function workspaceOfContentItem(db: Db, contentItemId: string): Promise<string | null> {
   const [r] = await db.select({ ws: contentItems.workspaceId }).from(contentItems).where(eq(contentItems.id, contentItemId));
+  return r?.ws ?? null;
+}
+
+export async function workspaceOfRun(db: Db, runId: string): Promise<string | null> {
+  const [r] = await db.select({ ws: generationRuns.workspaceId }).from(generationRuns).where(eq(generationRuns.id, runId));
   return r?.ws ?? null;
 }

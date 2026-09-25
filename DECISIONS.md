@@ -97,3 +97,19 @@ Capture only targets the product's trusted origin, which is set in the UI. That 
 
 ## 2026-09-25 · Images through ffmpeg, not sharp
 The worker's `ImageDecoder` (phash on contact sheets) and `ImageResizer` (small JPEGs for labeling and the personal-data vision pass) use the ffmpeg binary already in the worker image, via temp files. This keeps sharp's native binary out of the image. It costs one process per call, which is fine at this volume.
+
+## 2026-09-25 · Web UI for M2/M3 (board, queue, editors, settings)
+- **Pages:**
+  - `/p/[slug]` redirects to Today.
+  - Project tabs: Today · Plan · Content · Queue · Results · Screens & clips · Demo recording.
+  - Settings tabs: Limit · Where to post · Keys · Spending.
+- **Approvals:** every route that approves or confirms anything publishable (post approvals, Finalize, capture origin/login/flow confirm) goes through `requireUiSession`. That means cookie + same Origin + `x-mkt-csrf: 1`. After the core call returns, the route calls `applyEffects`, so BullMQ matches Postgres.
+- **Video items:** approving any of a finished video's posts moves the item from `final_ready` to `approved` (`markVideoItemsApproved`).
+- **Paid buttons:** each shows its price from core's estimators. The package route refuses (402) when the high estimate is above what's left of the month.
+- **Server-only imports:** web server code imports `@mkt/video/pure` (lint, timeline, safe zones, brand maths). The root `@mkt/video` entry exports React components and is imported only from client components. The web player loads Inter from its own `@fontsource/inter` dependency.
+- **`/api/media`:**
+  - Serves the real type only for images, audio and video (never SVG/HTML). Everything else is a download.
+  - `?dl=1` forces a download.
+  - Single Range requests are supported so `<video>` can seek. The whole object is still read into memory, which is fine at our file sizes (≤300 MB masters are downloaded, not streamed, so this may need streaming later).
+- **Webhooks:** the Upload-Post webhook has no session. It verifies the signature over the raw body (workspace secret first, then env), stores the event once per provider event id, and enqueues `publish.webhook`. Polling stays the source of truth.
+- **Finalize runs:** the editor's `finalize` run is closed by `executeFinalizeJob` once the renders are queued, or when it fails.

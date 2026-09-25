@@ -11,7 +11,7 @@ import { dbConnectionStore, variantEditedHook, voidApprovalsForVariants } from "
 import { enqueue, enqueueIngest, ingestQueue, publishRunEvent, queueFor, type IngestJobs, type MaintJobs, type RenderJobs } from "@mkt/core/queue";
 import { executeSummaryRun } from "@mkt/core/runs";
 import { resolveSecret, safeFetchText, ssrfAllowHostsFromEnv } from "@mkt/core/security";
-import { videoGenerator, workspaceOfContentItem, workspaceOfRender, type VideoDeps } from "@mkt/core/video";
+import { videoGenerator, workspaceOfContentItem, workspaceOfRender, workspaceOfRun, type VideoDeps } from "@mkt/core/video";
 import { ELEVENLABS_SECRET, createElevenLabsAudio, registeredPublishers } from "@mkt/providers";
 import { framesToCfr } from "@mkt/video/render";
 import { closeBrowser, fetchPageText } from "./capture/page-text.ts";
@@ -80,6 +80,9 @@ function okText(r: { url: string; status: number; text: string }): string {
 
 /** Everything an M1 run needs. */
 async function ingestDeps(runId: string): Promise<IngestDeps & { enqueueStrategy: (id: string) => Promise<void> }> {
+  // Private repos: the workspace's fine-grained token from the vault, else env (D19).
+  const ws = await workspaceOfRun(db, runId);
+  const githubToken = (ws ? await resolveSecret(db, ws, "github.token", "GITHUB_TOKEN") : null) ?? config.GITHUB_TOKEN;
   return {
     db,
     rates: await rates(),
@@ -87,7 +90,7 @@ async function ingestDeps(runId: string): Promise<IngestDeps & { enqueueStrategy
     publish: (e) => publishRunEvent(events, runId, e),
     captureSite: (url) => captureSite(url, { selfIps: config.SELF_IPS, proxyUrl: config.SMOKESCREEN_URL }),
     fetchText,
-    githubToken: config.GITHUB_TOKEN,
+    ...(githubToken ? { githubToken } : {}),
     enqueueStrategy: (id) => enqueueIngest(producer, "strategy.run", { runId: id }, id),
   };
 }

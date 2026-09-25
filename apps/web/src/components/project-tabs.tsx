@@ -9,22 +9,24 @@ const PROJECT_TABS = [
   { href: "content", label: "Content" },
   { href: "queue", label: "Queue" },
   { href: "results", label: "Results" },
+  { href: "assets", label: "Screens & clips" },
+  { href: "capture", label: "Demo recording" },
 ] as const;
 
 const SETTINGS_TABS = [
-  { href: "/settings", label: "Limit" },
+  { href: "/settings", label: "Limit", exact: true },
   { href: "/settings/accounts", label: "Where to post" },
   { href: "/settings/keys", label: "Keys" },
   { href: "/settings/spending", label: "Spending" },
 ] as const;
 
-function Tabs({ items }: { items: readonly { href: string; label: string }[] }) {
+function Tabs({ items }: { items: readonly { href: string; label: string; exact?: boolean }[] }) {
   const path = usePathname();
   return (
     <nav className="border-b border-zinc-800">
       <div className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-4">
         {items.map((t) => {
-          const active = path === t.href || path.startsWith(`${t.href}/`);
+          const active = path === t.href || (!t.exact && path.startsWith(`${t.href}/`));
           return (
             <Link
               key={t.href}
