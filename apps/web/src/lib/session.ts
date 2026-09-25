@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { env } from "@mkt/core/config";
-import { workspaceIdForUser } from "@mkt/core/tenancy";
+import { ensureWorkspaceForUser, workspaceIdForUser } from "@mkt/core/tenancy";
 import { getAuth } from "./auth";
 import { getDb } from "./db";
 
@@ -14,8 +14,11 @@ export interface SessionWorkspace {
 async function load(h: Headers): Promise<SessionWorkspace | null> {
   const session = await getAuth().api.getSession({ headers: h });
   if (!session) return null;
-  const workspaceId = await workspaceIdForUser(getDb(), session.user.id);
-  if (!workspaceId) return null;
+  // A signed-in user without a workspace deleted theirs; start them on a fresh one.
+  // (The allowlist was already enforced when the session was created.)
+  const workspaceId =
+    (await workspaceIdForUser(getDb(), session.user.id)) ??
+    (await ensureWorkspaceForUser(getDb(), { id: session.user.id, name: session.user.name }));
   return { userId: session.user.id, name: session.user.name, workspaceId };
 }
 

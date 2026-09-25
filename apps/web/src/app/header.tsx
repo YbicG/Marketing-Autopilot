@@ -15,7 +15,7 @@ export async function Header({ workspaceId, limitMicros }: { workspaceId: string
         <Link href="/" className="font-semibold">
           Marketing Autopilot
         </Link>
-        <Link href="/welcome" className="flex items-center gap-3 text-sm text-zinc-400 hover:text-zinc-200">
+        <Link href="/settings" className="flex items-center gap-3 text-sm text-zinc-400 hover:text-zinc-200">
           <span>
             {formatUsd(used)} / {formatUsd(m.capMicros)} this month · Subscriptions $0/mo
           </span>

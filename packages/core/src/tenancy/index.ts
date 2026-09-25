@@ -48,9 +48,16 @@ export async function workspaceIdForUser(db: Db, userId: string): Promise<string
   return row?.id ?? null;
 }
 
-/** Delete cascade (M0 done-when): every tenant row hangs off workspaces with ON DELETE CASCADE. */
-export async function deleteWorkspace(db: Db, workspaceId: string): Promise<void> {
-  await db.delete(schema.workspaces).where(eq(schema.workspaces.id, workspaceId));
+/**
+ * Delete cascade (M0 done-when): every tenant row hangs off workspaces with ON DELETE CASCADE.
+ * The acting user's sessions are revoked too; the next sign-in gets a fresh, empty workspace.
+ * Files and third-party data (R2, Upload-Post, Resend) join this as a job once they exist (M2+).
+ */
+export async function deleteWorkspace(db: Db, workspaceId: string, actorId?: string): Promise<void> {
+  await db.transaction(async (tx) => {
+    await tx.delete(schema.workspaces).where(eq(schema.workspaces.id, workspaceId));
+    if (actorId) await tx.delete(schema.sessions).where(eq(schema.sessions.userId, actorId));
+  });
 }
 
 export async function githubLoginForUser(db: Db, userId: string): Promise<string | null> {
