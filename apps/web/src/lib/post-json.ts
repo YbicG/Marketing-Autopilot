@@ -6,7 +6,7 @@ export async function postJson<T extends object = Record<string, unknown>>(
   try {
     const res = await fetch(url, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", "x-mkt-csrf": "1" },
       body: JSON.stringify(body),
     });
     const data = (await res.json().catch(() => ({}))) as T & { error?: string };

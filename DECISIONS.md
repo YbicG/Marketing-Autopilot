@@ -48,3 +48,49 @@ A separate `strategy` run (cap $1.50) is queued when the profile is written, so 
 
 ## 2026-09-24 · GitHub without OAuth scopes
 Public repos are read over unauthenticated REST through safe-fetch (optional `GITHUB_TOKEN` env for the rate limit). The sign-in token isn't used: the OAuth app only asks for `read:user user:email`. Private repos: drop the folder (M1) or a fine-grained token in the vault (M2).
+
+## 2026-09-25 · Upload-Post spike
+`docs/spikes/upload-post.md` records every §11 M2 spike item from the public docs, each marked confirmed or unverified. The adapter keeps each unverified request/response shape in one function marked `UNVERIFIED`, so a server test that disagrees changes one place. Submit sends `request_id = external_id = Idempotency-Key = posts.idempotency_key`. Lookup order: status by request id, then history by external_id. Only a miss on both is "absent", the one answer that allows a resend.
+
+## 2026-09-25 · Our own scheduler (D3)
+Approving a post writes the approval, moves the post to `queued` and adds a delayed `publish.due` job whose jobId is the idempotency key (`pst_{id}_g{n}`), all from one pure `transition()`. The effects run after the transaction commits. `publish.due` has one attempt. A submit timeout makes the post `unknown`, and reconcile (every 5 min) then looks it up; it's never re-sent blind. Boot rehydrate re-creates any missing delayed job from Postgres and turns slots more than `MISSED_SLOT_GRACE_MIN` late into `missed`. Edits, voids, pause and stale checks all just remove the local job: nothing is ever handed to Upload-Post's scheduler.
+
+## 2026-09-25 · Approvals only from the UI (D9)
+`uiSessionFromCookie` is the only way to get a `UiSession`, and only `apps/web/src/lib/ui-session.ts` calls it, after checking three things: the better-auth cookie session, our Origin, and an `x-mkt-csrf: 1` header. `postJson` always sends that header, and a cross-site form can't. The approval hash covers text + final media sha256s + platform options, and `publish.due` re-checks it before it uploads.
+
+## 2026-09-25 · Queue effects live in core
+`bullJobGateway`/`bullAnalyticsGateway` moved from the worker to `@mkt/core/publishing` so the web app (approve, pause, reschedule) and the worker schedule BullMQ jobs the same way. A finished job with the same id is removed before re-adding, since BullMQ ignores `add()` for an id it still remembers.
+
+## 2026-09-25 · Package engine
+`createPackageRun` builds the recipe (only enabled generators; M3a turns on `video`), the calendar plan and the frozen campaign bundle. `package.orchestrate` is idempotent. It enqueues `package.item` for `planned` rows with jobId `${runId}:${deliverableKey}`, and every child re-enqueues orchestrate with dedupe `orch:{runId}` plus a delayed safety tick. Children stuck in `generating` for more than 20 min are treated as dead (paid jobs have one attempt). A budget stop pauses the run as `paused_budget`. Video items go to the M3a pipeline through `EngineDeps.videoItem`.
+
+## 2026-09-25 · Worker wiring
+One worker process runs all five queues:
+- ingest: concurrency 4
+- generate: 8. `video.finalize` also runs here, since it's light work.
+- render: 1, for `render.video`, `render.still` and `capture.flow`, each also holding `sem:heavy`.
+- publish: 4. It starts only after boot rehydrate.
+- maint: 1
+
+Repeating jobs:
+- heartbeat: every 5 min
+- pg_dump: 03:10 daily
+- scratch GC: Sundays
+- connection health: every 6 h
+- reconcile: every 5 min
+- stale sweep: daily
+- conversions: daily
+
+Video deps are built per workspace, because the ElevenLabs key is resolved vault-first. With no key, a video gets captions only and the bundled track. Render jobs get a unique BullMQ id per enqueue: the `renders` row (status + attempts) is the real dedupe, and a render re-queues itself while its own job is still active.
+
+## 2026-09-25 · Secrets: vault then env
+Every provider secret is looked up by vault purpose (`upload_post.api_key`, `elevenlabs.api_key`…). The env fallback name is the purpose upper-cased with non-alphanumerics as `_` (`UPLOAD_POST_API_KEY`). Demo test logins (`capture.login.<productId>`) are vault-only JSON and never logged.
+
+## 2026-09-25 · Capture network
+`compose.prod.yml` declares `mkt-capture` with a fixed name (not `external`), so the first deploy creates it and there's no manual step. The SyllaCal demo compose joins it as `external: true`. Only the worker is on it.
+
+## 2026-09-25 · Video pipeline (M3a)
+Pipeline: Opus writes the script with 3 opening lines → Sonnet compiles the spec, and lint must pass → draft voice (Flash, cached per line by text hash) → the editor previews in `@remotion/player` with the same props as the final render. Finalize (Gate 1) is a spend confirmation keyed on spec hash + lines + voice. It runs final voice, a transcript check (re-voice only lines with WER > 5%, 2 takes at most) and music, then one `render.video` per opening line. At most 24 final renders per package; the rest wait until night. Any re-render, re-voice or auto-fix after approval voids the approval. Approve to post (Gate 2) hashes each platform file.
+
+## 2026-09-25 · Demo capture (M3b)
+Capture only targets the product's trusted origin, which is set in the UI. That origin is also the only host the capture proxy bypasses. Login runs in a separate context that is never recorded, and only its `storageState` carries over. The action denylist is checked twice: when the flow is planned and again on each click (text + aria-label). Every non-GET request leaving the origin is aborted, along with payment domains and the product's route denylist. Frames are scanned for personal data, with an OCR/vision pass once `sharp` ships in the worker image.
