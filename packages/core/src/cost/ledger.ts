@@ -2,7 +2,15 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { schema, uuidv7, type Db } from "@mkt/db";
 import { BudgetExceeded } from "./errors.ts";
 
-const { budgetPeriods, providerCalls, spendLedger } = schema;
+const { budgetAlerts, budgetPeriods, providerCalls, spendLedger } = schema;
+
+export const ALERT_THRESHOLDS = [50, 80, 100] as const;
+
+/** Thresholds (percent of cap) passed when spend moves from `before` to `after`. */
+export function crossedThresholds(before: number, after: number, cap: number): number[] {
+  if (cap <= 0) return [];
+  return ALERT_THRESHOLDS.filter((pct) => before * 100 < pct * cap && after * 100 >= pct * cap);
+}
 
 export function periodMonth(d = new Date()): string {
   return d.toISOString().slice(0, 7);
@@ -152,13 +160,29 @@ async function finish(db: Db, callId: string, status: "settled" | "released", s:
       .returning();
     if (!call) return;
 
-    await tx
+    const periods = await tx
       .update(budgetPeriods)
       .set({
         reservedMicros: sql`${budgetPeriods.reservedMicros} - ${call.estMicros}`,
         spentMicros: sql`${budgetPeriods.spentMicros} + ${s.actualMicros}`,
       })
-      .where(inArray(budgetPeriods.id, call.budgetPeriodIds));
+      .where(inArray(budgetPeriods.id, call.budgetPeriodIds))
+      .returning();
+
+    // §7.1 step 7: crossing 50/80/100% of the monthly limit writes an alert once per threshold.
+    const alerts = periods
+      .filter((p) => p.scope === "global_month")
+      .flatMap((p) =>
+        crossedThresholds(p.spentMicros - s.actualMicros, p.spentMicros, p.capMicros).map((pct) => ({
+          id: uuidv7(),
+          workspaceId: p.workspaceId,
+          budgetPeriodId: p.id,
+          thresholdPct: pct,
+          spentMicros: p.spentMicros,
+          capMicros: p.capMicros,
+        })),
+      );
+    if (alerts.length) await tx.insert(budgetAlerts).values(alerts).onConflictDoNothing();
 
     const base = { workspaceId: call.workspaceId, providerCallId: callId, periodMonth: periodMonth(call.createdAt) };
     const rows: (typeof spendLedger.$inferInsert)[] = [
@@ -195,4 +219,41 @@ export async function monthSpend(db: Db, workspaceId: string, fallbackCapMicros:
   return row
     ? { spentMicros: row.spentMicros, reservedMicros: row.reservedMicros, capMicros: row.capMicros }
     : { spentMicros: 0, reservedMicros: 0, capMicros: fallbackCapMicros };
+}
+
+export interface BudgetAlert {
+  id: string;
+  thresholdPct: number;
+  spentMicros: number;
+  capMicros: number;
+  createdAt: Date;
+}
+
+/** Undismissed alerts for this month's limit, newest first (the header toast). */
+export async function openAlerts(db: Db, workspaceId: string, month = periodMonth()): Promise<BudgetAlert[]> {
+  return db
+    .select({
+      id: budgetAlerts.id,
+      thresholdPct: budgetAlerts.thresholdPct,
+      spentMicros: budgetAlerts.spentMicros,
+      capMicros: budgetAlerts.capMicros,
+      createdAt: budgetAlerts.createdAt,
+    })
+    .from(budgetAlerts)
+    .innerJoin(budgetPeriods, eq(budgetPeriods.id, budgetAlerts.budgetPeriodId))
+    .where(
+      and(
+        eq(budgetAlerts.workspaceId, workspaceId),
+        eq(budgetPeriods.periodMonth, month),
+        sql`${budgetAlerts.dismissedAt} is null`,
+      ),
+    )
+    .orderBy(sql`${budgetAlerts.thresholdPct} desc`);
+}
+
+export async function dismissAlerts(db: Db, workspaceId: string): Promise<void> {
+  await db
+    .update(budgetAlerts)
+    .set({ dismissedAt: new Date() })
+    .where(and(eq(budgetAlerts.workspaceId, workspaceId), sql`${budgetAlerts.dismissedAt} is null`));
 }

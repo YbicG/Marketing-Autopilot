@@ -3,7 +3,7 @@ import { eq, sum } from "drizzle-orm";
 import { schema, uuidv7, type Db } from "@mkt/db";
 import { createTestDb } from "@mkt/db/testing";
 import { BudgetExceeded } from "./errors.ts";
-import { ensurePeriods, release, reserve, settle } from "./ledger.ts";
+import { crossedThresholds, dismissAlerts, ensurePeriods, openAlerts, release, reserve, settle } from "./ledger.ts";
 import { BilledFailure, runPaidCall } from "./run-paid-call.ts";
 
 let db: Db;
@@ -85,6 +85,28 @@ describe("settle / release", () => {
       ["reserve", 50_000],
       ["settle", 12_345],
     ]);
+  });
+
+  it("writes one alert per threshold crossed on the monthly limit, and dismissing clears them", async () => {
+    const ws = await newWorkspace();
+    const [pid] = await ensurePeriods(db, ws, [{ scope: "global_month", capMicros: 1_000_000 }]);
+    const spend = async (m: number) => settle(db, await reserve(db, call(ws, [pid!], m)), { actualMicros: m });
+    await spend(400_000); // 40%: nothing
+    expect(await openAlerts(db, ws)).toHaveLength(0);
+    await spend(450_000); // 85%: crosses 50 and 80 at once
+    expect((await openAlerts(db, ws)).map((a) => a.thresholdPct)).toEqual([80, 50]);
+    await spend(10_000); // 86%: nothing new
+    expect(await openAlerts(db, ws)).toHaveLength(2);
+    await dismissAlerts(db, ws);
+    await spend(140_000); // 100%
+    expect((await openAlerts(db, ws)).map((a) => a.thresholdPct)).toEqual([100]);
+  });
+
+  it("crossedThresholds handles exact boundaries", () => {
+    expect(crossedThresholds(0, 500, 1000)).toEqual([50]);
+    expect(crossedThresholds(500, 799, 1000)).toEqual([]);
+    expect(crossedThresholds(799, 1000, 1000)).toEqual([80, 100]);
+    expect(crossedThresholds(0, 10, 0)).toEqual([]);
   });
 
   it("release returns the whole reservation and bills nothing", async () => {
