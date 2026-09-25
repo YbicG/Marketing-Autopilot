@@ -7,7 +7,10 @@
     "start": "tsx src/index.ts",
     "smoke": "tsx src/smoke/index.ts",
     "ensure-browser": "tsx src/smoke/ensure-browser.ts",
-    "typecheck": "tsc -p ."
+    "spike": "tsx src/spike/models.ts",
+    "typecheck": "tsc -p .",
+    "test": "vitest run --passWithNoTests",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@mkt/contracts": "workspace:*",
@@ -17,6 +20,7 @@
     "bullmq": "^5.81.5",
     "ioredis": "^5.11.1",
     "playwright": "~1.63.0",
-    "tsx": "^4.23.15"
+    "tsx": "^4.23.15",
+    "zod": "^4.6.5"
   }
 }

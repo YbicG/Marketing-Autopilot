@@ -1,0 +1,15 @@
+# gitleaks config (§3.6): the default ruleset, minus files that hold fake keys on purpose.
+title = "Marketing Autopilot"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Test fixtures with fake keys, lockfiles, generated migrations"
+paths = [
+  '''(^|/)[^/]+\.test\.tsx?$''',
+  '''(^|/)fixtures/''',
+  '''(^|/)pnpm-lock\.yaml$''',
+  '''(^|/)packages/db/migrations/''',
+  '''(^|/)\.env\.example$''',
+]

@@ -11,7 +11,8 @@
   "scripts": {
     "generate": "drizzle-kit generate",
     "migrate": "tsx src/migrate.ts",
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p .",
+    "lint": "eslint ."
   },
   "dependencies": {
     "drizzle-orm": "^0.45.3",

@@ -1,0 +1,8 @@
+#!/bin/sh
+# Secret scan on staged changes (§3.6). Enabled by `pnpm install` (the root prepare script
+# sets core.hooksPath=.githooks). Skips with a notice when gitleaks isn't installed.
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-commit: gitleaks not found on PATH, skipping secret scan (install it: https://github.com/gitleaks/gitleaks)."
+  exit 0
+fi
+exec gitleaks protect --staged --redact --config "$(git rev-parse --show-toplevel)/.gitleaks.toml"

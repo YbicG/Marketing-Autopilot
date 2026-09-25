@@ -4,6 +4,6 @@
   "private": true,
   "type": "module",
   "exports": { ".": "./src/index.ts" },
-  "scripts": { "typecheck": "tsc -p .", "test": "vitest run --passWithNoTests" },
+  "scripts": { "typecheck": "tsc -p .", "lint": "eslint .", "test": "vitest run --passWithNoTests" },
   "dependencies": { "zod": "^4.6.5" }
 }
