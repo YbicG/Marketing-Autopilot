@@ -5,8 +5,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certi
 WORKDIR /repo
 COPY . .
 RUN pnpm install --frozen-lockfile
-# Chromium + its system deps are installed when capture lands (M0 smoke test):
-#   RUN pnpm exec playwright install --with-deps chromium
+# Chromium and its system libraries, in a shared path the non-root user can read.
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+RUN pnpm --filter @mkt/worker exec playwright install --with-deps chromium \
+  && rm -rf /var/lib/apt/lists/*
 RUN groupadd --system --gid 1001 mkt && useradd --system --uid 1001 --gid mkt --create-home mkt \
   && mkdir -p /data && chown -R mkt:mkt /data
 USER mkt

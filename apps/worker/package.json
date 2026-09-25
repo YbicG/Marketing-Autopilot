@@ -8,10 +8,12 @@
     "typecheck": "tsc -p ."
   },
   "dependencies": {
+    "@mkt/contracts": "workspace:*",
     "@mkt/core": "workspace:*",
     "@mkt/db": "workspace:*",
     "bullmq": "^5.81.5",
     "ioredis": "^5.11.1",
+    "playwright": "~1.63.0",
     "tsx": "^4.23.15"
   }
 }
