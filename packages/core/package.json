@@ -7,7 +7,10 @@
     "./config": "./src/config/index.ts",
     "./cost": "./src/cost/index.ts",
     "./ai": "./src/ai/index.ts",
-    "./tenancy": "./src/tenancy/index.ts"
+    "./tenancy": "./src/tenancy/index.ts",
+    "./queue": "./src/queue/index.ts",
+    "./runs": "./src/runs/index.ts",
+    "./security": "./src/security/ssrf.ts"
   },
   "scripts": {
     "typecheck": "tsc -p .",
@@ -17,7 +20,9 @@
     "@anthropic-ai/sdk": "^0.128.0",
     "@mkt/contracts": "workspace:*",
     "@mkt/db": "workspace:*",
+    "bullmq": "^5.81.5",
     "drizzle-orm": "^0.45.3",
+    "ioredis": "^5.11.1",
     "zod": "^4.6.5"
   },
   "devDependencies": {

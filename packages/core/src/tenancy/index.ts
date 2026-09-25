@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { schema, uuidv7, type Db } from "@mkt/db";
 
 /** `ALLOWED_GITHUB_LOGINS` is a comma list. Empty means nobody: there is no open signup. */
@@ -59,4 +59,28 @@ export async function githubLoginForUser(db: Db, userId: string): Promise<string
     .from(schema.users)
     .where(eq(schema.users.id, userId));
   return u?.login ?? null;
+}
+
+export async function getWorkspace(db: Db, workspaceId: string) {
+  const [ws] = await db.select().from(schema.workspaces).where(eq(schema.workspaces.id, workspaceId));
+  return ws ?? null;
+}
+
+/** First-run and Settings: the monthly AI limit. Whole dollars, $1–$1,000. */
+export async function setMonthlyLimit(db: Db, workspaceId: string, usd: number, actorId: string): Promise<void> {
+  if (!Number.isInteger(usd) || usd < 1 || usd > 1_000) throw new Error("Monthly limit must be a whole number of dollars between 1 and 1000");
+  await db.transaction(async (tx) => {
+    await tx
+      .update(schema.workspaces)
+      .set({ monthlyLimitMicros: usd * 1_000_000, onboardedAt: sql`coalesce(${schema.workspaces.onboardedAt}, now())` })
+      .where(eq(schema.workspaces.id, workspaceId));
+    await tx.insert(schema.auditLog).values({
+      id: uuidv7(),
+      workspaceId,
+      actorType: "user",
+      actorId,
+      action: "budget.set_monthly_limit",
+      data: { usd },
+    });
+  });
 }

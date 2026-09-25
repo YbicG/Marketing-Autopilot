@@ -172,3 +172,27 @@ async function finish(db: Db, callId: string, status: "settled" | "released", s:
 function assertMicros(n: number, name: string) {
   if (!Number.isSafeInteger(n) || n < 0) throw new Error(`${name} must be a non-negative integer`);
 }
+
+export interface MonthSpend {
+  spentMicros: number;
+  reservedMicros: number;
+  capMicros: number;
+}
+
+/** The header meter: this month's global scope. Before the first paid call there is no row yet. */
+export async function monthSpend(db: Db, workspaceId: string, fallbackCapMicros: number, month = periodMonth()): Promise<MonthSpend> {
+  const [row] = await db
+    .select()
+    .from(budgetPeriods)
+    .where(
+      and(
+        eq(budgetPeriods.workspaceId, workspaceId),
+        eq(budgetPeriods.scope, "global_month"),
+        eq(budgetPeriods.scopeRef, ""),
+        eq(budgetPeriods.periodMonth, month),
+      ),
+    );
+  return row
+    ? { spentMicros: row.spentMicros, reservedMicros: row.reservedMicros, capMicros: row.capMicros }
+    : { spentMicros: 0, reservedMicros: 0, capMicros: fallbackCapMicros };
+}

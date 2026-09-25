@@ -18,6 +18,8 @@ export interface ClaudeTextCall {
   system: string;
   messages: Anthropic.MessageParam[];
   runId?: string;
+  /** Structured output from `claudeFormat()`. Never combined with web search or fetch (§5.0). */
+  outputFormat?: { type: "json_schema"; schema: Record<string, unknown> };
 }
 
 export interface ClaudeTextResult {
@@ -91,7 +93,7 @@ async function stream(client: Anthropic, cfg: ReturnType<typeof featureConfig>, 
     model: cfg.model,
     max_tokens: maxTokens,
     thinking: { type: "adaptive" as const },
-    output_config: { effort: cfg.effort },
+    output_config: input.outputFormat ? { effort: cfg.effort, format: input.outputFormat } : { effort: cfg.effort },
     system: input.system,
     messages: input.messages,
   };
