@@ -1,47 +1,33 @@
-// Node-only entry: bundling and rendering. The worker imports this; the web app never does.
-import { fileURLToPath } from "node:url";
-import { bundle } from "@remotion/bundler";
-import { ensureBrowser, renderMedia, selectComposition } from "@remotion/renderer";
-
-const ENTRY = fileURLToPath(new URL("../entry.ts", import.meta.url));
-
-let bundled: Promise<string> | undefined;
-
-/**
- * One bundle per process; renders reuse its serve URL. Webpack's disk cache is off because
- * node_modules is root-owned in the worker image; the bundle goes to the OS temp dir.
- */
-export function getBundle(): Promise<string> {
-  bundled ??= bundle({ entryPoint: ENTRY, enableCaching: false });
-  return bundled;
-}
+// Node-only entry: bundling, rendering and ffmpeg post-processing. The worker imports this; the web app never does.
+import { ensureBrowser } from "@remotion/renderer";
 
 export { ensureBrowser };
 
-export interface RenderVideoInput {
-  compositionId: string;
-  inputProps: Record<string, unknown>;
-  outputLocation: string;
-  concurrency: number;
-  onProgress?: (fraction: number) => void;
-}
-
-/** §5.6 step 7 encoder settings. Loudnorm and platform transcodes run afterwards in ffmpeg. */
-export async function renderVideo(input: RenderVideoInput): Promise<{ durationInFrames: number; fps: number }> {
-  const serveUrl = await getBundle();
-  const composition = await selectComposition({ serveUrl, id: input.compositionId, inputProps: input.inputProps });
-  await renderMedia({
-    serveUrl,
-    composition,
-    inputProps: input.inputProps,
-    codec: "h264",
-    crf: 18,
-    x264Preset: "veryfast",
-    pixelFormat: "yuv420p",
-    audioCodec: "aac",
-    concurrency: input.concurrency,
-    outputLocation: input.outputLocation,
-    onProgress: ({ progress }) => input.onProgress?.(progress),
-  });
-  return { durationInFrames: composition.durationInFrames, fps: composition.fps };
-}
+export { ENTRY, bundleCacheRoot, currentSourceHash, ensureBundle, getBundle, isBundleSource, sourceHash, stageBundle } from "./bundle.ts";
+export {
+  QUALITY,
+  adRenderProps,
+  renderStillImage,
+  renderVideo,
+  type RenderAdInput,
+  type RenderStillInput,
+  type RenderVideoInput,
+  type RenderVideoResult,
+} from "./render.ts";
+export * from "./ffmpeg/index.ts";
+export { PLATFORM_SPECS, checkAgainstPlatform, type PlatformVideoSpec, type VideoPlatform } from "./platform-specs.ts";
+export { XMP_UUID, bufferReader, isFaststart, moovBeforeMdat, scanTopLevelBoxes, withFileReader, type Box, type ReadAt } from "./mp4.ts";
+export {
+  DIGITAL_SOURCE_TYPES,
+  DIGITAL_SOURCE_TYPE_BASE,
+  buildXmpPacket,
+  digitalSourceTypeForTier,
+  digitalSourceTypeUri,
+  injectJpegXmp,
+  mp4XmpBox,
+  planMp4Xmp,
+  writeXmp,
+  type DigitalSourceTypeCode,
+  type XmpResult,
+} from "./xmp.ts";
+export { buildLinkedInPdf, buildLinkedInPdfFromImages } from "./pdf.ts";

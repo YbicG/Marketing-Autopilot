@@ -9,9 +9,11 @@
   },
   "scripts": {
     "typecheck": "tsc -p .",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.3.0",
     "@mkt/contracts": "workspace:*",
     "@remotion/bundler": "4.0.528",
     "@remotion/captions": "4.0.528",
