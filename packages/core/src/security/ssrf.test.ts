@@ -78,3 +78,76 @@ describe("assertPublicUrl", () => {
     ).rejects.toMatchObject({ reason: "dns" });
   });
 });
+
+describe("plan SSRF table", () => {
+  const publicDns = resolveTo("93.184.216.34");
+
+  it.each([
+    // IPv4-mapped IPv6
+    "http://[::ffff:127.0.0.1]/",
+    "http://[::ffff:7f00:1]/",
+    // alternate IPv4 spellings the WHATWG parser normalizes
+    "http://2130706433/",
+    "http://0x7f000001/",
+    "http://0177.0.0.1/",
+    "http://127.1/",
+    // special ranges
+    "http://169.254.169.254/latest/meta-data/",
+    "http://100.64.0.1/",
+    "http://198.18.0.1/",
+    "http://0.0.0.0/",
+    "http://224.0.0.251/",
+    "http://[fc00::1]/",
+    "http://[fe80::1]/",
+    "http://[ff02::1]/",
+    "http://[::1]/",
+  ])("refuses %s as private_ip", async (raw) => {
+    await expect(assertPublicUrl(raw, { resolve: publicDns })).rejects.toMatchObject({ reason: "private_ip" });
+  });
+
+  it.each([
+    ["http://localhost/", "internal_host"],
+    ["http://LOCALHOST./", "internal_host"],
+    ["http://api.localhost/", "internal_host"],
+    ["http://nas.local/", "internal_host"],
+    ["http://metadata.google.internal/", "internal_host"],
+    ["http://postgres/", "internal_host"],
+    ["http://smokescreen/", "internal_host"],
+    ["http://wiki/", "single_label"],
+    ["http://user@example.com/", "userinfo"],
+    ["http://example.com@127.0.0.1/", "userinfo"],
+    ["http://:pw@example.com/", "userinfo"],
+    ["http://example.com:8080/", "port"],
+    ["https://example.com:8443/", "port"],
+    ["gopher://example.com/", "scheme"],
+    ["javascript:alert(1)", "scheme"],
+  ])("refuses %s (%s)", async (raw, reason) => {
+    await expect(assertPublicUrl(raw, { resolve: publicDns })).rejects.toMatchObject({ reason });
+  });
+
+  it("allows explicit standard ports", async () => {
+    await expect(assertPublicUrl("http://example.com:80/", { resolve: publicDns })).resolves.toBeTruthy();
+    await expect(assertPublicUrl("https://example.com:443/", { resolve: publicDns })).resolves.toBeTruthy();
+  });
+
+  it("refuses a hostname that resolves to the server's own IP (SELF_IPS)", async () => {
+    await expect(
+      assertPublicUrl("https://looks-public.example", { resolve: resolveTo("203.0.114.9"), selfIps: ["203.0.114.9"] }),
+    ).rejects.toMatchObject({ reason: "private_ip" });
+    await expect(assertPublicUrl("http://203.0.114.9/", { selfIps: ["203.0.114.9"] })).rejects.toMatchObject({
+      reason: "private_ip",
+    });
+  });
+
+  it("refuses when one private record hides among many public ones", async () => {
+    await expect(
+      assertPublicUrl("https://many.example", {
+        resolve: resolveTo("93.184.216.34", "1.1.1.1", "2606:4700::1", "::ffff:169.254.169.254", "8.8.8.8"),
+      }),
+    ).rejects.toMatchObject({ reason: "private_ip" });
+  });
+
+  it("refuses a hostname with no records", async () => {
+    await expect(assertPublicUrl("https://empty.example", { resolve: resolveTo() })).rejects.toMatchObject({ reason: "dns" });
+  });
+});
