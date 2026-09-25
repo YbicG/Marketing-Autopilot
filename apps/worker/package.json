@@ -5,12 +5,15 @@
   "type": "module",
   "scripts": {
     "start": "tsx src/index.ts",
+    "smoke": "tsx src/smoke/index.ts",
+    "ensure-browser": "tsx src/smoke/ensure-browser.ts",
     "typecheck": "tsc -p ."
   },
   "dependencies": {
     "@mkt/contracts": "workspace:*",
     "@mkt/core": "workspace:*",
     "@mkt/db": "workspace:*",
+    "@mkt/video": "workspace:*",
     "bullmq": "^5.81.5",
     "ioredis": "^5.11.1",
     "playwright": "~1.63.0",

@@ -9,6 +9,8 @@ RUN pnpm install --frozen-lockfile
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 RUN pnpm --filter @mkt/worker exec playwright install --with-deps chromium \
   && rm -rf /var/lib/apt/lists/*
+# Remotion's Chrome Headless Shell (same system libraries), baked in so renders never download.
+RUN pnpm --filter @mkt/worker ensure-browser
 RUN groupadd --system --gid 1001 mkt && useradd --system --uid 1001 --gid mkt --create-home mkt \
   && mkdir -p /data && chown -R mkt:mkt /data
 USER mkt
