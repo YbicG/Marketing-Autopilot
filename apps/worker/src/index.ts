@@ -3,9 +3,13 @@ import { Redis } from "ioredis";
 import { createDb } from "@mkt/db";
 import { env } from "@mkt/core/config";
 import { loadRateCards, rateLookup, seedPricingRates } from "@mkt/core/cost";
-import { publishRunEvent, type IngestJobs } from "@mkt/core/queue";
+import { executeIngestRun, executeRegenerateRun, executeStrategyRun, type IngestDeps } from "@mkt/core/ingest";
+import { storage } from "@mkt/core/media";
+import { enqueueIngest, ingestQueue, publishRunEvent, type IngestJobs } from "@mkt/core/queue";
 import { executeSummaryRun } from "@mkt/core/runs";
+import { safeFetchText, ssrfAllowHostsFromEnv } from "@mkt/core/security";
 import { closeBrowser, fetchPageText } from "./capture/page-text.ts";
+import { captureSite } from "./capture/site.ts";
 import { serverInfo } from "./boot/server-info.ts";
 
 const config = env();
@@ -24,11 +28,40 @@ const bullConnection = new Redis(config.REDIS_URL, { maxRetriesPerRequest: null 
 const events = new Redis(config.REDIS_URL);
 events.on("error", (err) => console.error("[worker] redis error", err.message));
 
+const producer = ingestQueue(new Redis(config.REDIS_URL, { maxRetriesPerRequest: null }));
+const store = storage(config);
+const allowHosts = ssrfAllowHostsFromEnv();
+
+/** Everything an M1 run needs. Rates are re-read per run so a corrected price applies without a redeploy. */
+async function ingestDeps(runId: string): Promise<IngestDeps & { enqueueStrategy: (id: string) => Promise<void> }> {
+  return {
+    db,
+    rates: rateLookup(await loadRateCards(db)),
+    storage: store,
+    publish: (e) => publishRunEvent(events, runId, e),
+    captureSite: (url) => captureSite(url, { selfIps: config.SELF_IPS, proxyUrl: config.SMOKESCREEN_URL }),
+    fetchText: (url, init) =>
+      safeFetchText(url, {
+        selfIps: config.SELF_IPS,
+        proxyUrl: config.SMOKESCREEN_URL,
+        allowHosts,
+        headers: init?.headers,
+        timeoutMs: init?.timeoutMs,
+        maxBytes: init?.maxBytes ?? 5_000_000,
+      }),
+    githubToken: config.GITHUB_TOKEN,
+    enqueueStrategy: (id) => enqueueIngest(producer, "strategy.run", { runId: id }, id),
+  };
+}
+
 const ingest = new Worker<IngestJobs[keyof IngestJobs], void, keyof IngestJobs>(
   "ingest",
   async (job) => {
+    const { runId } = job.data;
+    if (job.name === "ingest.run") return executeIngestRun(await ingestDeps(runId), runId);
+    if (job.name === "strategy.run") return executeStrategyRun(await ingestDeps(runId), runId);
+    if (job.name === "dna.regenerate") return executeRegenerateRun(await ingestDeps(runId), runId);
     if (job.name === "m0.summary") {
-      const { runId } = job.data;
       // Rates are re-read per run so a corrected price applies without a redeploy.
       const rates = rateLookup(await loadRateCards(db));
       await executeSummaryRun(
@@ -56,6 +89,7 @@ async function shutdown(signal: string) {
   shuttingDown = true;
   console.log(`[worker] ${signal}: draining`);
   await ingest.close().catch(() => undefined);
+  await producer.close().catch(() => undefined);
   await closeBrowser();
   await Promise.allSettled([bullConnection.quit(), events.quit(), sql.end({ timeout: 5 })]);
   process.exit(0);

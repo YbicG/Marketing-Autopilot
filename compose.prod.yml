@@ -62,13 +62,24 @@ services:
       <<: *app-env
       REMOTION_CONCURRENCY: ${REMOTION_CONCURRENCY:-2}
       WORKER_ROLES: ${WORKER_ROLES:-all}
-    depends_on: { migrate: { condition: service_completed_successfully } }
+      SMOKESCREEN_URL: http://smokescreen:4750
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      smokescreen: { condition: service_started }
     volumes: [mkt-data:/data]
     networks: [mkt]
     shm_size: 1gb
     mem_limit: 5g
     cpus: 3
     stop_grace_period: 2m
+
+  # Egress proxy for capture Chromium and safe-fetch: denies private/Docker/LAN/metadata ranges and SELF_IPS.
+  smokescreen:
+    build: { context: docker/smokescreen }
+    restart: unless-stopped
+    environment: { SELF_IPS: "${SELF_IPS}" }
+    networks: [mkt]
+    mem_limit: 64m
 
 volumes:
   pg-data: {}
