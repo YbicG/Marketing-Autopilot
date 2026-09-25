@@ -4,6 +4,7 @@ import {
   boolean,
   check,
   index,
+  integer,
   jsonb,
   pgTable,
   text,
@@ -210,8 +211,9 @@ export const generationRuns = pgTable(
     workspaceId: uuid("workspace_id")
       .notNull()
       .references(() => workspaces.id, { onDelete: "cascade" }),
-    kind: text("kind", { enum: ["m0_summary"] }).notNull(),
-    status: text("status", { enum: ["queued", "running", "completed", "failed", "canceled"] }).notNull(),
+    productId: uuid("product_id"),
+    kind: text("kind", { enum: ["m0_summary", "ingest", "strategy", "dna_regenerate"] }).notNull(),
+    status: text("status", { enum: ["queued", "running", "needs_review", "completed", "failed", "canceled"] }).notNull(),
     input: jsonb("input").$type<Record<string, unknown>>().notNull(),
     result: jsonb("result").$type<Record<string, unknown>>(),
     capMicros: micros("cap_micros").notNull(),
@@ -221,4 +223,274 @@ export const generationRuns = pgTable(
     finishedAt: ts("finished_at"),
   },
   (t) => [index("generation_runs_ws_created").on(t.workspaceId, t.createdAt)],
+);
+
+/** In-app spend alerts (§7.1 step 7): one row per scope period per threshold crossed. */
+export const budgetAlerts = pgTable(
+  "budget_alerts",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    budgetPeriodId: uuid("budget_period_id")
+      .notNull()
+      .references(() => budgetPeriods.id, { onDelete: "cascade" }),
+    thresholdPct: integer("threshold_pct").notNull(),
+    spentMicros: micros("spent_micros").notNull(),
+    capMicros: micros("cap_micros").notNull(),
+    dismissedAt: ts("dismissed_at"),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("budget_alerts_key").on(t.budgetPeriodId, t.thresholdPct)],
+);
+
+// ── products and sources (§4.2, M1) ──
+
+export const products = pgTable(
+  "products",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    slug: text("slug").notNull(),
+    name: text("name").notNull(),
+    kind: text("kind", { enum: ["web_b2c", "web_b2b", "mobile", "devtool", "unknown"] }).notNull().default("unknown"),
+    status: text("status", { enum: ["active", "parked"] }).notNull().default("active"),
+    urls: jsonb("urls").$type<{ website?: string; repo?: string }>().notNull().default({}),
+    currentDnaVersionId: uuid("current_dna_version_id"),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("products_ws_slug").on(t.workspaceId, t.slug)],
+);
+
+/** A project folder the browser uploaded (allowlisted files only), before a run picks it up. */
+export const folderUploads = pgTable("folder_uploads", {
+  id: uuid("id").primaryKey(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspaces.id, { onDelete: "cascade" }),
+  rootName: text("root_name").notNull(),
+  files: jsonb("files")
+    .$type<{ path: string; kind: string; size: number; storageKey: string; secretHits: number }[]>()
+    .notNull(),
+  gitRemote: text("git_remote"),
+  secretHits: integer("secret_hits").notNull().default(0),
+  createdAt: createdAt(),
+});
+
+export const sources = pgTable(
+  "sources",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    runId: uuid("run_id"),
+    kind: text("kind", { enum: ["website", "github", "folder_upload", "text"] }).notNull(),
+    url: text("url"),
+    visibility: text("visibility", { enum: ["public_ok", "internal"] }).notNull(),
+    parentSourceId: uuid("parent_source_id"),
+    status: text("status", { enum: ["pending", "fetched", "failed", "skipped"] }).notNull().default("pending"),
+    contentHash: text("content_hash"),
+    secretScanHits: integer("secret_scan_hits").notNull().default(0),
+    meta: jsonb("meta").$type<Record<string, unknown>>().notNull().default({}),
+    error: text("error"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("sources_product").on(t.productId)],
+);
+
+/** Text pulled from a source: a page as markdown, a README, a doc, package.json facts, notes. */
+export const sourceArtifacts = pgTable(
+  "source_artifacts",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    sourceId: uuid("source_id")
+      .notNull()
+      .references(() => sources.id, { onDelete: "cascade" }),
+    kind: text("kind", { enum: ["page", "readme", "doc", "package_json", "repo_meta", "notes", "brand"] }).notNull(),
+    title: text("title"),
+    url: text("url"),
+    path: text("path"),
+    text: text("text").notNull(),
+    meta: jsonb("meta").$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: createdAt(),
+  },
+  (t) => [index("source_artifacts_source").on(t.sourceId)],
+);
+
+export const assets = pgTable(
+  "assets",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    productId: uuid("product_id").references(() => products.id, { onDelete: "cascade" }),
+    sourceId: uuid("source_id").references(() => sources.id, { onDelete: "set null" }),
+    kind: text("kind", { enum: ["screenshot", "image"] }).notNull(),
+    origin: text("origin", { enum: ["captured", "uploaded", "generated", "licensed", "template"] }).notNull(),
+    provenanceTier: text("provenance_tier", { enum: ["A", "B", "C"] }).notNull().default("A"),
+    mime: text("mime").notNull(),
+    width: integer("width"),
+    height: integer("height"),
+    sha256: text("sha256").notNull(),
+    storageKey: text("storage_key").notNull(),
+    /** Page URL + viewport for captures; the file path for uploads. */
+    origination: jsonb("origination").$type<Record<string, unknown>>().notNull().default({}),
+    labels: jsonb("labels").$type<Record<string, unknown>>(),
+    piiHits: boolean("pii_hits").notNull().default(false),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("assets_ws_sha_kind").on(t.workspaceId, t.sha256, t.kind),
+    index("assets_product").on(t.productId),
+  ],
+);
+
+/** Findings from the research loop's client tools (record_finding / record_competitor / record_pain). */
+export const researchItems = pgTable(
+  "research_items",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    runId: uuid("run_id").notNull(),
+    kind: text("kind", { enum: ["finding", "competitor", "pain"] }).notNull(),
+    data: jsonb("data").$type<Record<string, unknown>>().notNull(),
+    sourceUrl: text("source_url"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("research_items_run").on(t.runId)],
+);
+
+// ── DNA (§4.2) ──
+
+export const productDnaVersions = pgTable(
+  "product_dna_versions",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    runId: uuid("run_id"),
+    version: integer("version").notNull(),
+    status: text("status", { enum: ["draft", "confirmed", "superseded"] }).notNull().default("draft"),
+    dna: jsonb("dna").$type<Record<string, unknown>>().notNull(),
+    fields: jsonb("fields").$type<Record<string, unknown>>().notNull(),
+    /** Evidence-bundle ids: "S1" -> { sourceId, url, title, visibility }. */
+    sourceMap: jsonb("source_map").$type<Record<string, unknown>>().notNull(),
+    evidenceKey: text("evidence_key"),
+    /** Percent of fields with at least one source (M1 done-when: 90 or more). */
+    coveragePct: integer("coverage_pct").notNull().default(0),
+    createdAt: createdAt(),
+    confirmedAt: ts("confirmed_at"),
+  },
+  (t) => [uniqueIndex("dna_versions_product_version").on(t.productId, t.version)],
+);
+
+export const dnaGapQuestions = pgTable(
+  "dna_gap_questions",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    runId: uuid("run_id").notNull(),
+    path: text("path").notNull(),
+    question: text("question").notNull(),
+    why: text("why"),
+    options: jsonb("options").$type<string[]>().notNull().default([]),
+    answer: text("answer"),
+    skipped: boolean("skipped").notNull().default(false),
+    answeredAt: ts("answered_at"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("dna_gap_questions_run").on(t.runId)],
+);
+
+export const claims = pgTable(
+  "claims",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    dnaVersionId: uuid("dna_version_id")
+      .notNull()
+      .references(() => productDnaVersions.id, { onDelete: "cascade" }),
+    /** Short id the model uses (C1, C2...), unique per DNA version. */
+    ref: text("ref").notNull(),
+    kind: text("kind", { enum: ["stat", "feature", "testimonial", "comparison", "price"] }).notNull(),
+    text: text("text").notNull(),
+    quote: text("quote"),
+    sourceRefs: text("source_refs").array().notNull(),
+    publicOk: boolean("public_ok").notNull(),
+    status: text("status", { enum: ["sourced", "verified", "rejected"] }).notNull().default("sourced"),
+    verifiedBy: text("verified_by"),
+    expiresAt: ts("expires_at"),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("claims_version_ref").on(t.dnaVersionId, t.ref)],
+);
+
+// ── strategy (§4.2) ──
+
+export const strategies = pgTable("strategies", {
+  id: uuid("id").primaryKey(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspaces.id, { onDelete: "cascade" }),
+  productId: uuid("product_id")
+    .notNull()
+    .references(() => products.id, { onDelete: "cascade" }),
+  dnaVersionId: uuid("dna_version_id")
+    .notNull()
+    .references(() => productDnaVersions.id, { onDelete: "cascade" }),
+  runId: uuid("run_id"),
+  output: jsonb("output").$type<Record<string, unknown>>().notNull(),
+  servedModel: text("served_model"),
+  launchDate: text("launch_date"),
+  createdAt: createdAt(),
+});
+
+export const angles = pgTable(
+  "angles",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    strategyId: uuid("strategy_id")
+      .notNull()
+      .references(() => strategies.id, { onDelete: "cascade" }),
+    idx: integer("idx").notNull(),
+    card: jsonb("card").$type<Record<string, unknown>>().notNull(),
+    /** Test all 3, mostly #1: 60/20/20 by default (§2.5). */
+    sharePct: integer("share_pct").notNull(),
+    status: text("status", { enum: ["active", "stopped"] }).notNull().default("active"),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("angles_strategy_idx").on(t.strategyId, t.idx)],
 );
