@@ -28,6 +28,7 @@ import { pgBackup } from "./jobs/maint/pg-backup.ts";
 import { storageGc } from "./jobs/maint/storage-gc.ts";
 import { createPublishDeps, runPublishJob } from "./jobs/publish/index.ts";
 import { heavyRunner } from "./jobs/render/heavy.ts";
+import { ffmpegImageTools } from "./jobs/render/image.ts";
 import { createVideoRenderer, specTools } from "./jobs/render/renderer.ts";
 import { renderStillJob, renderVideoJob } from "./jobs/render/video.ts";
 import { finalizeVideoJob } from "./jobs/video/finalize.ts";
@@ -107,6 +108,7 @@ const voidApprovalsFor = voidApprovalsForVariants(db, effects, { graceMin });
 const withHeavy = heavyRunner(semRedis);
 const renderer = createVideoRenderer({ ff: { ffmpegPath: config.FFMPEG_PATH, ffprobePath: config.FFPROBE_PATH } });
 const workDir = join(tmpdir(), "mkt-render");
+const images = ffmpegImageTools({ ffmpegPath: config.FFMPEG_PATH, ffprobePath: config.FFPROBE_PATH });
 
 /** Per workspace: the ElevenLabs key is vault-first (D19); without one, the captions-only cut + bundled track. */
 async function videoDeps(workspaceId: string, runId?: string): Promise<VideoDeps> {
@@ -119,6 +121,8 @@ async function videoDeps(workspaceId: string, runId?: string): Promise<VideoDeps
     providerCtx: ctxFor(workspaceId),
     renderer,
     tools: specTools,
+    imageDecoder: images.decoder,
+    imageResizer: images.resizer,
     ...(runId ? { publish: (e) => publishRunEvent(events, runId, e) } : {}),
     voidApprovalsFor,
     // A unique id per enqueue: the renders row (status + attempts) is the dedupe, and a render that
