@@ -16,3 +16,6 @@ export * from "./uploads.ts";
 export * from "./video-item.ts";
 export * from "./video-item-state.ts";
 export * from "./job-workspace.ts";
+export * from "./editor.ts";
+export * from "./probe-lite.ts";
+export * from "./library.ts";

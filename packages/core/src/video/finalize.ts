@@ -245,20 +245,34 @@ export async function executeFinalize(deps: VideoDeps, job: { runId: string; con
  * changed after the click spends nothing and asks for a new confirmation.
  */
 export async function executeFinalizeJob(deps: VideoDeps, data: { runId: string; contentItemId: string }): Promise<void> {
-  const [run] = await deps.db.select({ workspaceId: generationRuns.workspaceId }).from(generationRuns).where(eq(generationRuns.id, data.runId));
+  const [run] = await deps.db
+    .select({ workspaceId: generationRuns.workspaceId, kind: generationRuns.kind })
+    .from(generationRuns)
+    .where(eq(generationRuns.id, data.runId));
   if (!run) return;
   const [item] = await deps.db
     .select({ id: contentItems.id })
     .from(contentItems)
     .where(and(eq(contentItems.id, data.contentItemId), eq(contentItems.workspaceId, run.workspaceId)));
   if (!item) return;
+  // The editor's finalize run is ours to close; renders track their own rows from here.
+  const close = async (ok: boolean, message: string) => {
+    if (run.kind !== "finalize") return;
+    await deps.db
+      .update(generationRuns)
+      .set({ status: ok ? "completed" : "failed", result: { message }, ...(ok ? {} : { error: message.slice(0, 500) }), finishedAt: new Date() })
+      .where(and(eq(generationRuns.id, data.runId), eq(generationRuns.workspaceId, run.workspaceId)));
+  };
   try {
     await executeFinalize(deps, { ...data, workspaceId: run.workspaceId });
+    await close(true, "Final voice and music are done; the versions are rendering.");
   } catch (err) {
     if (err instanceof FinalizeNotConfirmed) {
       await deps.publish?.({ type: "needs_input", message: err.message });
+      await close(false, err.message);
       return;
     }
+    await close(false, "Finalizing stopped partway. Try Finalize again.");
     throw err;
   }
 }
