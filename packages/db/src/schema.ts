@@ -76,6 +76,9 @@ export const workspaces = pgTable("workspaces", {
   id: uuid("id").primaryKey(),
   name: text("name").notNull(),
   timezone: text("timezone").notNull().default("America/New_York"),
+  /** First-run setting (§2.3). Hard stop at 100%. */
+  monthlyLimitMicros: micros("monthly_limit_micros").notNull().default(60_000_000),
+  onboardedAt: ts("onboarded_at"),
   createdAt: createdAt(),
 });
 
@@ -196,4 +199,26 @@ export const spendLedger = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index("spend_ledger_ws_month").on(t.workspaceId, t.periodMonth)],
+);
+
+// ── runs ──
+
+export const generationRuns = pgTable(
+  "generation_runs",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    kind: text("kind", { enum: ["m0_summary"] }).notNull(),
+    status: text("status", { enum: ["queued", "running", "completed", "failed", "canceled"] }).notNull(),
+    input: jsonb("input").$type<Record<string, unknown>>().notNull(),
+    result: jsonb("result").$type<Record<string, unknown>>(),
+    capMicros: micros("cap_micros").notNull(),
+    error: text("error"),
+    createdAt: createdAt(),
+    startedAt: ts("started_at"),
+    finishedAt: ts("finished_at"),
+  },
+  (t) => [index("generation_runs_ws_created").on(t.workspaceId, t.createdAt)],
 );
