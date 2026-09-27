@@ -12,7 +12,8 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm --filter @mkt/web build",
-    "prepare": "node -e \"try{const x=require('child_process').execSync;x('git rev-parse --git-dir',{stdio:'ignore'});x('git config core.hooksPath .githooks')}catch{}\""
+    "prepare": "node -e \"try{const x=require('child_process').execSync;x('git rev-parse --git-dir',{stdio:'ignore'});x('git config core.hooksPath .githooks')}catch{}\"",
+    "test:guardrails": "pnpm --filter @mkt/core --filter @mkt/video run test:guardrails"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

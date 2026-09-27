@@ -106,7 +106,7 @@ export function buildEvidenceBundle(input: {
     out.push(`## ${id} · ${tag} · ${a.kind} · ${label(a)}`);
     if (a.url) out.push(`URL: ${a.url}`);
     else if (a.path) out.push(`File: ${a.path}`);
-    out.push("", "<source_text>", text.trim(), "</source_text>", "");
+    out.push("", "<source_text>", fenceSafe(text.trim()), "</source_text>", "");
   }
 
   const research = [...input.research].sort((a, b) => a.kind.localeCompare(b.kind) || a.id.localeCompare(b.id));
@@ -115,7 +115,7 @@ export function buildEvidenceBundle(input: {
     const id = `S${++n}`;
     sourceMap[id] = { sourceId: null, artifactId: null, researchId: r.id, url: r.sourceUrl, title: r.kind, origin: "third_party" };
     texts[id] = r.text;
-    out.push(`- ${id} · THIRD-PARTY · ${r.kind}: ${r.text}${r.sourceUrl ? ` (${r.sourceUrl})` : ""}`);
+    out.push(`- ${id} · THIRD-PARTY · ${r.kind}${r.sourceUrl ? ` (${fenceSafe(r.sourceUrl)})` : ""}:`, "<source_text>", fenceSafe(r.text), "</source_text>");
   }
 
   if (input.assets.length) out.push("", "# Screenshots", "");
@@ -128,7 +128,7 @@ export function buildEvidenceBundle(input: {
     const text = input.answers.map((q) => `Q: ${q.question}\nA: ${q.answer}`).join("\n\n");
     sourceMap[id] = { sourceId: null, artifactId: null, researchId: null, url: null, title: "Your answers", origin: "owned_internal" };
     texts[id] = text;
-    out.push("", `## ${id} · INTERNAL · answers from the developer`, "", "<source_text>", text, "</source_text>");
+    out.push("", `## ${id} · INTERNAL · answers from the developer`, "", "<source_text>", fenceSafe(text), "</source_text>");
   }
 
   return { markdown: out.join("\n") + "\n", sourceMap, texts };
@@ -196,4 +196,9 @@ export function claimIsPublic(
     if (allowed && supportedBy(claim.text, claim.quote, text)) return true;
   }
   return false;
+}
+
+/** Fetched text is data: a forged <source_text> tag inside it can't close (or open) the data block. */
+function fenceSafe(text: string): string {
+  return text.replace(/<\/?\s*source_text\s*>/gi, "[tag removed]");
 }

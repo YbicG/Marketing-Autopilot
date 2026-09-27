@@ -25,7 +25,8 @@
   "scripts": {
     "typecheck": "tsc -p .",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:guardrails": "vitest run src/guardrails"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",

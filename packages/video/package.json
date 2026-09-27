@@ -11,7 +11,8 @@
   "scripts": {
     "typecheck": "tsc -p .",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:guardrails": "vitest run src/guardrails"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",

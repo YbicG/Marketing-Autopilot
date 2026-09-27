@@ -110,7 +110,7 @@ export async function executeSummaryRun(deps: SummaryDeps, runId: string): Promi
         messages: [
           {
             role: "user",
-            content: `Page URL: ${page.finalUrl}\nPage title: ${page.title}\n\n<page_text>\n${text}\n</page_text>\n\nSummarize this product.`,
+            content: `Page URL: ${page.finalUrl}\nPage title: ${page.title}\n\n<page_text>\n${text.replace(/<\/?\s*page_text\s*>/gi, "[tag removed]")}\n</page_text>\n\nSummarize this product.`,
           },
         ],
       },
