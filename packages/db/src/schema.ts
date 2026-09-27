@@ -285,6 +285,8 @@ export interface ProductEmailSettings {
   audienceLabel?: string;
   /** Where these contacts came from (consent_source, §5.4). */
   consentSource?: string;
+  /** The owner confirmed EU contacts on this list gave consent (§5.4 "EU contacts only with consent"). */
+  euConsentAck?: boolean;
 }
 
 /** A project folder the browser uploaded (allowlisted files only), before a run picks it up. */
