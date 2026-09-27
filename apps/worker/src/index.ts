@@ -7,12 +7,15 @@ import { env } from "@mkt/core/config";
 import { loadRateCards, rateLookup, seedPricingRates } from "@mkt/core/cost";
 import { executeIngestRun, executeRegenerateRun, executeStrategyRun, type IngestDeps } from "@mkt/core/ingest";
 import { storage } from "@mkt/core/media";
+import { executeAdsKit } from "@mkt/core/ads";
+import { judgeLandingScreenshot, safeProbeFetch } from "@mkt/core/launch";
 import { dbConnectionStore, variantEditedHook, voidApprovalsForVariants } from "@mkt/core/publishing";
-import { enqueue, enqueueIngest, ingestQueue, publishRunEvent, queueFor, type IngestJobs, type MaintJobs, type RenderJobs } from "@mkt/core/queue";
+import { enqueue, enqueueIngest, ingestQueue, publishRunEvent, queueFor, type GenerateJobs, type IngestJobs, type MaintJobs, type RenderJobs } from "@mkt/core/queue";
 import { executeSummaryRun } from "@mkt/core/runs";
 import { resolveSecret, safeFetchText, ssrfAllowHostsFromEnv } from "@mkt/core/security";
 import { videoGenerator, workspaceOfContentItem, workspaceOfRender, workspaceOfRun, type VideoDeps } from "@mkt/core/video";
 import { ELEVENLABS_SECRET, createElevenLabsAudio, registeredPublishers } from "@mkt/providers";
+import type { RunEvent } from "@mkt/contracts";
 import { framesToCfr } from "@mkt/video/render";
 import { closeBrowser, fetchPageText } from "./capture/page-text.ts";
 import { captureSite } from "./capture/site.ts";
@@ -21,7 +24,12 @@ import { envNameFor, loginResolver, providerCtxFor } from "./boot/secrets.ts";
 import { serverInfo } from "./boot/server-info.ts";
 import { httpFirstPartyClient, runAnalyticsJob } from "./jobs/analytics/index.ts";
 import { captureFlow } from "./jobs/capture/flow.ts";
+import { createEmailDeps, emailReconcile, runEmailJob } from "./jobs/email/index.ts";
 import { createGenerateDeps, runGenerateJob } from "./jobs/generate/index.ts";
+import { landingAuditJob } from "./jobs/launch/audit.ts";
+import { playwrightLandingCapture } from "./jobs/launch/audit-capture.ts";
+import { launchKitJob, redditRulesFetcher, type LaunchKitWorkerDeps } from "./jobs/launch/kit.ts";
+import { launchTickDeps, launchTickJob } from "./jobs/launch/tick.ts";
 import { connectionsHealth } from "./jobs/maint/connections-health.ts";
 import { heartbeat } from "./jobs/maint/heartbeat.ts";
 import { pgBackup } from "./jobs/maint/pg-backup.ts";
@@ -159,6 +167,27 @@ const analyticsDeps = {
       : null,
 };
 
+// ── launch + email (M4-LC) ──
+const runEvents = (runId: string, e: RunEvent) => publishRunEvent(events, runId, e);
+const emailDeps = createEmailDeps({ db, publishQueue: publishQ, ctxFor, rates, publish: runEvents });
+const egress = { selfIps: config.SELF_IPS, proxyUrl: config.SMOKESCREEN_URL };
+const landingAuditDeps = {
+  db,
+  storage: store,
+  withHeavy,
+  captureLanding: playwrightLandingCapture(egress),
+  probeFetch: safeProbeFetch(egress),
+  judge: async (i: Parameters<typeof judgeLandingScreenshot>[1]) => judgeLandingScreenshot({ db, rates: await rates() }, i),
+};
+const launchKitDeps: LaunchKitWorkerDeps = {
+  db,
+  rates,
+  publish: runEvents,
+  // Rules come through safe-fetch + Smokescreen; they are data, never instructions.
+  fetchRules: redditRulesFetcher((u, o) => safeFetchText(u, { ...o, ...egress, allowHosts })),
+  adsKit: async (c) => executeAdsKit({ ai: { db, rates: await rates() }, publish: (e) => runEvents(c.runId, e) }, c),
+};
+
 // ── workers ──
 const failed = (job: Job | undefined, err: Error) => console.error("[worker] job failed", job?.queueName, job?.name, job?.id, err.message);
 const workers: Worker[] = [];
@@ -197,6 +226,8 @@ start(
       if (!ws) return;
       return finalizeVideoJob(await videoDeps(ws, data.runId), data);
     }
+    if (job.name === "email.draft") return runEmailJob(emailDeps, job.name, job.data);
+    if (job.name === "launch.kit") return launchKitJob(launchKitDeps, job.data as GenerateJobs["launch.kit"]);
     const handled = await runGenerateJob(generateDeps, job.name, job.data);
     if (handled === false) throw new Error(`unknown generate job ${job.name}`);
     return handled;
@@ -234,6 +265,7 @@ start(
         job.data as RenderJobs["capture.flow"],
       );
     }
+    if (job.name === "launch.landing_audit") return landingAuditJob(landingAuditDeps, job.data as RenderJobs["launch.landing_audit"]);
     throw new Error(`unknown render job ${job.name}`);
   },
   1,
@@ -241,7 +273,14 @@ start(
 
 // boot.rehydrate runs before the publish Worker takes jobs (§3.3).
 await runBootRehydrate({ db, publishQueue: publishQ, maintQueue: maintQ, graceMin });
-start("publish", (job) => runPublishJob(publishDeps, job.name, job.data), 4);
+start(
+  "publish",
+  async (job) => {
+    const email = await runEmailJob(emailDeps, job.name, job.data);
+    return email !== false ? email : runPublishJob(publishDeps, job.name, job.data);
+  },
+  4,
+);
 
 const connectionStore = dbConnectionStore(db);
 start(
@@ -259,6 +298,11 @@ start(
       case "maint.analytics_pull":
       case "maint.conversions_pull":
         return runAnalyticsJob(analyticsDeps, job.name, job.data);
+      case "launch.tick": {
+        const r = await launchTickJob(launchTickDeps(db));
+        await emailReconcile(emailDeps); // backstop for missed Resend webhooks
+        return r;
+      }
       default:
         throw new Error(`unknown maint job ${job.name}`);
     }
@@ -272,6 +316,7 @@ await mq.upsertJobScheduler("maint.heartbeat", { every: 5 * 60_000 }, { name: "m
 await mq.upsertJobScheduler("maint.pg_backup", { pattern: "10 3 * * *" }, { name: "maint.pg_backup", data: {} });
 await mq.upsertJobScheduler("maint.storage_gc", { pattern: "40 4 * * 0" }, { name: "maint.storage_gc", data: {} });
 await mq.upsertJobScheduler("maint.connections_health", { every: 6 * 60 * 60_000 }, { name: "maint.connections_health", data: {} });
+await mq.upsertJobScheduler("launch.tick", { pattern: "5 * * * *" }, { name: "launch.tick", data: {} });
 
 // Graceful deploys (§3.3): stop taking jobs, let running ones finish, then exit within the grace period.
 let shuttingDown = false;
