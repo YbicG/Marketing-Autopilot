@@ -17,6 +17,7 @@ import {
 } from "@mkt/contracts";
 import { schema, type Db } from "@mkt/db";
 import { brandFor } from "../video/context.ts";
+import { xLinksAllowedOn } from "../publishing/x-links.ts";
 import { bundleById } from "./bundle.ts";
 import { variantContentHash } from "./hash.ts";
 import { variantText } from "./package.ts";
@@ -83,7 +84,7 @@ async function loadItem(db: Db, workspaceId: string, contentItemId: string): Pro
     campaign,
     plan: (campaign.plan as unknown as CampaignPlan | null) ?? null,
     brief: (item.brief as unknown as ItemBrief | null) ?? null,
-    claims: new Map(claimRows.map((c) => [c.ref, { ref: c.ref, publicOk: c.publicOk, status: c.status, expiresAt: c.expiresAt, text: c.text }])),
+    claims: new Map(claimRows.map((c) => [c.ref, { ref: c.ref, kind: c.kind, publicOk: c.publicOk, status: c.status, expiresAt: c.expiresAt, text: c.text }])),
     variants: vs,
     posts: ps,
   };
@@ -118,13 +119,17 @@ async function contextFor(db: Db, l: Loaded, v: VariantRow): Promise<ValidateCon
   const post = l.posts.find((p) => p.variantId === v.id && p.state !== "canceled") ?? null;
   const at = post?.scheduledAt ?? null;
   const slot = l.plan?.slots.find((s) => (l.brief?.slotIds ?? []).includes(s.id) && s.platform === platform) ?? null;
+  const [xw] = await db
+    .select({ xLinksFrom: schema.products.xLinksFrom, xLinksUntil: schema.products.xLinksUntil })
+    .from(schema.products)
+    .where(eq(schema.products.id, l.campaign.productId));
   return {
     platform,
     format: formatFor(l, platform),
     scheduledAt: at,
     claims: l.claims,
     recentTexts: at ? await recentTexts(db, l.item.workspaceId, l.campaign.productId, platform, post?.connectionId ?? slot?.connectionId ?? null, at, l.item.id) : [],
-    xLinksAllowed: !!slot && !!l.plan && Math.abs(slot.day - l.plan.launchDay) <= 3,
+    xLinksAllowed: !!slot && !!l.plan && !!xw && xLinksAllowedOn(xw, slot.date, l.plan.launchDate),
   };
 }
 

@@ -32,6 +32,7 @@ export interface CopyIssue {
     | "unknown_fact"
     | "internal_fact"
     | "rejected_fact"
+    | "unverified_testimonial"
     | "fact_expires"
     | "number_without_source"
     | "jargon"
@@ -48,6 +49,8 @@ export interface ClaimInfo {
   publicOk: boolean;
   status: "sourced" | "verified" | "rejected";
   expiresAt: Date | null;
+  /** Testimonials must be verified in the UI before a draft may quote them (§8, FTC 16 CFR 465). */
+  kind?: string;
 }
 
 export interface ValidateContext {
@@ -59,7 +62,7 @@ export interface ValidateContext {
   claims: ReadonlyMap<string, ClaimInfo>;
   /** Other posts on the same connection (or same platform + product when unconnected) within 14 days. */
   recentTexts: readonly string[];
-  /** D24: X links only in launch week (the Upload-Post links add-on). */
+  /** D24: X links only inside the product's add-on window, else launch day ±3 (publishing/x-links.ts xLinksAllowedOn). */
   xLinksAllowed: boolean;
 }
 
@@ -155,7 +158,9 @@ export function claimIssues(refs: readonly string[], claims: ReadonlyMap<string,
     if (!c) out.push({ code: "unknown_fact", severity: "block", message: `It leans on a fact we don't have (${ref}).` });
     else if (c.status === "rejected") out.push({ code: "rejected_fact", severity: "block", message: `It uses a fact you marked as wrong (${ref}).` });
     else if (!c.publicOk) out.push({ code: "internal_fact", severity: "block", message: `It uses a private fact that can't be said in public (${ref}).` });
-    else if (c.expiresAt && scheduledAt && c.expiresAt.getTime() < scheduledAt.getTime()) {
+    else if (c.kind === "testimonial" && c.status !== "verified") {
+      out.push({ code: "unverified_testimonial", severity: "block", message: `It quotes a testimonial you haven't verified yet (${ref}).` });
+    } else if (c.expiresAt && scheduledAt && c.expiresAt.getTime() < scheduledAt.getTime()) {
       out.push({ code: "fact_expires", severity: "block", message: `A fact it uses (${ref}) goes out of date before this posts.` });
     }
   }

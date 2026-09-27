@@ -27,6 +27,7 @@ import type { RateLookup } from "../ai/usage.ts";
 import { BudgetExceeded } from "../cost/errors.ts";
 import { assetsFor } from "../ingest/profile.ts";
 import { defaultLaunchDate, latestStrategy } from "../ingest/strategy.ts";
+import { xLinksAllowedOn } from "../publishing/x-links.ts";
 import { budgetScopesForRun, runSpentMicros } from "../runs/summary.ts";
 import { bundleById, freezeBundle, withBundle } from "./bundle.ts";
 import { addDays, planCalendar, type PlatformPlanInput } from "./calendar.ts";
@@ -490,7 +491,7 @@ async function loadRunContext(db: Db, run: RunRow): Promise<RunContext> {
   if (!bundle) throw new Error("campaign bundle missing");
   const plan = campaign.plan as unknown as CampaignPlan;
   const claimRows = await db.select().from(claims).where(eq(claims.dnaVersionId, bundle.dnaVersionId));
-  const claimMap = new Map<string, ClaimInfo>(claimRows.map((c) => [c.ref, { ref: c.ref, publicOk: c.publicOk, status: c.status, expiresAt: c.expiresAt }]));
+  const claimMap = new Map<string, ClaimInfo>(claimRows.map((c) => [c.ref, { ref: c.ref, kind: c.kind, publicOk: c.publicOk, status: c.status, expiresAt: c.expiresAt }]));
   const angleRows = await db.select().from(angles).where(eq(angles.strategyId, campaign.strategyId));
   const shots = (await assetsFor(db, campaign.productId)).filter((a) => {
     const l = a.labels as { usefulForMarketing?: boolean; hasPersonalData?: boolean } | null;
@@ -551,6 +552,10 @@ export async function runItem(deps: EngineDeps, runId: string, contentItemId: st
       launch: brief.launch,
     };
     const slotFor = (p: SocialPlatform) => slots.find((s) => s.platform === p) ?? null;
+    const [xw] = await db
+      .select({ xLinksFrom: schema.products.xLinksFrom, xLinksUntil: schema.products.xLinksUntil })
+      .from(schema.products)
+      .where(eq(schema.products.id, ctx.campaign.productId));
     const vctx = async (p: SocialPlatform, f: PostFormat): Promise<ValidateContext> => {
       const slot = slotFor(p);
       const at = slot ? new Date(slot.scheduledAt) : null;
@@ -560,7 +565,7 @@ export async function runItem(deps: EngineDeps, runId: string, contentItemId: st
         scheduledAt: at,
         claims: ctx.claims,
         recentTexts: at ? await recentTexts(db, run.workspaceId, ctx.campaign.productId, p, slot!.connectionId, at, item.id) : [],
-        xLinksAllowed: slot ? Math.abs(slot.day - ctx.plan.launchDay) <= 3 : false,
+        xLinksAllowed: !!slot && !!xw && xLinksAllowedOn(xw, slot.date, ctx.plan.launchDate),
       };
     };
 

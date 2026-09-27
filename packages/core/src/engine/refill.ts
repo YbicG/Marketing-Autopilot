@@ -15,6 +15,7 @@ import { schema, uuidv7, type Db } from "@mkt/db";
 import { StructuredOutputInvalid } from "../ai/call.ts";
 import { ClaudeRefused } from "../ai/stop-reasons.ts";
 import { BudgetExceeded } from "../cost/errors.ts";
+import { xLinksAllowedOn } from "../publishing/x-links.ts";
 import { budgetScopesForRun, runSpentMicros } from "../runs/summary.ts";
 import { KIND_GENERATOR } from "./board.ts";
 import { bundleById } from "./bundle.ts";
@@ -196,17 +197,21 @@ export async function rewriteVariant(deps: RewriteDeps, runId: string, variantId
     const next = toPostVariant({ ...r.value, platform }, platform, body.kind);
     if (!next) return done("failed", "The rewrite came back empty. Try again.");
     const claimRows = await db.select().from(claims).where(eq(claims.dnaVersionId, bundle.dnaVersionId));
-    const claimMap = new Map<string, ClaimInfo>(claimRows.map((x) => [x.ref, { ref: x.ref, publicOk: x.publicOk, status: x.status, expiresAt: x.expiresAt }]));
+    const claimMap = new Map<string, ClaimInfo>(claimRows.map((x) => [x.ref, { ref: x.ref, kind: x.kind, publicOk: x.publicOk, status: x.status, expiresAt: x.expiresAt }]));
     const at = postRows[0]?.scheduledAt ?? null;
     const plan = c.plan as unknown as CampaignPlan | null;
     const slot = plan?.slots.find((s) => brief.slotIds.includes(s.id) && s.platform === platform);
+    const [xw] = await db
+      .select({ xLinksFrom: schema.products.xLinksFrom, xLinksUntil: schema.products.xLinksUntil })
+      .from(schema.products)
+      .where(eq(schema.products.id, c.productId));
     const vctx = {
       platform,
       format,
       scheduledAt: at,
       claims: claimMap,
       recentTexts: [],
-      xLinksAllowed: !!slot && !!plan && Math.abs(slot.day - plan.launchDay) <= 3,
+      xLinksAllowed: !!slot && !!plan && !!xw && xLinksAllowedOn(xw, slot.date, plan.launchDate),
     };
     const s = sanitizeVariant(next, vctx);
     const issues = [...s.issues, ...validateVariant(s.variant, vctx)];

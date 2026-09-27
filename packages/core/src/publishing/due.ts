@@ -16,12 +16,15 @@ import {
 import { approvalMatches } from "./approvals.ts";
 import { checkCaps, loadCapContext } from "./caps.ts";
 import { contentProblems } from "./claims.ts";
+import { launchDayVerdict, launchGateStatus } from "./launch-gates.ts";
 import { recordTrackedLinks, resolveLinkTokens, buildUtm } from "./links.ts";
 import { aiDisclosureFor, effectiveTier, withCaptionLabel, type Tier } from "./provenance.ts";
 import { scheduleEffects, type EffectDeps, type JobGateway } from "./scheduler.ts";
 import type { PostEvent, TransitionCtx } from "./state-machine.ts";
 import { applyEvent, applyEvents, currentContent, loadPost, type Actor, type PostRow } from "./store.ts";
 import { validateTikTokComposer } from "./tiktok.ts";
+import { localDay } from "./time.ts";
+import { linkKinds, xLinksAtPublish, xLinksWindowOf } from "./x-links.ts";
 
 const { campaigns, contentItems, posts, products, socialConnections, workspaces } = schema;
 
@@ -144,6 +147,11 @@ async function prepare(deps: PublishDeps, post: PostRow, ctx: TransitionCtx): Pr
 
   const [ws] = await db.select({ tz: workspaces.timezone }).from(workspaces).where(eq(workspaces.id, post.workspaceId));
   const tz = ws?.tz ?? "UTC";
+  const localDate = localDay(post.scheduledAt, tz);
+  // D20: on the launch plan's launch day, open gates hold every post (warnings are checked below).
+  const launch = await launchGateStatus(db, post.workspaceId, post.productId);
+  const gateVerdict = launchDayVerdict({ localDate, launch, warnings: [] });
+  if (gateVerdict.block) return { kind: "blocked", reason: gateVerdict.block };
   const capCtx = await loadCapContext(db, post);
   const capIssues = checkCaps({ post, others: capCtx.others, connections: capCtx.connections, tz, mode: "prepare" });
   if (capIssues.length) return { kind: "blocked", reason: capIssues.map((i) => i.message).join(" ") };
@@ -161,7 +169,7 @@ async function prepare(deps: PublishDeps, post: PostRow, ctx: TransitionCtx): Pr
   const warnings: string[] = [];
 
   const [meta] = await db
-    .select({ kind: contentItems.kind, angleId: contentItems.angleId, campaignId: campaigns.id, slug: products.slug, website: products.urls })
+    .select({ kind: contentItems.kind, angleId: contentItems.angleId, campaignId: campaigns.id, slug: products.slug, website: products.urls, xLinksFrom: products.xLinksFrom, xLinksUntil: products.xLinksUntil })
     .from(contentItems)
     .innerJoin(campaigns, eq(campaigns.id, contentItems.campaignId))
     .innerJoin(products, eq(products.id, campaigns.productId))
@@ -201,12 +209,24 @@ async function prepare(deps: PublishDeps, post: PostRow, ctx: TransitionCtx): Pr
     variantId: content.variant.id,
     angleId: meta.angleId,
   });
+  let linksAllowed = conn.capabilities.linksAddon === true;
+  if (post.platform === "x") {
+    // D24: X links only inside the product's add-on window.
+    const x = xLinksAtPublish({
+      window: xLinksWindowOf(meta),
+      day: localDate,
+      connectionAddon: linksAllowed,
+      links: linkKinds([content.text.text, ...(content.text.parts ?? [])]),
+    });
+    if (x.block) return { kind: "blocked", reason: x.block };
+    linksAllowed = x.linksAllowed;
+  }
   const resolve = (t: string) =>
     resolveLinkTokens(t, {
       landingUrl: meta.website.website ?? null,
       utm,
       links: caps.links,
-      linksAllowed: conn.capabilities.linksAddon === true,
+      linksAllowed,
     });
   const main = resolve(content.text.text);
   const parts = content.text.parts?.map(resolve);
@@ -261,6 +281,10 @@ async function prepare(deps: PublishDeps, post: PostRow, ctx: TransitionCtx): Pr
   const blocks = issues.filter((i) => i.severity === "block");
   if (blocks.length) return { kind: "blocked", reason: blocks.map((i) => i.message).join(" ") };
   warnings.push(...issues.filter((i) => i.severity === "warn").map((i) => i.message));
+
+  // D20: on launch day a warning is a block.
+  const warnVerdict = launchDayVerdict({ localDate, launch, warnings });
+  if (warnVerdict.block) return { kind: "blocked", reason: warnVerdict.block };
 
   return {
     kind: "ready",

@@ -18,7 +18,7 @@ export interface ClaimRules {
 export function claimProblem(c: ClaimRow, current: ClaimRow | null | undefined, rules: ClaimRules, onCurrentVersion: boolean): string | null {
   if (c.status === "rejected") return `You rejected a fact this post uses ("${short(c.text)}").`;
   if (!c.publicOk) return `A fact this post uses isn't public ("${short(c.text)}").`;
-  if (c.kind === "testimonial" && c.status !== "verified") return `A testimonial this post uses isn't verified yet ("${short(c.text)}").`;
+  if (c.kind === "testimonial" && (c.status !== "verified" || !c.verifiedBy)) return `A testimonial this post uses isn't verified yet ("${short(c.text)}").`;
   if (c.expiresAt && c.expiresAt.getTime() < rules.scheduledAt.getTime()) {
     return `A fact this post uses expires before it posts ("${short(c.text)}").`;
   }
