@@ -9,6 +9,8 @@ const PROJECT_TABS = [
   { href: "content", label: "Content" },
   { href: "queue", label: "Queue" },
   { href: "results", label: "Results" },
+  { href: "launch", label: "Launch" },
+  { href: "email", label: "Email" },
   { href: "assets", label: "Screens & clips" },
   { href: "capture", label: "Demo recording" },
 ] as const;
