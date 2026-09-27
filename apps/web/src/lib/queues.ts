@@ -1,8 +1,9 @@
 import { Redis } from "ioredis";
 import { env } from "@mkt/core/config";
 import { analyticsScheduler } from "@mkt/core/analytics";
+import { applyEmailEffects, type EmailEffect, type EmailEnqueue } from "@mkt/core/email";
 import { bullAnalyticsGateway, bullJobGateway, scheduleEffects, type Effect, type EffectDeps } from "@mkt/core/publishing";
-import { queueFor, type QueueName, type QueueOf } from "@mkt/core/queue";
+import { enqueue, queueFor, type PublishJobs, type QueueName, type QueueOf } from "@mkt/core/queue";
 
 let connection: Redis | undefined;
 const queues = new Map<QueueName, unknown>();
@@ -30,4 +31,19 @@ export function publishEffects(): EffectDeps {
 export async function applyEffects(list: { postId: string; effects: Effect[] }[]): Promise<void> {
   const deps = publishEffects();
   for (const r of list) await scheduleEffects(deps, r.postId, r.effects);
+}
+
+/** Broadcast follow-ups (submit / cancel at Resend) → the publish queue, with the machine's job ids. */
+export function emailEnqueue(): EmailEnqueue {
+  const q = getQueue("publish");
+  return async (job) => {
+    const opts = { jobId: job.jobId, ...(job.delayMs ? { delayMs: job.delayMs } : {}) };
+    if (job.name === "email.submit") await enqueue<"publish", "email.submit">(q, "email.submit", job.data as PublishJobs["email.submit"], opts);
+    else await enqueue<"publish", "email.cancel">(q, "email.cancel", job.data as PublishJobs["email.cancel"], opts);
+  };
+}
+
+/** Apply broadcast effects after the DB write committed (approve, edit, void, cancel, pause). */
+export async function applyBroadcastEffects(effects: readonly EmailEffect[]): Promise<void> {
+  await applyEmailEffects(emailEnqueue(), effects);
 }

@@ -1,7 +1,9 @@
+import { pauseBroadcasts } from "@mkt/core/email";
 import { productBySlug } from "@mkt/core/ingest";
 import { pausePosting, resumePosting } from "@mkt/core/publishing";
 import { errorResponse, publishDeps, readBody, userActor } from "@/app/api/posts/_shared";
 import { getDb } from "@/lib/db";
+import { applyBroadcastEffects } from "@/lib/queues";
 import { json } from "@/lib/session";
 import { requireUiSession } from "@/lib/ui-session";
 
@@ -31,7 +33,10 @@ export async function POST(req: Request) {
   try {
     if (body.action === "pause") {
       const r = await pausePosting(publishDeps(), scope, userActor(auth.s.userId));
-      return json(200, r);
+      // Pause also takes scheduled broadcasts back from Resend (§5.8 step 5). Resume never re-sends them.
+      const email = await pauseBroadcasts(db, auth.s.workspaceId, productId ?? null, userActor(auth.s.userId));
+      await applyBroadcastEffects(email.effects);
+      return json(200, { ...r, broadcastsPaused: email.paused });
     }
     const r = await resumePosting(publishDeps(), scope, userActor(auth.s.userId));
     return json(200, r);

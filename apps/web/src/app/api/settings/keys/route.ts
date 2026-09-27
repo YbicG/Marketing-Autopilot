@@ -2,6 +2,7 @@ import { z } from "zod";
 import { CAPTURE_LOGIN_RE, captureLoginPurpose, KNOWN_PURPOSES } from "@mkt/core/cost";
 import { deleteSecret, putSecret, VaultKeyError } from "@mkt/core/security";
 import { listProducts } from "@mkt/core/tenancy";
+import { RESEND_API_KEY, RESEND_WEBHOOK_SECRET } from "@mkt/providers";
 import { VAULT_KEY_MISSING } from "@/components/settings/vault";
 import { getDb } from "@/lib/db";
 import { isSameOrigin, json, sessionFromRequest } from "@/lib/session";
@@ -9,6 +10,8 @@ import { isSameOrigin, json, sessionFromRequest } from "@/lib/session";
 export const dynamic = "force-dynamic";
 
 const Purpose = z.string().min(1).max(120);
+/** Keys the app uses that aren't on the capability list (yet): Resend for the seasonal email (M4-LC). */
+const EXTRA_PURPOSES: ReadonlySet<string> = new Set([RESEND_API_KEY, RESEND_WEBHOOK_SECRET]);
 const Body = z.discriminatedUnion("action", [
   z.object({ action: z.literal("put"), purpose: Purpose, value: z.string().trim().min(1).max(8_192) }),
   z.object({
@@ -52,7 +55,7 @@ export async function POST(req: Request) {
     }
 
     const login = CAPTURE_LOGIN_RE.exec(b.purpose);
-    if (!KNOWN_PURPOSES.has(b.purpose) && !login) return json(400, { error: "That isn't a key this app uses." });
+    if (!KNOWN_PURPOSES.has(b.purpose) && !EXTRA_PURPOSES.has(b.purpose) && !login) return json(400, { error: "That isn't a key this app uses." });
     if (login && b.action === "put") return json(400, { error: "Use the test login form for demo logins." });
     if (login && !(await ownsProduct(login[1]!))) return json(404, { error: "That project doesn't exist any more. Refresh the page." });
 

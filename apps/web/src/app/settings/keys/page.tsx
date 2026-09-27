@@ -6,11 +6,32 @@ import { SettingsTabs } from "@/components/project-tabs";
 import { KeyForm, LoginForm } from "@/components/settings/key-form";
 import { shortDate, vaultStatus } from "@/components/settings/vault";
 import { env } from "@mkt/core/config";
+import { RESEND_API_KEY, RESEND_WEBHOOK_SECRET } from "@mkt/providers";
 import { getDb } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
 import { Header } from "../../header";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * Resend for the seasonal email (M4-LC, §13 Resend row). Not in core's CAPABILITIES yet, so the
+ * card is built here; env fallbacks RESEND_API_KEY / RESEND_WEBHOOK_SECRET match the worker and webhook.
+ */
+const RESEND: Capability = {
+  id: "resend",
+  name: "Resend",
+  monthly: null,
+  priceLabel: "free up to 100 emails a day",
+  unlocks: "Sending the seasonal email to your past buyers from your own domain, with unsubscribes and bounces handled.",
+  without: "No email goes out. You can still write it and copy the text.",
+  secrets: [
+    { purpose: RESEND_API_KEY, label: "API key (full access)", envName: "RESEND_API_KEY" },
+    { purpose: RESEND_WEBHOOK_SECRET, label: "Webhook signing secret", envName: "RESEND_WEBHOOK_SECRET" },
+  ],
+  signupUrl: "https://resend.com/api-keys",
+};
+const EXTRA_CAPABILITIES = [RESEND];
+const EXTRA_PURPOSES = new Set(EXTRA_CAPABILITIES.flatMap((c) => c.secrets.map((x) => x.purpose)));
 
 type Stored = { purpose: string; hint: string | null; createdAt: Date; rotatedAt: Date | null };
 
@@ -36,9 +57,10 @@ export default async function KeysPage() {
   const configured = new Set([
     ...byPurpose.keys(),
     ...[...KNOWN_PURPOSES].filter(([, { secret }]) => secret.envName && process.env[secret.envName]).map(([p]) => p),
+    ...EXTRA_CAPABILITIES.flatMap((c) => c.secrets).filter((x) => x.envName && process.env[x.envName]).map((x) => x.purpose),
   ]);
   const productIds = new Set(products.map((p) => p.id));
-  const other = secrets.filter((x) => !KNOWN_PURPOSES.has(x.purpose) && !(CAPTURE_LOGIN_RE.test(x.purpose) && productIds.has(x.purpose.slice(14))));
+  const other = secrets.filter((x) => !KNOWN_PURPOSES.has(x.purpose) && !EXTRA_PURPOSES.has(x.purpose) && !(CAPTURE_LOGIN_RE.test(x.purpose) && productIds.has(x.purpose.slice(14))));
 
   return (
     <>
@@ -58,14 +80,20 @@ export default async function KeysPage() {
         )}
 
         <section className="grid gap-4 md:grid-cols-2" aria-label="Services">
-          {CAPABILITIES.map((c) => (
+          {[...CAPABILITIES, ...EXTRA_CAPABILITIES].map((c) => (
             <CapabilityCard
               key={c.id}
               c={c}
               connected={isConnected(c, configured)}
               byPurpose={byPurpose}
               disabled={!vault.ready}
-              note={c.id === "upload_post" ? `In Upload-Post, set the webhook to ${env().APP_BASE_URL}/api/webhooks/upload-post and turn on email notifications.` : undefined}
+              note={
+                c.id === "upload_post"
+                  ? `In Upload-Post, set the webhook to ${env().APP_BASE_URL}/api/webhooks/upload-post and turn on email notifications.`
+                  : c.id === "resend"
+                    ? `In Resend → Webhooks, add ${env().APP_BASE_URL}/api/webhooks/resend with the email and contact events, then paste its signing secret (starts with whsec_) here. Send from a domain you verified in Resend.`
+                    : undefined
+              }
             />
           ))}
         </section>
