@@ -33,6 +33,10 @@ export interface GenerateJobs {
   "package.item": { runId: string; contentItemId: string };
   "copy.rewrite": { runId: string; variantId: string };
   "video.finalize": { runId: string; contentItemId: string };
+  /** M4-LC: one launch kit piece (subreddit, ambassador, press, creator, reply_bank, ads_export). */
+  "launch.kit": { runId: string; kitId: string };
+  /** M4-LC: draft the seasonal broadcast's subject + body. */
+  "email.draft": { runId: string; broadcastId: string };
 }
 
 /** render (§3.3): everything heavy runs under the sem:heavy semaphore. */
@@ -40,6 +44,8 @@ export interface RenderJobs {
   "render.still": { contentItemId: string; variantId: string };
   "render.video": { renderId: string };
   "capture.flow": { flowId: string; runId?: string };
+  /** M4-LC landing audit (Playwright, under sem:heavy). */
+  "launch.landing_audit": { auditId: string };
 }
 
 /** publish (§3.3): publish.due is delayed with jobId = the post's idempotency key. */
@@ -48,6 +54,11 @@ export interface PublishJobs {
   "publish.reconcile": Record<string, never>;
   "publish.webhook": { webhookEventId: string };
   "publish.stale_sweep": { productId?: string };
+  /** M4-LC: hand an approved broadcast to Resend (scheduled send). At most once per generation. */
+  "email.submit": { broadcastId: string };
+  /** Cancel a broadcast scheduled at Resend (edit, void or pause). */
+  "email.cancel": { broadcastId: string; reason: string };
+  "email.webhook": { webhookEventId: string };
 }
 
 export interface MaintJobs {
@@ -58,6 +69,8 @@ export interface MaintJobs {
   "maint.alerts": Record<string, never>;
   "maint.pg_backup": Record<string, never>;
   "maint.storage_gc": Record<string, never>;
+  /** M4-LC: advance launch tasks (todo → ready by date and dependencies) and re-check gates. */
+  "launch.tick": Record<string, never>;
 }
 
 export interface AllJobs {
@@ -82,10 +95,12 @@ export const PAID_JOBS = new Set<string>([
   "package.item",
   "copy.rewrite",
   "video.finalize",
+  "launch.kit",
+  "email.draft",
 ]);
 
 /** Free jobs that must still run at most once per jobId (their handler reconciles instead of retrying). */
-export const SINGLE_ATTEMPT_JOBS = new Set<string>(["publish.due"]);
+export const SINGLE_ATTEMPT_JOBS = new Set<string>(["publish.due", "email.submit"]);
 
 export function queueFor<Q extends QueueName>(name: Q, connection: ConnectionOptions) {
   return new Queue<AllJobs[Q][keyof AllJobs[Q]], unknown, Extract<keyof AllJobs[Q], string>>(name, { connection });

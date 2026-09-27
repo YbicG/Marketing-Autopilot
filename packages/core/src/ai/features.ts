@@ -61,6 +61,15 @@ export const FEATURES = {
   "qa.vision": sonnet("low", 4_000),
   "qa.text_judge": sonnet("low", 4_000),
   "qa.pii_frames": sonnet("low", 4_000),
+  "launch.kit.subreddit": sonnet("medium", 12_000),
+  "launch.kit.ambassador": sonnet("medium", 8_000),
+  "launch.kit.press": sonnet("medium", 16_000),
+  "launch.kit.creator": sonnet("medium", 8_000),
+  "launch.kit.reply_bank": sonnet("medium", 12_000),
+  "launch.landing_judge": sonnet("low", 4_000),
+  "copy.email": sonnet("medium", 8_000),
+  "ads.concepts": opus("medium", 12_000),
+  "ads.copy": sonnet("medium", 12_000),
 } satisfies Record<string, FeatureConfig>;
 
 export type FeatureId = keyof typeof FEATURES;

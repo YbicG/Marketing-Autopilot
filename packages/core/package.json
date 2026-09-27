@@ -17,7 +17,10 @@
     "./engine": "./src/engine/index.ts",
     "./video": "./src/video/index.ts",
     "./capture": "./src/capture/index.ts",
-    "./analytics": "./src/analytics/index.ts"
+    "./analytics": "./src/analytics/index.ts",
+    "./launch": "./src/launch/index.ts",
+    "./email": "./src/email/index.ts",
+    "./ads": "./src/ads/index.ts"
   },
   "scripts": {
     "typecheck": "tsc -p .",

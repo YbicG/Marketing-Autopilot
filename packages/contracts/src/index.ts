@@ -22,3 +22,7 @@ export * from "./video-spec.ts";
 export * from "./publishing.ts";
 export * from "./capture-flow.ts";
 export * from "./results.ts";
+export * from "./launch-plan.ts";
+export * from "./launch-kit.ts";
+export * from "./email.ts";
+export * from "./ads.ts";

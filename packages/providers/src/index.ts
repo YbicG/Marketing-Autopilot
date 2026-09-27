@@ -6,3 +6,4 @@ export * from "./publish/caps.ts";
 export * from "./publish/upload-post.ts";
 export * from "./analytics/firstparty.ts";
 export * from "./audio/index.ts";
+export * from "./email/index.ts";

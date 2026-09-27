@@ -212,7 +212,7 @@ export const generationRuns = pgTable(
       .notNull()
       .references(() => workspaces.id, { onDelete: "cascade" }),
     productId: uuid("product_id"),
-    kind: text("kind", { enum: ["m0_summary", "ingest", "strategy", "dna_regenerate", "package", "refill", "finalize", "capture"] }).notNull(),
+    kind: text("kind", { enum: ["m0_summary", "ingest", "strategy", "dna_regenerate", "package", "refill", "finalize", "capture", "launch_kit", "broadcast", "ads_kit", "landing_audit"] }).notNull(),
     status: text("status", { enum: ["queued", "running", "needs_review", "completed", "failed", "canceled", "paused_budget"] }).notNull(),
     input: jsonb("input").$type<Record<string, unknown>>().notNull(),
     result: jsonb("result").$type<Record<string, unknown>>(),
@@ -265,10 +265,27 @@ export const products = pgTable(
     captureRouteDenylist: text("capture_route_denylist").array().notNull().default([]),
     /** YouTube madeForKids, asked once per project (§2.3 TikTok composer row). */
     madeForKids: boolean("made_for_kids"),
+    /** D24: the Upload-Post X links add-on window (ISO dates, inclusive). X links outside it are blocked. */
+    xLinksFrom: text("x_links_from"),
+    xLinksUntil: text("x_links_until"),
+    /** Sender identity for broadcasts (§5.4 email): CAN-SPAM needs a real from, reply-to and postal address. */
+    emailSettings: jsonb("email_settings").$type<ProductEmailSettings>(),
     createdAt: createdAt(),
   },
   (t) => [uniqueIndex("products_ws_slug").on(t.workspaceId, t.slug)],
 );
+
+export interface ProductEmailSettings {
+  fromName: string;
+  fromEmail: string;
+  replyTo?: string;
+  postalAddress: string;
+  /** Resend audience (segment) of past buyers the seasonal broadcast goes to. */
+  audienceId?: string;
+  audienceLabel?: string;
+  /** Where these contacts came from (consent_source, §5.4). */
+  consentSource?: string;
+}
 
 /** A project folder the browser uploaded (allowlisted files only), before a run picks it up. */
 export const folderUploads = pgTable("folder_uploads", {
@@ -1045,3 +1062,178 @@ export const captureFlows = pgTable("capture_flows", {
   lastError: text("last_error"),
   createdAt: createdAt(),
 });
+
+// ── launch (M4-LC, §2.3 Launch, §5.4 launch kit) ──
+
+/** One per campaign: the D30 checklist anchored on the launch day. */
+export const launchPlans = pgTable(
+  "launch_plans",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    campaignId: uuid("campaign_id").references(() => campaigns.id, { onDelete: "set null" }),
+    /** D1 and launch day (ISO dates), copied from the campaign so the plan survives a new campaign. */
+    startDate: text("start_date").notNull(),
+    launchDate: text("launch_date").notNull(),
+    status: text("status", { enum: ["draft", "active", "done"] }).notNull().default("draft"),
+    templateVersion: text("template_version").notNull(),
+    createdAt: createdAt(),
+    updatedAt: ts("updated_at").notNull().defaultNow(),
+  },
+  (t) => [index("launch_plans_product").on(t.productId)],
+);
+
+export const LAUNCH_TASK_MODES = ["auto", "assisted", "manual", "gate"] as const;
+export const LAUNCH_TASK_STATES = ["todo", "ready", "scheduled", "done", "skipped"] as const;
+
+/** A checklist row (Auto / Assisted / You / Gate). Gates block the tasks that depend on them. */
+export const launchTasks = pgTable(
+  "launch_tasks",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    launchPlanId: uuid("launch_plan_id")
+      .notNull()
+      .references(() => launchPlans.id, { onDelete: "cascade" }),
+    /** Stable key from the template, e.g. "gate.tracking_test" or "kit.press.pitches". */
+    key: text("key").notNull(),
+    title: text("title").notNull(),
+    detail: text("detail"),
+    mode: text("mode", { enum: LAUNCH_TASK_MODES }).notNull(),
+    /** Days relative to the launch day (0 = launch, negative = before). */
+    dayOffset: integer("day_offset").notNull(),
+    dueDate: text("due_date").notNull(),
+    dependsOn: text("depends_on").array().notNull().default([]),
+    status: text("status", { enum: LAUNCH_TASK_STATES }).notNull().default("todo"),
+    /** What the task points at: { contentItemId } | { assistedTaskId } | { broadcastId } | { kitId } | { auditId }. */
+    ref: jsonb("ref").$type<Record<string, string>>(),
+    /** Gate result: { passed, checkedAt, reasons[] }. */
+    gate: jsonb("gate").$type<{ passed: boolean; checkedAt: string; reasons: string[] }>(),
+    doneAt: ts("done_at"),
+    doneBy: text("done_by"),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("launch_tasks_plan_key").on(t.launchPlanId, t.key), index("launch_tasks_due").on(t.workspaceId, t.dueDate)],
+);
+
+export const LAUNCH_KIT_KINDS = ["subreddit", "ambassador", "press", "creator", "reply_bank", "ads_export"] as const;
+export type LaunchKitKind = (typeof LAUNCH_KIT_KINDS)[number];
+
+/** Generated launch kit pieces. The body is the contract schema for its kind (contracts/launch.ts, ads.ts). */
+export const launchKits = pgTable(
+  "launch_kits",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    launchPlanId: uuid("launch_plan_id").references(() => launchPlans.id, { onDelete: "cascade" }),
+    kind: text("kind", { enum: LAUNCH_KIT_KINDS }).notNull(),
+    status: text("status", { enum: ["planned", "generating", "ready", "needs_you", "failed"] }).notNull().default("planned"),
+    body: jsonb("body").$type<Record<string, unknown>>(),
+    /** §8 endorsements: a kit won't export until every required disclosure is present. */
+    disclosuresOk: boolean("disclosures_ok").notNull().default(false),
+    issues: jsonb("issues").$type<{ code: string; message: string; severity: "block" | "warn" }[]>().notNull().default([]),
+    claimIds: text("claim_ids").array().notNull().default([]),
+    exportAssetId: uuid("export_asset_id"),
+    runId: uuid("run_id"),
+    needsYouReason: text("needs_you_reason"),
+    createdAt: createdAt(),
+    updatedAt: ts("updated_at").notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("launch_kits_plan_kind").on(t.launchPlanId, t.kind)],
+);
+
+/** Landing audit (§5.4): runs in the worker with Playwright; a hard gate for launch day (D20). */
+export const landingAudits = pgTable(
+  "landing_audits",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    url: text("url").notNull(),
+    status: text("status", { enum: ["queued", "running", "done", "failed"] }).notNull().default("queued"),
+    /** One row per check: { id, label, passed, severity: "gate" | "warn", detail }. */
+    checks: jsonb("checks")
+      .$type<{ id: string; label: string; passed: boolean; severity: "gate" | "warn"; detail?: string }[]>()
+      .notNull()
+      .default([]),
+    passed: boolean("passed"),
+    screenshotAssetIds: text("screenshot_asset_ids").array().notNull().default([]),
+    error: text("error"),
+    createdAt: createdAt(),
+    finishedAt: ts("finished_at"),
+  },
+  (t) => [index("landing_audits_product").on(t.productId)],
+);
+
+// ── email (M4-LC broadcast; sequences in M5) ──
+
+export const BROADCAST_STATES = ["draft", "pending_approval", "approved", "scheduled_at_resend", "sent", "canceled", "failed"] as const;
+export type BroadcastState = (typeof BROADCAST_STATES)[number];
+
+export const emailBroadcasts = pgTable(
+  "email_broadcasts",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    launchPlanId: uuid("launch_plan_id").references(() => launchPlans.id, { onDelete: "set null" }),
+    name: text("name").notNull(),
+    subject: text("subject").notNull().default(""),
+    preheader: text("preheader"),
+    /** The body the UI edits (plain paragraphs + link tokens); html/text are built from it with the footer at approve time. */
+    body: text("body").notNull().default(""),
+    html: text("html"),
+    text: text("text"),
+    audienceId: text("audience_id"),
+    audienceLabel: text("audience_label"),
+    status: text("status", { enum: BROADCAST_STATES }).notNull().default("draft"),
+    scheduledAt: ts("scheduled_at"),
+    contentHash: text("content_hash"),
+    approvalId: uuid("approval_id"),
+    resendBroadcastId: text("resend_broadcast_id"),
+    claimIds: text("claim_ids").array().notNull().default([]),
+    issues: jsonb("issues").$type<{ code: string; message: string; severity: "block" | "warn" }[]>().notNull().default([]),
+    runId: uuid("run_id"),
+    lastError: text("last_error"),
+    sentAt: ts("sent_at"),
+    createdAt: createdAt(),
+    updatedAt: ts("updated_at").notNull().defaultNow(),
+  },
+  (t) => [index("email_broadcasts_product").on(t.productId), uniqueIndex("email_broadcasts_resend").on(t.resendBroadcastId)],
+);
+
+/** Checked before every send (§5.4). Keyed by sha256 of the lower-cased address; the address itself is never stored. */
+export const emailSuppressions = pgTable(
+  "email_suppressions",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    emailHash: text("email_hash").notNull(),
+    reason: text("reason", { enum: ["unsubscribed", "bounced", "complained", "manual"] }).notNull(),
+    source: text("source").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("email_suppressions_key").on(t.workspaceId, t.emailHash)],
+);
