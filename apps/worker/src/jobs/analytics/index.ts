@@ -25,7 +25,7 @@ export function maintConversionsPull(deps: AnalyticsWorkerDeps, _data: MaintJobs
 
 /**
  * First-party aggregate endpoint (SyllaCal UTM PR 1, §5.9): token-protected, no personal data.
- * ASSUMPTION until that PR lands: GET {baseUrl}/api/marketing/utm-aggregate?from=YYYY-MM-DD&to=YYYY-MM-DD
+ * ASSUMPTION until that PR lands: GET {baseUrl}/api/marketing/aggregate?from=YYYY-MM-DD&to=YYYY-MM-DD
  * with `Authorization: Bearer <token>` returning { rows: ConversionRow[] }.
  */
 export function httpFirstPartyClient(opts: {
@@ -35,7 +35,7 @@ export function httpFirstPartyClient(opts: {
 }): FirstPartyClient {
   return {
     async daily({ from, to }) {
-      const url = new URL("/api/marketing/utm-aggregate", opts.baseUrl);
+      const url = new URL("/api/marketing/aggregate", opts.baseUrl);
       url.searchParams.set("from", from);
       url.searchParams.set("to", to);
       const body = JSON.parse(await opts.fetchText(url.toString(), { headers: { authorization: `Bearer ${opts.token}` } })) as {
