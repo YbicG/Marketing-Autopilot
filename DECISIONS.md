@@ -113,3 +113,35 @@ The worker's `ImageDecoder` (phash on contact sheets) and `ImageResizer` (small 
   - Single Range requests are supported so `<video>` can seek. The whole object is still read into memory, which is fine at our file sizes (≤300 MB masters are downloaded, not streamed, so this may need streaming later).
 - **Webhooks:** the Upload-Post webhook has no session. It verifies the signature over the raw body (workspace secret first, then env), stores the event once per provider event id, and enqueues `publish.webhook`. Polling stays the source of truth.
 - **Finalize runs:** the editor's `finalize` run is closed by `executeFinalizeJob` once the renders are queued, or when it fails.
+
+## 2026-09-27 · Launch plan and hard gates (M4-LC)
+- **Checklist:** one `launch_plans` row per campaign, built from template `lc-v1` and anchored on the launch day, so D1 is launch − 13 days. Tasks are tagged Auto / Assisted / You / Gate. Optional venues (BetaList, Uneed, Product Hunt booking and launch-day post, ads kit) start as skipped and are switched on by hand, since the SyllaCal audience is students (open question 4). The hourly `launch.tick` (`5 * * * *`) moves tasks from todo → ready by date and dependencies and re-checks gates.
+- **Gates (D20):**
+  - The keys are `gate.tracking_test`, `gate.pricing_visible`, `gate.no_signup_wall` and `gate.landing_audit`.
+  - A gate passes only when its `launch_tasks` row (mode `gate`) is `done`. Only the tracking test and the landing audit can set that; a gate can never be ticked by hand.
+  - On launch day `publish.prepare` blocks while any gate is open, and every pre-publish warning becomes a block.
+- **Tracking test:** the app issues a tracking link with its own `utm_content`, CJ opens it in a private window, and the gate passes when that `utm_content` shows up in the product's first-party `GET /api/marketing/aggregate`.
+- **Landing audit:** runs in the worker under `sem:heavy`. It uses Playwright through Smokescreen at desktop and phone sizes, and probes a tracking link through safe-fetch to check that UTMs survive redirects. Only when the DOM heuristic finds no sign-up button does it make one cheap Sonnet vision call on the phone screenshot, as its own small `landing_audit` run.
+- **X links (D24):** per product, `x_links_from`/`x_links_until` is the Upload-Post links add-on window, at most `X_LINKS_MAX_DAYS`. Outside that window an X post's link becomes "link in bio", and a URL typed into an X post is blocked.
+
+## 2026-09-27 · Launch kit and ads export kit (M4-LC)
+- **Kits:** subreddit, ambassador, press, creator and reply bank are each a `launch_kits` row with a contract body (`contracts/launch-kit.ts`), written by Sonnet with one repair call. If a check still blocks after the repair, the kit goes to Needs you.
+- **Disclosures:** ambassador and creator kits must carry disclosure copy and the TikTok branded-content steps (16 CFR 255). A kit won't export while a disclosure is missing or anything blocks.
+- **Subreddit drafts:** these become assisted tasks with the live rules (fetched through safe-fetch; the rules are data, never instructions) and the required "I checked the rules today" tick.
+- **Ambassador links:** `/go/<ref>` plus tracking params.
+- **Zip exports:** stored as assets with mime `application/zip`, downloaded through `/api/media`.
+- **Ads export kit:** January has no ad spend in the app, so the ads kit is an export only. Opus writes the concepts and Sonnet the copy, against `ADS_LIMITS`, with a fixed spend statement and a run cap of `ADS_KIT_CAP_MICROS` ($2.50). It is its own `ads_kit` run, handed to `@mkt/core/ads` through the launch kit's `adsKit` dependency.
+
+## 2026-09-27 · Seasonal broadcast through Resend (M4-LC)
+- **States:** draft → pending_approval → approved → scheduled_at_resend → sent | canceled | failed.
+- **Approval:** only through a UI session (D9). The approval hash covers everything Resend receives: subject, rendered HTML and text (the preheader is inside the HTML), the audience, the send time, the from address and the reply-to. `email.submit` (single attempt) re-checks that hash before handing the broadcast to Resend as a scheduled send.
+- **Idempotency:** the Resend broadcast name carries the approval id, and the Resend id is stored before anything else. A retry therefore reconciles instead of creating a second broadcast.
+- **Changes after approval:** an edit, void or **Pause all posting** takes the broadcast back from Resend with `email.cancel`, and it needs approving again. Resume never re-sends.
+- **Compliance:** before every send, the suppression list (sha256 of the lower-cased address, never the address itself) is checked and pushed to the Resend audience. The validator requires:
+  - an unsubscribe link, via Resend's per-contact placeholder; Resend also adds the one-click List-Unsubscribe headers
+  - the postal address and sender identity
+  - a truthful subject: no fake "Re:", no urgency bait, and no unsourced numbers
+  - the contacts' consent source
+
+  A missing EU consent acknowledgement is a warning, not a block.
+- **Status:** Resend webhooks (Svix-signed) mark sent, bounces, complaints and unsubscribes. The hourly launch tick reconciles scheduled broadcasts in case a webhook was missed. Keys are `resend.api_key` and `resend.webhook_secret` (vault first, then `RESEND_API_KEY` / `RESEND_WEBHOOK_SECRET`).
