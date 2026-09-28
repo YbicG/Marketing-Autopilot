@@ -21,7 +21,9 @@ function createAuth() {
       schema: { users: schema.users, sessions: schema.sessions, accounts: schema.accounts, verifications: schema.verifications },
     }),
     user: {
-      additionalFields: { githubLogin: { type: "string", required: false, input: false } },
+      // input must be true: better-auth drops input:false fields from the provider profile, so the
+      // allowlist never saw the login. The user.update hook below keeps it out of client updates.
+      additionalFields: { githubLogin: { type: "string", required: false, input: true } },
     },
     account: { encryptOAuthTokens: true },
     socialProviders: {
@@ -38,6 +40,13 @@ function createAuth() {
           before: async (user) => (isAllowedLogin(user.githubLogin, allow) ? undefined : false),
           after: async (user) => {
             await ensureWorkspaceForUser(db, user);
+          },
+        },
+        // The login is set once, from GitHub, at sign-up; nothing may change it afterwards.
+        update: {
+          before: async (data) => {
+            const { githubLogin: _ignored, ...rest } = data as Record<string, unknown>;
+            return { data: rest };
           },
         },
       },
