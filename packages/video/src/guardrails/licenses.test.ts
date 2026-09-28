@@ -1,6 +1,7 @@
 // §8 "Licenses": every font, music track, sound effect and device frame used in a render has a
-// license on file. Fonts: only bundled, licensed fonts render. Music: see the GAP below, and
-// packages/core/src/guardrails/licenses.test.ts for generated tracks.
+// license on file. Fonts: only bundled, licensed fonts render. Music: a chosen track needs a
+// licenseRef (lint blocks it here; prepareAudio refuses it in core, see
+// packages/core/src/guardrails/licenses.test.ts, which also covers generated tracks).
 import { describe, expect, it } from "vitest";
 import { ASSETS, IDS, makeSpec } from "../spec/fixture.ts";
 import { BUNDLED_FONTS, FONT_LICENSES, fontStack, isBundledFont } from "../fonts/registry.ts";
@@ -22,13 +23,11 @@ describe("§8 Licenses", () => {
     expect(issues.find((i) => i.code === "font_not_bundled")?.severity).toBe("warn");
   });
 
-  // GAP: lintSpec only checks that the music track exists and is audio (packages/video/src/spec/lint.ts:89);
-  // LintAsset has no license field (lint.ts:7), and core uses spec.music.trackAssetId as-is
-  // (packages/core/src/video/audio.ts:262). Fix: add licenseRef to LintAsset and block a track without one.
-  it.fails("GAP: a music track with no license on file is blocked", () => {
+  it("a music track with no license on file is blocked", () => {
     const unlicensed: LintContext = { ...ctx, assets: { ...ASSETS, [IDS.music]: { kind: "audio", durationMs: 60_000 } } };
     const issues = lintSpec(makeSpec(), unlicensed);
-    expect(issues.some((i) => i.severity === "block" && /music|license/i.test(`${i.code} ${i.message}`))).toBe(true);
+    expect(issues.find((i) => i.code === "music_unlicensed")?.severity).toBe("block");
+    expect(lintSpec(makeSpec(), ctx).some((i) => i.code === "music_unlicensed")).toBe(false);
   });
 
   it.todo("device frames carry a license — the DeviceMockup frame is drawn in code today (no third-party frame art bundled)");

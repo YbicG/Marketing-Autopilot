@@ -4,7 +4,14 @@ import { CTA_MIN_MS, CTA_SEGMENT, HOOK_MIN_MS, HOOK_SEGMENT, VO_PAD_MS } from ".
 
 // §5.6 step 3 lintSpec + the free parts of §5.7 stage 0 that only need the spec.
 
-export type LintAsset = { kind: string; durationMs?: number | null; width?: number | null; height?: number | null };
+export type LintAsset = {
+  kind: string;
+  durationMs?: number | null;
+  width?: number | null;
+  height?: number | null;
+  /** The license on file (assets.license_ref); §8 blocks a music track without one. */
+  licenseRef?: string | null;
+};
 
 export type LintContext = {
   assets: Record<string, LintAsset>;
@@ -86,7 +93,8 @@ export function lintSpec(spec: VideoSpec, ctx: LintContext): SpecIssue[] {
   };
 
   needAsset(spec.brand.logoAssetId, "The logo");
-  needAsset(spec.music.trackAssetId, "The music track", undefined, new Set(["audio"]));
+  const track = needAsset(spec.music.trackAssetId, "The music track", undefined, new Set(["audio"]));
+  if (track && !track.licenseRef?.trim()) add("block", "music_unlicensed", "The music track has no license on file");
   if (!isBundledFont(spec.brand.font)) add("warn", "font_not_bundled", `Font "${spec.brand.font}" isn't bundled; Inter is used instead`);
 
   const sceneIds = new Set(spec.scenes.map((s) => s.id));

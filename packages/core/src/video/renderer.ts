@@ -21,6 +21,7 @@ export interface LintAssetInfo {
   durationMs?: number;
   width?: number;
   height?: number;
+  licenseRef?: string;
 }
 
 export interface LintContext {

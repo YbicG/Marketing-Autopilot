@@ -32,7 +32,7 @@ export function lintContextFor(v: Pick<VideoContext, "footage" | "claims">, now:
   const usable = v.claims.filter((c) => isUsableClaim(c, now));
   return {
     assets: Object.fromEntries(
-      v.footage.map((a) => [a.id, { kind: a.kind, durationMs: a.durationMs ?? undefined, width: a.width ?? undefined, height: a.height ?? undefined }]),
+      v.footage.map((a) => [a.id, { kind: a.kind, durationMs: a.durationMs ?? undefined, width: a.width ?? undefined, height: a.height ?? undefined, licenseRef: a.licenseRef ?? undefined }]),
     ),
     publicClaimRefs: new Set(usable.map((c) => c.ref)),
     verifiedClaimRefs: new Set(usable.filter((c) => c.status === "verified").map((c) => c.ref)),

@@ -8,7 +8,7 @@ import { normalizeLine, ttsTextHash } from "./hash.ts";
 import type { AdPropsLike, TimelineLike } from "./renderer.ts";
 import { storeAsset } from "./store.ts";
 
-const { ttsSegments } = schema;
+const { assets, ttsSegments } = schema;
 
 /** tts_segments.model values: the ElevenLabs model each quality maps to (§7.2 draft→final ladder). */
 export const TTS_MODEL_KEYS = { draft: "eleven_flash_v2_5", final: "eleven_v3" } as const;
@@ -237,6 +237,23 @@ export async function ensureMusic(
   return { assetId: deps.bundledTrackAssetId ?? null, fallback: true };
 }
 
+/** §8 Licenses: the spec's chosen music track has no license on file (or isn't this workspace's audio). */
+export class MusicNotLicensed extends Error {
+  readonly code = "needs_you";
+  constructor(readonly assetId: string) {
+    super("The chosen music track has no license on file. Pick a licensed track, or clear it to use generated music.");
+    this.name = "MusicNotLicensed";
+  }
+}
+
+async function assertLicensedTrack(deps: VideoDeps, workspaceId: string, assetId: string): Promise<void> {
+  const [a] = await deps.db
+    .select({ kind: assets.kind, licenseRef: assets.licenseRef })
+    .from(assets)
+    .where(and(eq(assets.id, assetId), eq(assets.workspaceId, workspaceId)));
+  if (!a || a.kind !== "audio" || !a.licenseRef?.trim()) throw new MusicNotLicensed(assetId);
+}
+
 /**
  * All voice lines (cached per line) + music for a spec. Without a key: the captions-only cut with
  * the bundled track, flagged so the editor can say why there's no voice.
@@ -260,6 +277,7 @@ export async function prepareAudio(
   }
 
   if (input.spec.music.trackAssetId) {
+    await assertLicensedTrack(deps, scope.workspaceId, input.spec.music.trackAssetId);
     plan.musicAssetId = input.spec.music.trackAssetId;
   } else if (input.withMusic && deps.audio) {
     const lengthMs = input.timelineMs ? input.timelineMs(plan) : input.spec.targetSeconds * 1000;

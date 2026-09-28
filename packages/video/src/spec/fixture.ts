@@ -52,5 +52,5 @@ export const ASSETS = {
   [IDS.shot]: { kind: "screenshot", width: 1440, height: 900 },
   [IDS.rec]: { kind: "recording", durationMs: 8000, width: 1440, height: 900 },
   [IDS.logo]: { kind: "image", width: 512, height: 512 },
-  [IDS.music]: { kind: "audio", durationMs: 60000 },
+  [IDS.music]: { kind: "audio", durationMs: 60000, licenseRef: '{"kind":"music","ref":"fixture","terms":"test"}' },
 };

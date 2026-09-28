@@ -9,7 +9,7 @@ import { createTestDb } from "@mkt/db/testing";
 import type { RateLookup } from "../ai/usage.ts";
 import { loadRateCards, rateLookup, seedPricingRates } from "../cost/rates.ts";
 import { budgetScopesForRun } from "../runs/summary.ts";
-import { prepareAudio } from "../video/audio.ts";
+import { MusicNotLicensed, prepareAudio } from "../video/audio.ts";
 import { latestSpec } from "../video/spec.ts";
 import { storeAsset } from "../video/store.ts";
 import { seedVideoWorld } from "../video/testing.ts";
@@ -54,10 +54,7 @@ describe("§8 Licenses", () => {
     expect(plan).toMatchObject({ musicAssetId: "bundled-1", musicFallback: true });
   });
 
-  // GAP: a spec's music.trackAssetId is used as-is (core/src/video/audio.ts:262, prepareAudio);
-  // nothing checks the asset has a licenseRef. Fix there (or in lintSpec's LintAsset,
-  // packages/video/src/spec/lint.ts:7) by refusing a music track with no license on file.
-  it.fails("GAP: an uploaded track with no license on file is refused as the video's music", async () => {
+  it("an uploaded track with no license on file is refused as the video's music", async () => {
     const w = await seedVideoWorld(db);
     const h = videoHarness(db, rates, w);
     await runVideoItem(h.deps, w.runId, w.ws, w.itemId);
@@ -76,7 +73,7 @@ describe("§8 Licenses", () => {
     const [run] = await db.select().from(schema.generationRuns).where(eq(schema.generationRuns.id, w.runId));
     const scope = { workspaceId: w.ws, runId: w.runId, budgetPeriodIds: await budgetScopesForRun(db, w.ws, w.runId, run!.capMicros) };
     const withSong = { ...spec, music: { ...spec.music, trackAssetId: song.id } };
-    await expect(prepareAudio(h.deps, scope, { productId: w.productId, spec: withSong, quality: "final", withMusic: true })).rejects.toThrow();
+    await expect(prepareAudio(h.deps, scope, { productId: w.productId, spec: withSong, quality: "final", withMusic: true })).rejects.toBeInstanceOf(MusicNotLicensed);
   });
 
   it.todo("sound effects carry a license receipt — not wired yet (VideoDeps.audio.sfx exists, nothing calls it)");
