@@ -3,7 +3,7 @@
 
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { schema, uuidv7, type Db } from "@mkt/db";
-import type { ClaudeDeps } from "../ai/call.ts";
+import { estimateCard, type ClaudeDeps } from "../ai/call.ts";
 import { feature } from "../ai/features.ts";
 import type { RateLookup } from "../ai/usage.ts";
 import { estimateClaudeMicros } from "../cost/pricing.ts";
@@ -105,7 +105,7 @@ export async function captureView(db: Db, workspaceId: string, productId: string
 /** Price on the "Suggest flows" button: one Sonnet call with the page text, a short answer. */
 export function estimateFlowPlanMicros(rates: RateLookup, inputChars = 12_000): number {
   const cfg = feature("capture.flow_plan");
-  return estimateClaudeMicros(inputChars, Math.round(cfg.maxTokens / 3), rates(cfg.model));
+  return estimateClaudeMicros(inputChars, Math.round(cfg.maxTokens / 3), estimateCard(rates, cfg));
 }
 
 const MAX_PAGE_TEXT = 30_000;

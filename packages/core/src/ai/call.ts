@@ -1,10 +1,12 @@
 import type Anthropic from "@anthropic-ai/sdk";
+import { eq } from "drizzle-orm";
 import type { z } from "zod";
-import type { Db } from "@mkt/db";
-import { estimateClaudeMicros } from "../cost/pricing.ts";
+import { schema, uuidv7, type Db } from "@mkt/db";
+import { OPENROUTER_FALLBACK_CARD, estimateClaudeMicros, type RateCard } from "../cost/pricing.ts";
 import { BilledFailure, runPaidCall } from "../cost/run-paid-call.ts";
 import { anthropic } from "./client.ts";
-import { feature as featureConfig, type FeatureId } from "./features.ts";
+import { feature as featureConfig, type FeatureConfig, type FeatureId, type ModelOverride } from "./features.ts";
+import { openRouterMessage, type FetchLike } from "./openrouter.ts";
 import { ClaudeTruncated, assertUsableStop } from "./stop-reasons.ts";
 import { claudeFormat } from "./structured.ts";
 import { withWatchdog } from "./stream-watchdog.ts";
@@ -26,6 +28,8 @@ export interface ClaudeCall {
   tools?: Anthropic.ToolUnion[];
   /** Upper bound on web searches this call may run, for the estimate ($0.01 each). */
   maxSearches?: number;
+  /** Run this call on another model (the model eval). Such calls are never captured. */
+  override?: ModelOverride;
 }
 
 /** Kept for the M0 call sites. */
@@ -47,6 +51,18 @@ export interface ClaudeDeps {
   db: Db;
   rates: RateLookup;
   client?: Anthropic;
+  /** OpenRouter transport, for tests. */
+  fetch?: FetchLike;
+}
+
+/** The rate card to estimate with. An OpenRouter model without a rate row gets the high fallback card. */
+export function estimateCard(rates: RateLookup, cfg: Pick<FeatureConfig, "provider" | "model">): RateCard {
+  try {
+    return rates(cfg.model);
+  } catch (err) {
+    if (cfg.provider === "openrouter") return OPENROUTER_FALLBACK_CARD;
+    throw err;
+  }
 }
 
 /**
@@ -55,7 +71,7 @@ export interface ClaudeDeps {
  * `tool_use` and `pause_turn` come back to the caller (see tool-loop.ts).
  */
 export async function callClaude(deps: ClaudeDeps, input: ClaudeCall): Promise<ClaudeCallResult> {
-  const cfg = featureConfig(input.feature);
+  const cfg = input.override ? featureConfig(input.feature, new Map([[input.feature, input.override]])) : featureConfig(input.feature);
   const callIds: string[] = [];
   let maxTokens = cfg.maxTokens;
 
@@ -66,21 +82,18 @@ export async function callClaude(deps: ClaudeDeps, input: ClaudeCall): Promise<C
         {
           workspaceId: input.workspaceId,
           budgetPeriodIds: input.budgetPeriodIds,
-          estMicros: estimateClaudeMicros(inputChars(input), maxTokens, deps.rates(cfg.model), input.maxSearches ?? 0),
+          estMicros: estimateClaudeMicros(inputChars(input), maxTokens, estimateCard(deps.rates, cfg), input.maxSearches ?? 0),
           feature: input.feature,
-          provider: "anthropic",
+          provider: cfg.provider,
           requestedModel: cfg.model,
           runId: input.runId,
         },
         async (callId) => {
           callIds.push(callId);
-          const msg = await stream(deps.client ?? anthropic(), cfg, input, maxTokens);
-          const priced = priceMessage(msg as unknown as MessageLike, deps.rates);
-          const billed = {
-            ...priced,
-            usage: msg.usage as unknown as Record<string, unknown>,
-            providerRequestId: msg.id,
-          };
+          const { msg, billed } =
+            cfg.provider === "openrouter"
+              ? await viaOpenRouter(deps, cfg, input, maxTokens)
+              : await viaAnthropic(deps, cfg, input, maxTokens);
           try {
             assertUsableStop(msg, maxTokens);
           } catch (err) {
@@ -89,6 +102,7 @@ export async function callClaude(deps: ClaudeDeps, input: ClaudeCall): Promise<C
           return { result: msg, ...billed };
         },
       );
+      await capture(deps.db, input, cfg, message, callIds.at(-1)!);
       return { message, servedModel: message.model, callIds };
     } catch (err) {
       if (err instanceof ClaudeTruncated && attempt === 0) {
@@ -97,6 +111,34 @@ export async function callClaude(deps: ClaudeDeps, input: ClaudeCall): Promise<C
       }
       throw err;
     }
+  }
+}
+
+/** Requests bigger than this (mostly screenshots) aren't kept as eval samples. */
+const CAPTURE_MAX_CHARS = 2_000_000;
+
+/**
+ * AI_CAPTURE_PROMPTS=1: keep single-shot calls (no tools) as samples for the model eval.
+ * Never fails the call it records.
+ */
+async function capture(db: Db, input: ClaudeCall, cfg: FeatureConfig, message: Anthropic.Message, callId: string): Promise<void> {
+  if (process.env.AI_CAPTURE_PROMPTS !== "1" || input.tools?.length || input.override || input.feature === "eval.judge") return;
+  const request = { system: input.system, messages: input.messages, ...(input.outputFormat ? { outputFormat: input.outputFormat } : {}) };
+  if (JSON.stringify(request).length > CAPTURE_MAX_CHARS) return;
+  try {
+    const [call] = await db.select({ actualMicros: schema.providerCalls.actualMicros }).from(schema.providerCalls).where(eq(schema.providerCalls.id, callId));
+    await db.insert(schema.promptCaptures).values({
+      id: uuidv7(),
+      workspaceId: input.workspaceId,
+      feature: input.feature,
+      provider: cfg.provider,
+      model: message.model,
+      request,
+      output: textOf(message),
+      actualMicros: call?.actualMicros ?? null,
+    });
+  } catch (err) {
+    console.warn("[ai] prompt capture failed:", err instanceof Error ? err.message : String(err));
   }
 }
 
@@ -166,7 +208,31 @@ function parseJson<S extends z.ZodType>(schema: S, text: string): { ok: true; va
   };
 }
 
-async function stream(client: Anthropic, cfg: ReturnType<typeof featureConfig>, input: ClaudeCall, maxTokens: number) {
+async function viaAnthropic(deps: ClaudeDeps, cfg: FeatureConfig, input: ClaudeCall, maxTokens: number) {
+  const msg = await stream(deps.client ?? anthropic(), cfg, input, maxTokens);
+  const priced = priceMessage(msg as unknown as MessageLike, deps.rates);
+  return { msg, billed: { ...priced, usage: msg.usage as unknown as Record<string, unknown>, providerRequestId: msg.id } };
+}
+
+/** OpenRouter reports what it charged (usage.cost); that is what settles. Rates only if it didn't say. */
+async function viaOpenRouter(deps: ClaudeDeps, cfg: FeatureConfig, input: ClaudeCall, maxTokens: number) {
+  const reply = await openRouterMessage(cfg, input, maxTokens, deps.fetch ? { fetch: deps.fetch } : {});
+  const msg = reply.message;
+  const actualMicros =
+    reply.costMicros ?? priceMessage(msg as unknown as MessageLike, (m) => estimateCard(deps.rates, { provider: "openrouter", model: m })).actualMicros;
+  return {
+    msg,
+    billed: { actualMicros, serverToolFeesMicros: 0, servedModel: msg.model, usage: reply.usage, providerRequestId: msg.id },
+  };
+}
+
+/** The fallback beta is new; if the API rejects it for a model, run the call once without it. */
+function isFallbackRejection(err: unknown): boolean {
+  const e = err as { status?: number; message?: string };
+  return e?.status === 400 && /fallback/i.test(e.message ?? "");
+}
+
+async function stream(client: Anthropic, cfg: FeatureConfig, input: ClaudeCall, maxTokens: number) {
   const params = {
     model: cfg.model,
     max_tokens: maxTokens,
@@ -178,12 +244,17 @@ async function stream(client: Anthropic, cfg: ReturnType<typeof featureConfig>, 
   };
   if (cfg.fallbacks) {
     // beta.ts in the plan: the only place that touches client.beta.messages.
-    const s = client.beta.messages.stream({
-      ...(params as unknown as Anthropic.Beta.MessageCreateParamsStreaming),
-      betas: [FALLBACK_BETA],
-      fallbacks: "default",
-    } as Anthropic.Beta.MessageCreateParamsStreaming);
-    return (await withWatchdog(s)) as unknown as Anthropic.Message;
+    try {
+      const s = client.beta.messages.stream({
+        ...(params as unknown as Anthropic.Beta.MessageCreateParamsStreaming),
+        betas: [FALLBACK_BETA],
+        fallbacks: "default",
+      } as Anthropic.Beta.MessageCreateParamsStreaming);
+      return (await withWatchdog(s)) as unknown as Anthropic.Message;
+    } catch (err) {
+      if (!isFallbackRejection(err)) throw err;
+      console.warn(`[ai] ${cfg.model} rejected ${FALLBACK_BETA}; calling without fallbacks`);
+    }
   }
   return withWatchdog(client.messages.stream(params as Anthropic.MessageStreamParams));
 }

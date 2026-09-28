@@ -1,6 +1,6 @@
 import { AD_PLATFORMS } from "@mkt/contracts";
 import { feature } from "../ai/features.ts";
-import { priceClaudeUsage, SEED_RATES, type RateCard } from "../cost/pricing.ts";
+import { OPENROUTER_FALLBACK_CARD, priceClaudeUsage, SEED_RATES, type RateCard } from "../cost/pricing.ts";
 
 // §7.1 step 1 for the "Make the ads kit · ~$0.xx" button: one ads.concepts call (Opus) plus one
 // ads.copy call (Sonnet) per platform, each carrying the campaign bundle.
@@ -16,10 +16,11 @@ const COPY_TASK_CHARS = 5_000;
 /** Share of max_tokens a structured answer usually uses (thinking included). */
 const EXPECTED_OUTPUT_SHARE = 0.3;
 
-const cardFor = (model: string): RateCard => {
-  const r = SEED_RATES.find((x) => x.model === model);
-  if (!r) throw new Error(`no seed rate for ${model}`);
-  return r.rates;
+const cardFor = (cfg: { provider: string; model: string }): RateCard => {
+  const r = SEED_RATES.find((x) => x.model === cfg.model);
+  if (r) return r.rates;
+  if (cfg.provider === "openrouter") return OPENROUTER_FALLBACK_CARD;
+  throw new Error(`no seed rate for ${cfg.model}`);
 };
 
 function callMicros(feat: "ads.concepts" | "ads.copy", inputChars: number, outputShare: number, cachedChars = 0): number {
@@ -28,7 +29,7 @@ function callMicros(feat: "ads.concepts" | "ads.copy", inputChars: number, outpu
   const cached = Math.ceil(cachedChars / 3.5);
   return priceClaudeUsage(
     { input_tokens: input, output_tokens: Math.ceil(cfg.maxTokens * outputShare), cache_read_input_tokens: cached },
-    cardFor(cfg.model),
+    cardFor(cfg),
   ).totalMicros;
 }
 

@@ -184,6 +184,28 @@ export const providerCalls = pgTable(
   (t) => [index("provider_calls_ws_created").on(t.workspaceId, t.createdAt)],
 );
 
+/**
+ * Model-eval samples, written only while AI_CAPTURE_PROMPTS=1: one finished call's request and answer,
+ * replayed against other models by the worker's eval:models script. Deleted with the workspace.
+ */
+export const promptCaptures = pgTable(
+  "prompt_captures",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    feature: text("feature").notNull(),
+    provider: text("provider").notNull(),
+    model: text("model").notNull(),
+    request: jsonb("request").$type<Record<string, unknown>>().notNull(),
+    output: text("output").notNull(),
+    actualMicros: micros("actual_micros"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("prompt_captures_feature_created").on(t.feature, t.createdAt)],
+);
+
 /** Append-only. reserve (+est) · release (−est) · settle (+actual) · adjust · external (subscriptions). */
 export const spendLedger = pgTable(
   "spend_ledger",

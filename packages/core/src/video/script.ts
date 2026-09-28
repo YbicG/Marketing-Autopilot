@@ -1,6 +1,6 @@
 import { HOOK_COUNT, HOOK_STYLES, HookVariant, VideoScriptModel, videoScriptFromModel, type HookStyle, type VideoScript } from "@mkt/contracts";
 import { z } from "zod";
-import { callClaudeJson } from "../ai/call.ts";
+import { callClaudeJson, estimateCard } from "../ai/call.ts";
 import { feature } from "../ai/features.ts";
 import { estimateClaudeMicros } from "../cost/pricing.ts";
 import type { RateLookup } from "../ai/usage.ts";
@@ -146,5 +146,5 @@ ${RULES}`,
 export function estimateHooksMoreMicros(rates: RateLookup, contextChars = 8_000): number {
   const cfg = feature("video.hooks_more");
   // Short answer: a third of max_tokens is the realistic output, not the ceiling.
-  return estimateClaudeMicros(contextChars, Math.round(cfg.maxTokens / 3), rates(cfg.model));
+  return estimateClaudeMicros(contextChars, Math.round(cfg.maxTokens / 3), estimateCard(rates, cfg));
 }

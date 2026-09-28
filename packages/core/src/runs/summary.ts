@@ -152,6 +152,11 @@ export function describeFailure(err: unknown): { code: string; message: string; 
   if (err instanceof StructuredOutputInvalid) {
     return { code: err.code, message: "Claude's answer came back in the wrong shape twice. Try again.", retryable: true };
   }
+  const code = (err as { code?: unknown } | null)?.code;
+  if (code === "research_search_missing") return { code, message: (err as Error).message, retryable: false };
+  if (code === "openrouter_error") {
+    return { code, message: "The OpenRouter model for this step failed. Try again, or move the step back to Claude.", retryable: true };
+  }
   return { code: "failed", message: "Something went wrong reading this product. Try again in a minute.", retryable: true };
 }
 

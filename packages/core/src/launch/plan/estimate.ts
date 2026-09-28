@@ -1,3 +1,4 @@
+import { estimateCard } from "../../ai/call.ts";
 import { feature } from "../../ai/features.ts";
 import type { RateLookup } from "../../ai/usage.ts";
 import { estimateClaudeMicros } from "../../cost/pricing.ts";
@@ -12,5 +13,5 @@ const JUDGE_PROMPT_CHARS = 600;
  */
 export function estimateLandingAuditMicros(rates: RateLookup): number {
   const cfg = feature("launch.landing_judge");
-  return estimateClaudeMicros(Math.ceil(PHONE_SHOT_TOKENS * 3.5) + JUDGE_PROMPT_CHARS, cfg.maxTokens, rates(cfg.model));
+  return estimateClaudeMicros(Math.ceil(PHONE_SHOT_TOKENS * 3.5) + JUDGE_PROMPT_CHARS, cfg.maxTokens, estimateCard(rates, cfg));
 }

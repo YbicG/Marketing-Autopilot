@@ -5,7 +5,7 @@
 import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import type { CampaignPlan, HookVariant, SpecIssue, VideoSpec } from "@mkt/contracts";
 import { schema, uuidv7, type Db } from "@mkt/db";
-import type { ClaudeDeps } from "../ai/call.ts";
+import { estimateCard, type ClaudeDeps } from "../ai/call.ts";
 import { feature } from "../ai/features.ts";
 import type { RateLookup } from "../ai/usage.ts";
 import { estimateClaudeMicros } from "../cost/pricing.ts";
@@ -386,7 +386,7 @@ export async function ensureVideoPosts(db: Db, workspaceId: string, contentItemI
 export function estimateChangeRequestMicros(rates: RateLookup, specChars = 8_000): number {
   const cfg = feature("video.change_request");
   // In: the spec + footage list + request. Out: the whole spec again (about as long as it went in).
-  return estimateClaudeMicros(specChars + 4_000, Math.max(1_000, Math.round(specChars / 3)), rates(cfg.model));
+  return estimateClaudeMicros(specChars + 4_000, Math.max(1_000, Math.round(specChars / 3)), estimateCard(rates, cfg));
 }
 
 /** Draft re-voice of the given lines (what saving an edit with changed spoken lines costs). */
