@@ -19,7 +19,7 @@ export const SCENE_LABEL: Record<SceneType, string> = {
 
 const IMAGE_TYPES = new Set<SceneType>(["ScreenshotKenBurns", "FullPageScroll", "DeviceMockup", "FeatureCallout", "SplitCompare"]);
 
-export const field = "w-full rounded-md border border-edge bg-zinc-950 px-2.5 py-1.5 text-sm text-zinc-100 focus:border-zinc-400 focus:outline-none disabled:opacity-60";
+export const field = "w-full rounded-md border border-edge bg-zinc-950 px-2.5 py-1.5 text-sm text-zinc-100 focus:border-zinc-400 disabled:opacity-60";
 
 /** Picking a picture can change what kind of scene it is (a recording plays; a screenshot zooms). */
 export function withPicture(scene: Scene, asset: FootageItem | null): Scene {
@@ -82,12 +82,12 @@ function FocusBoxInputs({ scene, onChange, disabled }: { scene: Scene; onChange:
               <input type="number" min={0} max={100} step={1} value={Math.round(box[k] * 100)} onChange={(e) => set(k, Number(e.target.value))} className={field} />
             </label>
           ))}
-          <button type="button" onClick={clear} className="pb-2 text-zinc-400 underline underline-offset-2">
+          <button type="button" onClick={clear} className="inline-flex min-h-11 items-center md:min-h-0 pb-2 text-zinc-400 underline underline-offset-2">
             Show the whole picture
           </button>
         </div>
       ) : (
-        <button type="button" onClick={() => set("x", 25)} className="self-start text-zinc-300 underline underline-offset-2">
+        <button type="button" onClick={() => set("x", 25)} className="inline-flex min-h-11 items-center md:min-h-0 self-start text-zinc-300 underline underline-offset-2">
           Zoom in on part of it
         </button>
       )}
@@ -134,17 +134,17 @@ export function SceneEditor({
   return (
     <li className="flex flex-col gap-3 rounded-md border border-zinc-800 p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h4 className="text-sm font-medium">
+        <h3 className="text-sm font-medium">
           Scene {index + 1} <span className="font-normal text-zinc-500">· {SCENE_LABEL[scene.type]}</span>
-        </h4>
-        <span className="flex gap-2 text-xs text-zinc-400">
-          <button type="button" disabled={disabled || index === 0} onClick={() => onMove(-1)} className="hover:text-zinc-200 disabled:opacity-40" aria-label="Move scene up">
+        </h3>
+        <span className="flex gap-3 text-xs text-zinc-400">
+          <button type="button" disabled={disabled || index === 0} onClick={() => onMove(-1)} className="inline-flex min-h-11 items-center md:min-h-0 hover:text-zinc-200 disabled:opacity-40" aria-label={`Move scene ${index + 1} up`}>
             ↑ Up
           </button>
-          <button type="button" disabled={disabled || index === count - 1} onClick={() => onMove(1)} className="hover:text-zinc-200 disabled:opacity-40" aria-label="Move scene down">
+          <button type="button" disabled={disabled || index === count - 1} onClick={() => onMove(1)} className="inline-flex min-h-11 items-center md:min-h-0 hover:text-zinc-200 disabled:opacity-40" aria-label={`Move scene ${index + 1} down`}>
             ↓ Down
           </button>
-          <button type="button" disabled={disabled || count <= 1} onClick={onRemove} className="hover:text-red-300 disabled:opacity-40">
+          <button type="button" disabled={disabled || count <= 1} onClick={onRemove} className="inline-flex min-h-11 items-center md:min-h-0 hover:text-red-300 disabled:opacity-40" aria-label={`Remove scene ${index + 1}`}>
             Remove
           </button>
         </span>

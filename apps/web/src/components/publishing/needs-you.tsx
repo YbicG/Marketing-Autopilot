@@ -17,6 +17,7 @@ export function NeedsYouList({ items, empty }: { items: NeedsYouJson[]; empty?: 
   const [error, setError] = useState<string | null>(null);
 
   async function postNow(postId: string) {
+    if (busy) return;
     setBusy(postId);
     setError(null);
     const out = await postJson(`/api/posts/${postId}/post-now`, {});
@@ -26,7 +27,7 @@ export function NeedsYouList({ items, empty }: { items: NeedsYouJson[]; empty?: 
   }
 
   if (!items.length) return empty ? <p className="text-sm text-zinc-500">{empty}</p> : null;
-  const btn = "inline-flex min-h-11 items-center rounded-lg border border-zinc-700 px-3 py-1.5 text-sm md:min-h-8 text-zinc-200 hover:border-zinc-500 disabled:opacity-50";
+  const btn = "inline-flex min-h-11 items-center rounded-lg border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-50 md:min-h-9";
   return (
     <>
       <ul className="flex flex-col divide-y divide-zinc-800 rounded-xl border border-zinc-800 bg-surface">
@@ -36,7 +37,7 @@ export function NeedsYouList({ items, empty }: { items: NeedsYouJson[]; empty?: 
             <div className="flex gap-2">
               {it.kind === "missed" && it.postId && (
                 <>
-                  <button type="button" className={btn} disabled={busy === it.postId} onClick={() => void postNow(it.postId!)}>
+                  <button type="button" className={btn} disabled={busy !== null} onClick={() => void postNow(it.postId!)}>
                     {busy === it.postId ? "Starting…" : "Post now"}
                   </button>
                   <button type="button" className={btn} onClick={() => setOpen(it.postId!)}>
@@ -58,7 +59,11 @@ export function NeedsYouList({ items, empty }: { items: NeedsYouJson[]; empty?: 
           </li>
         ))}
       </ul>
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && (
+        <p className="text-xs text-red-400" role="alert">
+          {error}
+        </p>
+      )}
       {open && <PostDrawer postId={open} onClose={() => setOpen(null)} />}
     </>
   );

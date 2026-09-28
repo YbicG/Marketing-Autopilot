@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { postJson } from "@/lib/post-json";
 
-const BTN = "rounded-md border border-zinc-700 px-2.5 py-1 text-xs text-zinc-200 hover:border-zinc-500 disabled:opacity-50";
+const BTN = "min-h-11 rounded-md border border-zinc-700 px-2.5 py-1 text-xs text-zinc-200 hover:border-zinc-500 disabled:opacity-50 md:min-h-7";
 
 /**
  * Row controls for the checklist. "You" and "Assisted" rows get Mark done / Skip (and Undo);
@@ -29,6 +29,7 @@ export function TaskActions({
   const [error, setError] = useState<string | null>(null);
 
   async function send(url: string, body: unknown) {
+    if (busy) return;
     setBusy(true);
     setError(null);
     const out = await postJson(url, body);
@@ -74,7 +75,11 @@ export function TaskActions({
           </button>
         )}
       </div>
-      {error && <p className="max-w-xs text-right text-xs text-red-400">{error}</p>}
+      {error && (
+        <p role="alert" className="max-w-xs text-right text-xs text-red-400">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -85,6 +90,7 @@ export function PlanRefresh({ slug }: { slug: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   async function refresh() {
+    if (busy) return;
     setBusy(true);
     setError(null);
     const out = await postJson(`/api/launch/plan/${encodeURIComponent(slug)}`, { action: "refresh" });
@@ -94,10 +100,14 @@ export function PlanRefresh({ slug }: { slug: string }) {
   }
   return (
     <div className="flex flex-col items-end gap-1">
-      <button type="button" onClick={() => void refresh()} disabled={busy} className="rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-60">
+      <button type="button" onClick={() => void refresh()} disabled={busy} className="min-h-11 md:min-h-9 rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-60">
         {busy ? "Checking…" : "Check again"}
       </button>
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && (
+        <p role="alert" className="text-xs text-red-400">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

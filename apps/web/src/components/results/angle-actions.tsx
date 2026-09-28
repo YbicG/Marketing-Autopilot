@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { postJson } from "@/lib/post-json";
 
-const btn = "rounded-md border border-zinc-600 px-2.5 py-1 text-xs text-zinc-200 hover:border-zinc-400 disabled:opacity-50";
+const btn = "inline-flex min-h-11 items-center rounded-md border border-zinc-600 px-2.5 py-1 text-xs text-zinc-200 hover:border-zinc-400 disabled:opacity-50 md:min-h-0";
 
 /** Per-angle actions on the Results page: make more, stop or start, and the (later) ad button. */
 export function AngleActions({
@@ -29,6 +29,7 @@ export function AngleActions({
   const base = `/api/results/${encodeURIComponent(slug)}`;
 
   async function more() {
+    if (busy) return;
     setBusy("more");
     setMsg(null);
     const out = await postJson<{ count: number }>(`${base}/more`, { angleId });
@@ -39,6 +40,7 @@ export function AngleActions({
   }
 
   async function toggle() {
+    if (busy) return;
     setBusy("stop");
     setMsg(null);
     const out = await postJson(`${base}/stop`, { angleId, ...(status === "stopped" ? { status: "active" } : {}) });
@@ -75,6 +77,9 @@ export function AngleActions({
       </div>
       {!canTurnIntoAd && adReason && <p className="text-xs text-zinc-500">Turn into an ad: {adReason}</p>}
       {msg && <p className={`text-xs ${msg.tone === "ok" ? "text-emerald-400" : "text-amber-300"}`}>{msg.text}</p>}
+      <p className="sr-only" aria-live="polite">
+        {msg?.text}
+      </p>
     </div>
   );
 }

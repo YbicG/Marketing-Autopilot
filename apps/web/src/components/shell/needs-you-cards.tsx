@@ -69,10 +69,16 @@ export function NeedsYouGrid({ cards }: { cards: NeedsYouCard[] }) {
             )}
           </div>
           <div className="flex-1">
-            <p className="font-medium">{c.title}</p>
+            <p id={`${c.key}-title`} className="font-medium">
+              {c.title}
+            </p>
             <p className="mt-1 text-sm text-muted">{c.detail}</p>
           </div>
-          <Link href={c.href} className="self-start rounded-lg bg-warn px-3 py-1.5 text-sm font-medium text-zinc-950 hover:bg-warn/90">
+          <Link
+            href={c.href}
+            aria-describedby={`${c.key}-title`}
+            className="inline-flex min-h-11 items-center self-start rounded-lg bg-warn px-3 py-1.5 text-sm font-medium text-zinc-950 hover:bg-warn/90 md:min-h-9"
+          >
             {c.action}
           </Link>
         </li>

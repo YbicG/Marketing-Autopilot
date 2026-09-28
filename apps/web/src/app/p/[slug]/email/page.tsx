@@ -35,7 +35,7 @@ export default async function EmailPage({ params }: { params: Promise<{ slug: st
 
   return (
     <>
-      <main className="flex max-w-5xl flex-col gap-8 px-4 md:px-10 py-8">
+      <main className="flex max-w-5xl flex-col gap-8 px-4 py-8 md:px-10">
         <div>
           <h1 className="font-serif text-4xl tracking-tight">Email</h1>
           <p className="mt-1 text-sm text-zinc-400">
@@ -53,11 +53,13 @@ export default async function EmailPage({ params }: { params: Promise<{ slug: st
           </p>
         )}
 
-        <section className="flex flex-col gap-3" aria-label="Emails">
+        <section className="flex flex-col gap-3" aria-labelledby="emails">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold">Emails</h2>
+            <h2 id="emails" className="text-lg font-semibold">
+              Emails
+            </h2>
             {open ? (
-              <Link href={`/p/${encodeURIComponent(slug)}/email/${open.id}`} className="text-sm text-zinc-300 underline underline-offset-2">
+              <Link href={`/p/${encodeURIComponent(slug)}/email/${open.id}`} className="inline-flex min-h-11 items-center text-sm text-zinc-300 underline underline-offset-2 md:min-h-9">
                 Open the email in progress
               </Link>
             ) : (
@@ -76,7 +78,7 @@ export default async function EmailPage({ params }: { params: Promise<{ slug: st
                     <Link href={`/p/${encodeURIComponent(slug)}/email/${b.id}`} className="flex flex-col gap-1 px-4 py-3 hover:bg-zinc-900/60">
                       <div className="flex flex-wrap items-center gap-2">
                         <StatusPill status={b.status} />
-                        <span className="font-medium">{b.subject || b.name}</span>
+                        <span className="min-w-0 break-words font-medium">{b.subject || b.name}</span>
                       </div>
                       <p className="text-xs text-zinc-400">
                         {when ? `${b.status === "sent" ? "Sent" : "Sends"} ${when} (${tzName(tz)} time)` : "No send time yet"}

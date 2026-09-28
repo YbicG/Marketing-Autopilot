@@ -118,22 +118,26 @@ export function FolderDrop({ onReady }: Props) {
             e.dataTransfer.dropEffect = "copy";
             setDragging(true);
           }}
-          onDragLeave={() => setDragging(false)}
+          onDragLeave={(e) => {
+            // Moving over a child fires dragleave too; only reset when the pointer leaves the box.
+            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false);
+          }}
           onDrop={onDrop}
           className={`flex flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed px-4 py-10 text-center transition-colors ${
             dragging ? "border-zinc-400 bg-zinc-900" : "border-zinc-800 bg-zinc-950"
           }`}
         >
-          <p className="text-sm font-medium text-zinc-100">
+          <p className="text-sm font-medium text-zinc-100" aria-live="polite">
             {busy ? "Reading folder…" : "Drop your project folder"}
           </p>
           <p className="text-xs text-zinc-500">We only read the README, docs, package.json and screenshots.</p>
-          <label className="mt-2 cursor-pointer rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-300 hover:border-zinc-600">
+          <label className="mt-2 flex min-h-11 cursor-pointer items-center rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-300 outline-accent outline-offset-2 hover:border-zinc-600 has-[:focus-visible]:outline-2 md:min-h-8">
             Choose folder
+            {/* sr-only, not hidden: a display:none input can't take keyboard focus. */}
             <input
               type="file"
               multiple
-              className="hidden"
+              className="sr-only"
               disabled={busy}
               onChange={onChoose}
               ref={(el) => {
@@ -150,7 +154,7 @@ export function FolderDrop({ onReady }: Props) {
       {manifest && (
         <div className="flex flex-col gap-3 rounded-md border border-zinc-800 bg-zinc-900 p-4">
           <div className="flex items-baseline justify-between gap-2">
-            <p className="text-sm font-medium text-zinc-100">
+            <p className="min-w-0 break-all text-sm font-medium text-zinc-100">
               {manifest.included.length} {manifest.included.length === 1 ? "file" : "files"} from{" "}
               <span className="font-mono">{manifest.rootName}</span>
             </p>
@@ -182,7 +186,7 @@ export function FolderDrop({ onReady }: Props) {
 
           {manifest.skipped.length > 0 && (
             <details className="text-xs">
-              <summary className="cursor-pointer text-zinc-400 hover:text-zinc-200">
+              <summary className="flex min-h-11 cursor-pointer items-center text-zinc-400 hover:text-zinc-200 md:min-h-0">
                 Skipped {manifest.skipped.length} {manifest.skipped.length === 1 ? "file" : "files"}
               </summary>
               <ul className="mt-2 max-h-48 overflow-auto">
@@ -191,11 +195,11 @@ export function FolderDrop({ onReady }: Props) {
                     <span className="min-w-0 flex-1 truncate font-mono text-zinc-500" title={s.path}>
                       {s.path}
                     </span>
-                    <span className="shrink-0 text-zinc-600">{REASON_LABEL[s.reason]}</span>
+                    <span className="shrink-0 text-zinc-500">{REASON_LABEL[s.reason]}</span>
                   </li>
                 ))}
                 {manifest.skipped.length > SKIPPED_RENDER_CAP && (
-                  <li className="py-0.5 text-zinc-600">
+                  <li className="py-0.5 text-zinc-500">
                     and {manifest.skipped.length - SKIPPED_RENDER_CAP} more
                   </li>
                 )}
@@ -208,14 +212,14 @@ export function FolderDrop({ onReady }: Props) {
               type="button"
               onClick={confirmFiles}
               disabled={confirmed || manifest.included.length === 0}
-              className="rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60"
+              className="min-h-11 rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60 md:min-h-9"
             >
               {confirmed ? "Files selected" : "Use these files"}
             </button>
             <button
               type="button"
               onClick={clear}
-              className="rounded-md border border-zinc-800 px-4 py-2 text-sm text-zinc-300 hover:border-zinc-600"
+              className="min-h-11 rounded-md border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:border-zinc-600 md:min-h-9"
             >
               Clear
             </button>
@@ -224,7 +228,11 @@ export function FolderDrop({ onReady }: Props) {
         </div>
       )}
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-red-400">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

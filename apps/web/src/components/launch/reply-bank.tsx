@@ -24,9 +24,9 @@ export function ReplyBank({ replies }: { replies: ReplyRow[] }) {
         onChange={(e) => setQ(e.target.value)}
         placeholder="Type a word from the comment, like price or Outlook"
         aria-label="Search the replies"
-        className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm"
+        className="min-h-11 w-full rounded-md border border-edge bg-zinc-900 px-3 py-2 text-sm text-ink outline-none focus:border-zinc-400 md:min-h-9"
       />
-      <p className="text-xs text-zinc-500">
+      <p className="text-xs text-zinc-500" aria-live="polite">
         {q ? `${shown.length} of ${replies.length} replies` : `${replies.length} replies`}. Copy one, then paste it where the question was asked.
       </p>
       {shown.length === 0 && <p className="text-sm text-zinc-400">No reply matches. Try another word, or add one below.</p>}
@@ -37,7 +37,7 @@ export function ReplyBank({ replies }: { replies: ReplyRow[] }) {
               <p className="text-sm font-medium text-zinc-200">{r.trigger}</p>
               <p className="mt-1 whitespace-pre-wrap break-words text-sm text-zinc-400">{r.reply}</p>
             </div>
-            <CopyButton text={r.reply} label="Copy" className="shrink-0 rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500" />
+            <CopyButton text={r.reply} label="Copy" className="min-h-11 shrink-0 self-start rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500 md:min-h-9" />
           </li>
         ))}
       </ul>

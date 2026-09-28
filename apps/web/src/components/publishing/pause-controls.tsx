@@ -29,7 +29,7 @@ export function PauseControls({ slug, pausedCount }: { slug: string; pausedCount
     router.refresh();
   }
 
-  const btn = "rounded-md border px-3 py-1.5 text-sm disabled:opacity-60";
+  const btn = "inline-flex min-h-11 items-center rounded-md border px-3 py-1.5 text-sm disabled:opacity-60 md:min-h-9";
   return (
     <div className="flex flex-col gap-1">
       <div className="flex flex-wrap items-center gap-2">
@@ -55,8 +55,10 @@ export function PauseControls({ slug, pausedCount }: { slug: string; pausedCount
           </>
         )}
       </div>
-      {note && <p className="text-xs text-zinc-400">{note}</p>}
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      <div aria-live="polite">
+        {note && <p className="text-xs text-zinc-400">{note}</p>}
+        {error && <p className="text-xs text-red-400">{error}</p>}
+      </div>
     </div>
   );
 }

@@ -22,6 +22,8 @@ export function DropZone() {
   const links = chips.filter((c) => c.kind !== "unknown").map((c) => c.raw);
   const tooMany = links.length > MAX_LINKS;
   const hasInput = links.length > 0 || !!folder || notes.trim().length > 0;
+  const hasUnknown = chips.some((c) => c.kind === "unknown");
+  const hintIds = [hasUnknown && "links-unknown", tooMany && "links-too-many"].filter(Boolean).join(" ");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -74,6 +76,8 @@ export function DropZone() {
           value={linksText}
           onChange={(e) => setLinksText(e.target.value)}
           placeholder="syllacal.com  github.com/you/your-app"
+          aria-invalid={tooMany || undefined}
+          aria-describedby={hintIds || undefined}
           className={`${field} resize-y`}
         />
         {(chips.length > 0 || folder || notes.trim()) && (
@@ -81,7 +85,7 @@ export function DropZone() {
             {chips.map((c) => (
               <li
                 key={c.raw}
-                className={`rounded-full border px-2.5 py-1 ${
+                className={`max-w-full break-all rounded-full border px-2.5 py-1 ${
                   c.kind === "unknown" ? "border-amber-800 text-amber-300" : "border-zinc-700 text-zinc-300"
                 }`}
               >
@@ -89,23 +93,25 @@ export function DropZone() {
               </li>
             ))}
             {folder && (
-              <li className="rounded-full border border-zinc-700 px-2.5 py-1 text-zinc-300">
+              <li className="max-w-full break-all rounded-full border border-zinc-700 px-2.5 py-1 text-zinc-300">
                 <span className="font-medium">Project folder</span> <span className="text-zinc-500">{folder.rootName}</span>
               </li>
             )}
             {notes.trim() && <li className="rounded-full border border-zinc-700 px-2.5 py-1 font-medium text-zinc-300">Notes</li>}
           </ul>
         )}
-        {chips.some((c) => c.kind === "unknown") && (
-          <p className="text-xs text-amber-300">Words that aren't links are left out. Put them in the notes instead.</p>
+        {hasUnknown && (
+          <p id="links-unknown" className="text-xs text-amber-300">Words that aren't links are left out. Put them in the notes instead.</p>
         )}
-        {tooMany && <p className="text-xs text-red-400">Up to {MAX_LINKS} links, please.</p>}
+        {tooMany && (
+          <p id="links-too-many" className="text-xs text-red-400">
+            Up to {MAX_LINKS} links, please.
+          </p>
+        )}
       </div>
 
       <div className="flex flex-col gap-2">
-        <p className="text-sm text-zinc-400">
-          Got the code? Drop the project folder. We only read the README, docs, package.json and screenshots.
-        </p>
+        <p className="text-sm text-zinc-400">Got the code? Drop the project folder.</p>
         <FolderDrop onReady={setFolder} />
       </div>
 
@@ -128,10 +134,13 @@ export function DropZone() {
         <button
           type="submit"
           disabled={!!busy || !hasInput || tooMany}
-          className="shrink-0 rounded-lg bg-accent-strong px-4 py-2.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60"
+          className="min-h-11 shrink-0 rounded-lg bg-accent-strong px-4 py-2.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60 md:min-h-10"
         >
           {busy ?? "Read my product"}
         </button>
+        <span role="status" className="sr-only">
+          {busy}
+        </span>
         <p className="text-xs text-zinc-500">~$0.80 · ~4 min · you can close this tab</p>
       </div>
       {error && (

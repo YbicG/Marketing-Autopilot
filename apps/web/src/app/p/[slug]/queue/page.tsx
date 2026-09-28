@@ -99,7 +99,7 @@ export default async function QueuePage({
       : new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "long", year: "numeric" }).format(new Date(`${monthPrefix}-01T12:00:00Z`));
   const status = qv.statusLine.charAt(0).toLowerCase() + qv.statusLine.slice(1);
   const href = (v: string, st: string) => `/p/${product.slug}/queue?view=${v}&start=${st}`;
-  const tab = (active: boolean) => `rounded-md px-3 py-1 text-sm ${active ? "bg-zinc-800 text-zinc-100" : "text-zinc-400 hover:text-zinc-200"}`;
+  const tab = (active: boolean) => `inline-flex min-h-11 items-center rounded-md px-3 py-1 text-sm md:min-h-9 ${active ? "bg-zinc-800 text-zinc-100" : "text-zinc-400 hover:text-zinc-200"}`;
 
   return (
     <>
@@ -124,25 +124,25 @@ export default async function QueuePage({
         <section className="flex flex-col gap-3" aria-label="Calendar">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <Link href={href(view, prev)} className="rounded-md border border-zinc-700 px-2 py-1 text-sm hover:border-zinc-500" aria-label="Earlier">
+              <Link href={href(view, prev)} className="inline-flex min-h-11 items-center rounded-md border border-zinc-700 px-3 py-1 text-sm hover:border-zinc-500 md:min-h-9" aria-label={view === "week" ? "Earlier week" : "Earlier month"}>
                 ←
               </Link>
-              <Link href={href(view, today)} className="rounded-md border border-zinc-700 px-2 py-1 text-sm hover:border-zinc-500">
+              <Link href={href(view, today)} className="inline-flex min-h-11 items-center rounded-md border border-zinc-700 px-3 py-1 text-sm hover:border-zinc-500 md:min-h-9">
                 Today
               </Link>
-              <Link href={href(view, next)} className="rounded-md border border-zinc-700 px-2 py-1 text-sm hover:border-zinc-500" aria-label="Later">
+              <Link href={href(view, next)} className="inline-flex min-h-11 items-center rounded-md border border-zinc-700 px-3 py-1 text-sm hover:border-zinc-500 md:min-h-9" aria-label={view === "week" ? "Later week" : "Later month"}>
                 →
               </Link>
-              <span className="text-sm text-zinc-300">{rangeLabel}</span>
+              <h2 className="text-sm font-normal text-zinc-300">{rangeLabel}</h2>
             </div>
-            <div className="flex gap-1">
-              <Link href={href("week", start)} className={tab(view === "week")}>
+            <nav className="flex gap-1" aria-label="Calendar view">
+              <Link href={href("week", start)} className={tab(view === "week")} aria-current={view === "week" ? "page" : undefined}>
                 Week
               </Link>
-              <Link href={href("month", start)} className={tab(view === "month")}>
+              <Link href={href("month", start)} className={tab(view === "month")} aria-current={view === "month" ? "page" : undefined}>
                 Month
               </Link>
-            </div>
+            </nav>
           </div>
           <QueueBoard days={days} view={view} />
         </section>

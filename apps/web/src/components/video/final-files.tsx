@@ -58,6 +58,9 @@ const RENDER_STATUS: Record<string, string> = {
   failed: "Failed",
 };
 
+/** The rendered shape, so each player keeps its space before the video loads. */
+const ASPECT: Record<string, string> = { "9x16": "aspect-[9/16]", "1x1": "aspect-square", "16x9": "aspect-video" };
+
 const tierOf = (t: string): "A" | "B" | "C" => (t === "B" || t === "C" ? t : "A");
 
 /** Loudness in plain words: platforms play at about −14 LUFS. */
@@ -71,6 +74,7 @@ export function FinalFiles({
   itemId,
   slug,
   status,
+  format,
   tier,
   judgeIssues,
   openingLines,
@@ -81,6 +85,8 @@ export function FinalFiles({
   itemId: string;
   slug: string;
   status: string;
+  /** VideoSpec format ("9x16", "1x1", "16x9"). */
+  format?: string;
   tier: string;
   judgeIssues: Issue[];
   openingLines: string[];
@@ -95,7 +101,10 @@ export function FinalFiles({
   const pending = posts.filter((p) => p.state === "pending_approval");
   const blocked = files.some((f) => f.issues.some((i) => i.severity === "block")) || renders.some((r) => r.issues.some((i) => i.severity === "block"));
 
+  const aspect = ASPECT[format ?? ""] ?? "aspect-[9/16]";
+
   async function approve() {
+    if (busy) return;
     setBusy(true);
     setMsg(null);
     const made = await postJson<{ postIds: string[]; unscheduled: string[] }>(`/api/videos/${itemId}/posts`, {});
@@ -126,7 +135,7 @@ export function FinalFiles({
     <section className="flex flex-col gap-4 rounded-md border border-zinc-800 p-4" aria-label="Final versions">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h3 className="font-semibold">Final versions</h3>
+          <h2 className="font-semibold">Final versions</h2>
           <AiLabelChip tier={tierOf(tier)} />
         </div>
         {ready && (
@@ -136,17 +145,20 @@ export function FinalFiles({
               onClick={() => void approve()}
               disabled={busy || blocked}
               title={blocked ? "Fix the problems marked “Must fix” first" : undefined}
-              className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50"
+              className="inline-flex min-h-11 items-center rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50 md:min-h-9"
             >
               {busy ? "Approving…" : pending.length || !posts.length ? "Approve to post" : "Approve any new files"}
             </button>
-            <a href={`/p/${encodeURIComponent(slug)}/queue`} className="text-sm text-zinc-400 underline underline-offset-2">
+            <a href={`/p/${encodeURIComponent(slug)}/queue`} className="inline-flex min-h-11 items-center text-sm text-zinc-400 underline underline-offset-2 md:min-h-0">
               See it in the Queue
             </a>
           </span>
         )}
       </div>
       {msg && <p className={`text-sm ${msg.tone === "ok" ? "text-emerald-400" : "text-amber-300"}`}>{msg.text}</p>}
+      <p className="sr-only" aria-live="polite">
+        {msg?.text}
+      </p>
       {judgeIssues.length > 0 && <IssueList issues={judgeIssues} />}
 
       <ol className="grid gap-4 md:grid-cols-3">
@@ -156,14 +168,14 @@ export function FinalFiles({
           return (
             <li key={r.id} className="flex flex-col gap-2 rounded-md border border-zinc-800 p-3">
               <div className="flex items-baseline justify-between gap-2">
-                <h4 className="text-sm font-medium">Version {r.hookIdx + 1}</h4>
+                <h3 className="text-sm font-medium">Version {r.hookIdx + 1}</h3>
                 <span className="text-xs text-zinc-500">{rank ? `Ranked #${rank}` : (RENDER_STATUS[r.status] ?? r.status)}</span>
               </div>
               <p className="text-xs text-zinc-400">“{openingLines[r.hookIdx] ?? ""}”</p>
               {r.outputAssetId ? (
-                <video src={`/api/media/${r.outputAssetId}`} controls preload="metadata" className="w-full rounded bg-black" {...(r.thumbAssetId ? { poster: `/api/media/${r.thumbAssetId}` } : {})} />
+                <video src={`/api/media/${r.outputAssetId}`} controls preload="metadata" className={`${aspect} w-full rounded bg-zinc-950 object-contain`} {...(r.thumbAssetId ? { poster: `/api/media/${r.thumbAssetId}` } : {})} />
               ) : (
-                <div className="flex aspect-[9/16] items-center justify-center rounded bg-zinc-900 text-xs text-zinc-500">{RENDER_STATUS[r.status] ?? r.status}…</div>
+                <div className={`flex ${aspect} items-center justify-center rounded bg-zinc-900 text-xs text-zinc-500`}>{RENDER_STATUS[r.status] ?? r.status}…</div>
               )}
               {r.error && <p className="text-xs text-red-400">{r.error}</p>}
               {r.loudness && <p className="text-xs text-zinc-500">{loudnessNote(r.loudness)}</p>}
@@ -171,7 +183,7 @@ export function FinalFiles({
               {r.status === "succeeded" && <IssueList issues={r.issues} />}
               {r.contactSheetAssetId && (
                 <details className="text-xs text-zinc-400">
-                  <summary className="cursor-pointer">Frames at a glance</summary>
+                  <summary className="flex min-h-11 cursor-pointer items-center md:min-h-0">Frames at a glance</summary>
                   <img src={`/api/media/${r.contactSheetAssetId}`} alt="Nine frames from this version" className="mt-2 w-full rounded" loading="lazy" />
                 </details>
               )}
@@ -184,7 +196,7 @@ export function FinalFiles({
                         <span className="flex flex-wrap items-center justify-between gap-2">
                           <span className="text-zinc-300">{PLATFORM_NAME[f.platform] ?? f.platform}</span>
                           {f.videoAssetId && (
-                            <a href={`/api/media/${f.videoAssetId}?dl=1`} download={`${f.platform}-version-${r.hookIdx + 1}.mp4`} className="text-zinc-400 underline underline-offset-2">
+                            <a href={`/api/media/${f.videoAssetId}?dl=1`} download={`${f.platform}-version-${r.hookIdx + 1}.mp4`} className="inline-flex min-h-11 items-center text-zinc-400 underline underline-offset-2 md:min-h-0">
                               Download {FILE_LABEL[f.format] ?? "file"}
                             </a>
                           )}

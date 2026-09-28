@@ -14,6 +14,7 @@ export function FieldActions({ slug, dnaVersionId, path, label, value, pinned }:
   const [error, setError] = useState<string | null>(null);
 
   async function togglePin() {
+    if (busy) return;
     setBusy(true);
     setError(null);
     const out = await postJson(`/api/products/${encodeURIComponent(slug)}/dna`, { action: "pin", dnaVersionId, path, pinned: !pinned });
@@ -25,7 +26,7 @@ export function FieldActions({ slug, dnaVersionId, path, label, value, pinned }:
   return (
     <div className="flex flex-col gap-2">
       <div className="flex gap-3 text-xs">
-        <button type="button" onClick={() => setEditing((v) => !v)} className="text-zinc-400 underline-offset-2 hover:text-zinc-200 hover:underline">
+        <button type="button" onClick={() => setEditing((v) => !v)} aria-expanded={editing} aria-label={`Wrong? Fix ${label}`} className="inline-flex min-h-11 items-center text-zinc-400 underline-offset-2 hover:text-zinc-200 hover:underline md:min-h-0">
           Wrong?
         </button>
         <button
@@ -34,7 +35,7 @@ export function FieldActions({ slug, dnaVersionId, path, label, value, pinned }:
           disabled={busy}
           aria-pressed={pinned}
           title={pinned ? "Kept as is when the profile is rewritten" : "Keep this as is when the profile is rewritten"}
-          className={`underline-offset-2 hover:underline disabled:opacity-60 ${pinned ? "text-amber-300" : "text-zinc-400 hover:text-zinc-200"}`}
+          className={`inline-flex min-h-11 items-center underline-offset-2 hover:underline disabled:opacity-60 md:min-h-0 ${pinned ? "text-emerald-300" : "text-zinc-400 hover:text-zinc-200"}`}
         >
           {pinned ? "Pinned" : "Pin"}
         </button>
@@ -42,7 +43,11 @@ export function FieldActions({ slug, dnaVersionId, path, label, value, pinned }:
       {editing && (
         <FieldEditor slug={slug} dnaVersionId={dnaVersionId} path={path} label={label} value={value} onDone={() => setEditing(false)} autoFocus />
       )}
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && (
+        <p className="text-xs text-red-400" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

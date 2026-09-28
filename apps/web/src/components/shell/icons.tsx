@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-const PATHS: Record<string, ReactNode> = {
+const PATHS = {
   home: <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />,
   bell: <path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0" />,
   wallet: <path d="M4 7h15a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM4 7l11-3v3M16 13.5h.01" />,
@@ -20,11 +20,11 @@ const PATHS: Record<string, ReactNode> = {
   back: <path d="M15 18l-6-6 6-6" />,
   plus: <path d="M12 5v14M5 12h14" />,
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
-};
+} satisfies Record<string, ReactNode>;
 
 export type IconName = keyof typeof PATHS;
 
-export function Icon({ name, className = "size-4" }: { name: string; className?: string }) {
+export function Icon({ name, className = "size-4" }: { name: IconName; className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
       {PATHS[name]}

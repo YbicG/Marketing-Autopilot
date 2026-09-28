@@ -11,8 +11,8 @@ export interface PlatformRow {
   handle: string | null;
 }
 
-const primary = "rounded-md bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-white disabled:opacity-50";
-const quiet = "rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-300 hover:border-zinc-500 disabled:opacity-50";
+const primary = "min-h-11 md:min-h-9 rounded-md bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50";
+const quiet = "min-h-11 md:min-h-9 shrink-0 self-start rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-300 hover:border-zinc-500 disabled:opacity-50 sm:self-auto";
 
 const STATUS: Record<NonNullable<PlatformRow["status"]>, { text: string; tone: string }> = {
   active: { text: "Connected", tone: "text-emerald-400" },
@@ -27,6 +27,7 @@ export function ConnectPanel({ productId, rows, disabled }: { productId: string;
   const [error, setError] = useState<string | null>(null);
 
   async function connect(platforms: string[], key: string) {
+    if (busy !== null) return;
     setBusy(key);
     setError(null);
     const out = await postJson<{ url: string }>("/api/settings/accounts/connect", { productId, platforms });
@@ -63,13 +64,18 @@ export function ConnectPanel({ productId, rows, disabled }: { productId: string;
               {r.status !== "active" && (
                 <button type="button" className={quiet} disabled={disabled || busy !== null} onClick={() => void connect([r.platform], r.platform)}>
                   {busy === r.platform ? "Opening…" : r.status ? "Reconnect" : "Connect"}
+                  <span className="sr-only"> {r.label}</span>
                 </button>
               )}
             </li>
           );
         })}
       </ul>
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-red-400">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -81,6 +87,7 @@ export function ProfileButton({ productId, ready, disabled }: { productId: strin
   const [profile, setProfile] = useState<string | null>(null);
 
   async function make() {
+    if (busy) return;
     setBusy(true);
     setError(null);
     const out = await postJson<{ profileRef: string }>("/api/settings/accounts/profile", { productId });
@@ -95,7 +102,11 @@ export function ProfileButton({ productId, ready, disabled }: { productId: strin
       <button type="button" className={quiet} disabled={disabled || busy} onClick={() => void make()}>
         {busy ? "Creating…" : "Create profile"}
       </button>
-      {error && <span className="text-sm text-red-400">{error}</span>}
+      {error && (
+        <span role="alert" className="text-sm text-red-400">
+          {error}
+        </span>
+      )}
     </span>
   );
 }

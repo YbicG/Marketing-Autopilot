@@ -174,6 +174,7 @@ export function VideoEditor(p: VideoEditorProps) {
   const removeScene = (i: number) => setDraft((d) => (d.scenes.length <= 1 ? d : { ...d, scenes: d.scenes.filter((_, k) => k !== i), transitions: d.transitions.filter((t) => t.sceneId !== d.scenes[i]!.id) }));
 
   async function save(spec: VideoSpec, source: "user" | "change_request", baseSpecId = p.specId) {
+    if (busy) return;
     setBusy("save");
     setMsg(null);
     const out = await postJson<{ specId: string; issues: Issue[] }>(`/api/videos/${p.itemId}/spec`, { spec, baseSpecId, source });
@@ -185,6 +186,7 @@ export function VideoEditor(p: VideoEditorProps) {
   }
 
   async function writeMore() {
+    if (busy) return;
     setBusy("more");
     setMsg(null);
     const out = await postJson<{ more: HookVariant[] }>(`/api/videos/${p.itemId}/hooks-more`, {});
@@ -195,6 +197,7 @@ export function VideoEditor(p: VideoEditorProps) {
   }
 
   async function askForChanges() {
+    if (busy) return;
     setBusy("ask");
     setMsg(null);
     setProposal(null);
@@ -206,7 +209,7 @@ export function VideoEditor(p: VideoEditorProps) {
   }
 
   async function finalize() {
-    if (!p.finalizeHash) return;
+    if (!p.finalizeHash || busy) return;
     setBusy("finalize");
     setMsg(null);
     const out = await postJson(`/api/videos/${p.itemId}/finalize`, { shownHash: p.finalizeHash });
@@ -236,16 +239,15 @@ export function VideoEditor(p: VideoEditorProps) {
         {/* Preview */}
         <div className="flex flex-col gap-3 lg:sticky lg:top-4 lg:self-start">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex rounded-md border border-zinc-700 text-xs" role="tablist" aria-label="Shape">
+            <div className="flex rounded-md border border-zinc-700 text-xs" role="group" aria-label="Shape">
               {FORMATS.map((f) => (
                 <button
                   key={f.value}
                   type="button"
-                  role="tab"
-                  aria-selected={draft.format === f.value}
+                  aria-pressed={draft.format === f.value}
                   disabled={locked}
                   onClick={() => setDraft((d) => ({ ...d, format: f.value }))}
-                  className={`px-2.5 py-1 ${draft.format === f.value ? "bg-zinc-200 text-zinc-900" : "text-zinc-400 hover:text-zinc-200"}`}
+                  className={`min-h-11 px-2.5 py-1 disabled:opacity-50 md:min-h-0 ${draft.format === f.value ? "bg-zinc-200 text-zinc-900" : "text-zinc-400 hover:text-zinc-200"}`}
                 >
                   {f.label}
                 </button>
@@ -253,7 +255,7 @@ export function VideoEditor(p: VideoEditorProps) {
             </div>
             <label className="flex items-center gap-2 text-xs text-zinc-500">
               Safe zone
-              <select value={zone} onChange={(e) => setZone(e.target.value as SafeZonePlatform | "")} className="rounded border border-zinc-700 bg-zinc-950 px-1.5 py-1 text-xs text-zinc-200">
+              <select value={zone} onChange={(e) => setZone(e.target.value as SafeZonePlatform | "")} className="rounded border border-edge bg-zinc-950 px-1.5 py-1 text-xs text-zinc-200 focus:border-zinc-400">
                 {ZONES.map((z) => (
                   <option key={z.value} value={z.value}>
                     {z.label}
@@ -276,12 +278,12 @@ export function VideoEditor(p: VideoEditorProps) {
         <div className="flex flex-col gap-6">
           <section className="flex flex-col gap-3" aria-label="Opening lines">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="font-semibold">Opening lines</h3>
+              <h2 className="font-semibold">Opening lines</h2>
               <button
                 type="button"
                 onClick={() => void writeMore()}
                 disabled={busy !== null || locked}
-                className="rounded-md border border-zinc-600 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-400 disabled:opacity-50"
+                className="inline-flex min-h-11 items-center rounded-md border border-zinc-600 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-400 disabled:opacity-50 md:min-h-9"
               >
                 {busy === "more" ? "Writing…" : `Write 3 more · ~${p.prices.hooksMore}`}
               </button>
@@ -302,7 +304,7 @@ export function VideoEditor(p: VideoEditorProps) {
                       <span className="text-sm font-medium">
                         #{rank + 1} <span className="font-normal text-zinc-500">· {STYLE_LABEL[h.style] ?? h.style}</span>
                       </span>
-                      <label className="flex items-center gap-1.5 text-xs text-zinc-400">
+                      <label className="flex min-h-11 items-center gap-1.5 text-xs text-zinc-400 md:min-h-0">
                         <input type="radio" name="preview-line" checked={previewIdx === i} onChange={() => setPreviewIdx(i)} />
                         Preview this one
                       </label>
@@ -336,10 +338,10 @@ export function VideoEditor(p: VideoEditorProps) {
             {p.moreHooks.length > 0 && (
               <div className="flex flex-col gap-2 rounded-md border border-zinc-800 p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h4 className="text-sm font-medium">More opening lines</h4>
+                  <h3 className="text-sm font-medium">More opening lines</h3>
                   <label className="flex items-center gap-2 text-xs text-zinc-500">
                     Replace
-                    <select value={replaceIdx} onChange={(e) => setReplaceIdx(Number(e.target.value))} className="rounded border border-zinc-700 bg-zinc-950 px-1.5 py-1 text-xs text-zinc-200">
+                    <select value={replaceIdx} onChange={(e) => setReplaceIdx(Number(e.target.value))} className="rounded border border-edge bg-zinc-950 px-1.5 py-1 text-xs text-zinc-200 focus:border-zinc-400">
                       {draft.hookVariants.map((_, k) => (
                         <option key={k} value={k}>
                           line {k + 1}
@@ -363,7 +365,7 @@ export function VideoEditor(p: VideoEditorProps) {
                           type="button"
                           disabled={locked || inUse}
                           onClick={() => setDraft((d) => ({ ...d, hookVariants: d.hookVariants.map((x, j) => (j === replaceIdx ? h : x)) }))}
-                          className="text-xs text-zinc-300 underline underline-offset-2 disabled:no-underline disabled:opacity-50"
+                          className="inline-flex min-h-11 items-center text-xs text-zinc-300 underline underline-offset-2 disabled:no-underline disabled:opacity-50 md:min-h-0"
                         >
                           {inUse ? "In use" : `Use as line ${replaceIdx + 1}`}
                         </button>
@@ -376,7 +378,7 @@ export function VideoEditor(p: VideoEditorProps) {
           </section>
 
           <section className="flex flex-col gap-3" aria-label="Scenes">
-            <h3 className="font-semibold">Scenes</h3>
+            <h2 className="font-semibold">Scenes</h2>
             <ol className="flex flex-col gap-3">
               {draft.scenes.map((s, i) => (
                 <SceneEditor
@@ -396,7 +398,7 @@ export function VideoEditor(p: VideoEditorProps) {
               ))}
             </ol>
             <div className="flex flex-col gap-2 rounded-md border border-zinc-800 p-3">
-              <h4 className="text-sm font-medium">Closing line</h4>
+              <h3 className="text-sm font-medium">Closing line</h3>
               <label className="flex flex-col gap-1 text-xs text-zinc-500">
                 On-screen text
                 <input value={draft.cta.onScreen} disabled={locked} onChange={(e) => setDraft((d) => ({ ...d, cta: { ...d.cta, onScreen: e.target.value } }))} className={field} />
@@ -435,7 +437,7 @@ export function VideoEditor(p: VideoEditorProps) {
             </label>
             <fieldset className="flex flex-col gap-1 text-xs text-zinc-500" disabled={locked}>
               <legend className="mb-1">Captions</legend>
-              <label className="flex items-center gap-2 text-sm text-zinc-300">
+              <label className="flex min-h-11 items-center gap-2 text-sm text-zinc-300 md:min-h-0">
                 <input type="checkbox" checked={draft.captions.enabled || p.noVoice} disabled={p.noVoice} onChange={(e) => setDraft((d) => ({ ...d, captions: { ...d.captions, enabled: e.target.checked } }))} />
                 Show the spoken words on screen
               </label>
@@ -449,7 +451,13 @@ export function VideoEditor(p: VideoEditorProps) {
               <legend className="mb-1">Length</legend>
               <div className="flex rounded-md border border-zinc-700 text-sm">
                 {([15, 30, 45] as const).map((n) => (
-                  <button key={n} type="button" onClick={() => setDraft((d) => ({ ...d, targetSeconds: n }))} className={`flex-1 px-2 py-1 ${draft.targetSeconds === n ? "bg-zinc-200 text-zinc-900" : "text-zinc-400 hover:text-zinc-200"}`}>
+                  <button
+                    key={n}
+                    type="button"
+                    aria-pressed={draft.targetSeconds === n}
+                    onClick={() => setDraft((d) => ({ ...d, targetSeconds: n }))}
+                    className={`min-h-11 flex-1 px-2 py-1 disabled:opacity-50 md:min-h-0 ${draft.targetSeconds === n ? "bg-zinc-200 text-zinc-900" : "text-zinc-400 hover:text-zinc-200"}`}
+                  >
                     {n}s
                   </button>
                 ))}
@@ -463,28 +471,31 @@ export function VideoEditor(p: VideoEditorProps) {
               type="button"
               onClick={() => void save(draft, "user")}
               disabled={busy !== null || !dirty || locked}
-              className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50"
+              className="inline-flex min-h-11 items-center rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50 md:min-h-9"
             >
               {busy === "save" ? "Saving…" : changedLines > 0 ? `Save · re-voices ${changedLines} line${changedLines === 1 ? "" : "s"} ${usd(savePrice)}` : "Save"}
             </button>
             {dirty && (
-              <button type="button" onClick={() => setDraft(p.spec)} disabled={busy !== null} className="text-sm text-zinc-400 underline underline-offset-2">
+              <button type="button" onClick={() => setDraft(p.spec)} disabled={busy !== null} className="inline-flex min-h-11 items-center text-sm text-zinc-400 underline underline-offset-2 md:min-h-0">
                 Undo my changes
               </button>
             )}
-            {msg && <span className={`text-sm ${msg.tone === "ok" ? "text-emerald-400" : "text-amber-300"}`}>{msg.text}</span>}
+            <span className={`text-sm ${msg?.tone === "ok" ? "text-emerald-400" : "text-amber-300"}`} aria-live="polite">
+              {msg?.text}
+            </span>
             {!msg && (p.status === "final_ready" || p.status === "approved") && dirty && (
               <span className="text-xs text-amber-300">Saving changes the final files: they'll need finalizing and approving again.</span>
             )}
           </div>
 
           <section className="flex flex-col gap-2 rounded-md border border-zinc-800 p-4" aria-label="Ask for changes">
-            <h3 className="font-semibold">Ask for changes</h3>
+            <h2 className="font-semibold">Ask for changes</h2>
             <textarea
               value={ask}
               onChange={(e) => setAsk(e.target.value)}
               rows={2}
               disabled={locked || dirty}
+              aria-label="What to change"
               placeholder="Like “make scene 2 shorter” or “end on the calendar view”"
               className={field}
             />
@@ -493,7 +504,7 @@ export function VideoEditor(p: VideoEditorProps) {
                 type="button"
                 onClick={() => void askForChanges()}
                 disabled={busy !== null || locked || dirty || ask.trim().length < 3}
-                className="rounded-md border border-zinc-600 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-400 disabled:opacity-50"
+                className="inline-flex min-h-11 items-center rounded-md border border-zinc-600 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-400 disabled:opacity-50 md:min-h-9"
               >
                 {busy === "ask" ? "Thinking…" : `Ask · ~${p.prices.changeRequest}`}
               </button>
@@ -501,7 +512,7 @@ export function VideoEditor(p: VideoEditorProps) {
             </div>
             {proposal && (
               <div className="flex flex-col gap-2 rounded-md border border-zinc-700 p-3">
-                <h4 className="text-sm font-medium">Proposed changes</h4>
+                <h3 className="text-sm font-medium">Proposed changes</h3>
                 <ul className="flex max-h-72 flex-col gap-1 overflow-y-auto text-xs">
                   {proposal.diff.map((d, k) => (
                     <li key={k} className="flex flex-col">
@@ -517,14 +528,14 @@ export function VideoEditor(p: VideoEditorProps) {
                     type="button"
                     onClick={() => void save(proposal.spec, "change_request", proposal.baseSpecId)}
                     disabled={busy !== null}
-                    className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50"
+                    className="inline-flex min-h-11 items-center rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50 md:min-h-9"
                   >
                     {busy === "save" ? "Saving…" : "Apply and save"}
                   </button>
-                  <button type="button" onClick={() => setDraft(proposal.spec)} disabled={busy !== null} className="text-sm text-zinc-300 underline underline-offset-2">
+                  <button type="button" onClick={() => setDraft(proposal.spec)} disabled={busy !== null} className="inline-flex min-h-11 items-center text-sm text-zinc-300 underline underline-offset-2 md:min-h-0">
                     Edit it first
                   </button>
-                  <button type="button" onClick={() => setProposal(null)} className="text-sm text-zinc-400 underline underline-offset-2">
+                  <button type="button" onClick={() => setProposal(null)} className="inline-flex min-h-11 items-center text-sm text-zinc-400 underline underline-offset-2 md:min-h-0">
                     Discard
                   </button>
                 </div>
@@ -533,20 +544,22 @@ export function VideoEditor(p: VideoEditorProps) {
           </section>
 
           <section className="flex flex-col gap-2 rounded-md border border-zinc-800 p-4" aria-label="Finalize">
-            <h3 className="font-semibold">Finalize</h3>
+            <h2 className="font-semibold">Finalize</h2>
             <p className="text-sm text-zinc-400">
               Makes the 3 finished versions, one per opening line: the final voice, a check that every word was said right, music at the exact length, then files for each app and a last look at every frame.
             </p>
             {finalStale && <p className="text-xs text-amber-300">You changed the video after finalizing. Finalize again to update the files.</p>}
             {p.status === "finalizing" ? (
-              <p className="text-sm text-sky-300">Finalizing now. This page updates itself.</p>
+              <p className="text-sm text-sky-300" role="status">
+                Finalizing now. This page updates itself.
+              </p>
             ) : (
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   onClick={() => void finalize()}
                   disabled={busy !== null || !!finalizeBlocked || !p.finalizeHash}
-                  className="rounded-md bg-sky-500 px-3 py-1.5 text-sm font-medium text-sky-950 hover:bg-sky-400 disabled:opacity-50"
+                  className="inline-flex min-h-11 items-center rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50 md:min-h-9"
                 >
                   {busy === "finalize" ? "Starting…" : `Finalize 3 versions · ~${p.prices.finalize}`}
                 </button>
@@ -565,6 +578,7 @@ export function VideoEditor(p: VideoEditorProps) {
           tier={p.final.tier}
           judgeIssues={p.final.judgeIssues.map((i) => ({ severity: i.severity, message: i.message }))}
           openingLines={p.spec.hookVariants.map((h) => h.onScreen)}
+          format={p.spec.format}
           renders={p.renders}
           files={p.files}
           posts={p.posts}

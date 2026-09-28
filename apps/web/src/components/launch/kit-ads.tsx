@@ -127,14 +127,14 @@ export function AdsLimits() {
     <section className="flex flex-col gap-2">
       <h2 className="text-lg font-semibold">Text limits</h2>
       <p className="text-xs text-zinc-500">Over the first number the platform rejects the text; over the second it may cut it off. Check the platform before you upload.</p>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
+      <div className="overflow-x-auto" role="region" aria-label="Text limits table" tabIndex={0}>
+        <table className="w-full min-w-[520px] text-left text-sm">
           <thead className="text-xs text-zinc-500">
             <tr>
-              <th className="py-1 pr-4 font-normal">Platform</th>
-              <th className="py-1 pr-4 font-normal">Main text</th>
-              <th className="py-1 pr-4 font-normal">Headline</th>
-              <th className="py-1 pr-4 font-normal">Description</th>
+              <th scope="col" className="py-1 pr-4 font-normal">Platform</th>
+              <th scope="col" className="py-1 pr-4 font-normal">Main text</th>
+              <th scope="col" className="py-1 pr-4 font-normal">Headline</th>
+              <th scope="col" className="py-1 pr-4 font-normal">Description</th>
             </tr>
           </thead>
           <tbody className="text-zinc-300">
@@ -146,7 +146,9 @@ export function AdsLimits() {
               };
               return (
                 <tr key={p} className="border-t border-zinc-800">
-                  <td className="py-1 pr-4">{l.label}</td>
+                  <th scope="row" className="py-1 pr-4 font-normal">
+                    {l.label}
+                  </th>
                   {l.keyword ? (
                     <td colSpan={3} className="py-1 pr-4 text-zinc-400">
                       Keywords up to {l.keyword.max} characters; the ad is your App Store listing.

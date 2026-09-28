@@ -10,6 +10,7 @@ export function NewBroadcast({ slug, priceLabel, disabled }: { slug: string; pri
   const [error, setError] = useState<string | null>(null);
 
   async function start() {
+    if (busy || disabled) return;
     setBusy(true);
     setError(null);
     const out = await postJson<{ broadcastId?: string }>("/api/email/broadcasts", { slug });
@@ -27,11 +28,15 @@ export function NewBroadcast({ slug, priceLabel, disabled }: { slug: string; pri
         type="button"
         onClick={() => void start()}
         disabled={busy || disabled}
-        className="self-start rounded-lg bg-accent-strong px-3 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50"
+        className="min-h-11 md:min-h-9 self-start rounded-lg bg-accent-strong px-3 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50"
       >
         {busy ? "Starting…" : `Write the seasonal email · ~${priceLabel}`}
       </button>
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-red-400">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

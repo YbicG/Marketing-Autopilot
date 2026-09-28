@@ -146,7 +146,7 @@ export function TikTokComposer({ post, onSaved }: { post: PostDetailJson; onSave
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="text-sm font-medium">TikTok settings{handle ? ` · @${handle.replace(/^@/, "")}` : ""}</h3>
         {aiAuto && (
-          <span className="rounded-full border border-violet-800 px-2 py-0.5 text-xs text-violet-200" title="Set automatically because this post uses AI voice or images">
+          <span className="rounded-full border border-rose/40 px-2 py-0.5 text-xs text-rose" title="Set automatically because this post uses AI voice or images">
             AI-generated label: on
           </span>
         )}
@@ -164,7 +164,7 @@ export function TikTokComposer({ post, onSaved }: { post: PostDetailJson; onSave
           {PRIVACY.map((p) => {
             const disabled = (branded && p.value === "SELF_ONLY") || (allowed ? !allowed.has(p.value) : false);
             return (
-              <label key={p.value} className={`flex items-center gap-2 text-sm ${disabled ? "text-zinc-600" : "text-zinc-200"}`}>
+              <label key={p.value} className={`flex min-h-11 items-center gap-2 text-sm md:min-h-0 ${disabled ? "text-zinc-600" : "text-zinc-200"}`}>
                 <input
                   type="radio"
                   name={`privacy-${post.id}`}
@@ -184,24 +184,24 @@ export function TikTokComposer({ post, onSaved }: { post: PostDetailJson; onSave
 
       <fieldset className={box}>
         <legend className="px-1 text-sm text-zinc-300">Let people</legend>
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex min-h-11 items-center gap-2 text-sm md:min-h-0">
           <input type="checkbox" checked={!options.disableComment} disabled={!!info?.commentDisabled} onChange={(e) => set("disableComment", !e.target.checked)} />
           Comment{info?.commentDisabled ? " (turned off in your TikTok settings)" : ""}
         </label>
         {isVideo && (
           <>
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex min-h-11 items-center gap-2 text-sm md:min-h-0">
               <input type="checkbox" checked={!options.disableDuet} disabled={!!info?.duetDisabled} onChange={(e) => set("disableDuet", !e.target.checked)} />
               Duet{info?.duetDisabled ? " (turned off in your TikTok settings)" : ""}
             </label>
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex min-h-11 items-center gap-2 text-sm md:min-h-0">
               <input type="checkbox" checked={!options.disableStitch} disabled={!!info?.stitchDisabled} onChange={(e) => set("disableStitch", !e.target.checked)} />
               Stitch{info?.stitchDisabled ? " (turned off in your TikTok settings)" : ""}
             </label>
           </>
         )}
         {!isVideo && (
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex min-h-11 items-center gap-2 text-sm md:min-h-0">
             <input type="checkbox" checked={d.autoAddMusic} onChange={(e) => set("autoAddMusic", e.target.checked)} />
             Add TikTok&apos;s suggested music to the photos
           </label>
@@ -210,7 +210,7 @@ export function TikTokComposer({ post, onSaved }: { post: PostDetailJson; onSave
 
       <fieldset className={box}>
         <legend className="px-1 text-sm text-zinc-300">Disclose post content</legend>
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex min-h-11 items-center gap-2 text-sm md:min-h-0">
           <input type="checkbox" checked={d.commercialContent.enabled} onChange={(e) => setCommercial({ enabled: e.target.checked })} />
           This post promotes a brand, product or service
         </label>
@@ -221,11 +221,11 @@ export function TikTokComposer({ post, onSaved }: { post: PostDetailJson; onSave
         )}
         {d.commercialContent.enabled && (
           <div className="flex flex-col gap-2 pl-6">
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex min-h-11 items-center gap-2 text-sm md:min-h-0">
               <input type="checkbox" checked={d.commercialContent.yourBrand} onChange={(e) => setCommercial({ yourBrand: e.target.checked })} />
               Your brand (you&apos;re promoting yourself or your own business)
             </label>
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex min-h-11 items-center gap-2 text-sm md:min-h-0">
               <input type="checkbox" checked={d.commercialContent.brandedContent} onChange={(e) => setCommercial({ brandedContent: e.target.checked })} />
               Branded content (you&apos;re promoting someone else in exchange for something)
             </label>
@@ -236,7 +236,7 @@ export function TikTokComposer({ post, onSaved }: { post: PostDetailJson; onSave
       </fieldset>
 
       {!aiAuto && (
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex min-h-11 items-center gap-2 text-sm md:min-h-0">
           <input type="checkbox" checked={d.markAsAi} onChange={(e) => set("markAsAi", e.target.checked)} />
           Label this as AI-generated
         </label>
@@ -244,11 +244,11 @@ export function TikTokComposer({ post, onSaved }: { post: PostDetailJson; onSave
 
       <fieldset className={box}>
         <legend className="px-1 text-sm text-zinc-300">How to post</legend>
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex min-h-11 items-center gap-2 text-sm md:min-h-0">
           <input type="radio" name={`mode-${post.id}`} checked={d.postMode === "direct"} onChange={() => set("postMode", "direct")} />
           Post directly at the scheduled time
         </label>
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex min-h-11 items-center gap-2 text-sm md:min-h-0">
           <input type="radio" name={`mode-${post.id}`} checked={d.postMode === "drafts"} onChange={() => set("postMode", "drafts")} />
           Send to my TikTok drafts (you finish it in the TikTok app)
         </label>
@@ -259,11 +259,11 @@ export function TikTokComposer({ post, onSaved }: { post: PostDetailJson; onSave
           <legend className="px-1 text-sm text-zinc-300">Is this project made for kids?</legend>
           <p className="text-xs text-zinc-500">We ask once per project.</p>
           <div className="flex gap-4">
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex min-h-11 items-center gap-2 text-sm md:min-h-0">
               <input type="radio" name={`kids-${post.id}`} checked={madeForKids === true} onChange={() => setMadeForKids(true)} />
               Yes
             </label>
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex min-h-11 items-center gap-2 text-sm md:min-h-0">
               <input type="radio" name={`kids-${post.id}`} checked={madeForKids === false} onChange={() => setMadeForKids(false)} />
               No
             </label>
@@ -291,13 +291,19 @@ export function TikTokComposer({ post, onSaved }: { post: PostDetailJson; onSave
           type="button"
           onClick={() => void save()}
           disabled={busy || !local.success || blockedByAccount}
-          className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 disabled:opacity-50 hover:bg-accent-hover"
+          className="inline-flex min-h-11 items-center rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 disabled:opacity-50 hover:bg-accent-hover md:min-h-9"
         >
           {busy ? "Saving…" : "Save TikTok settings"}
         </button>
-        {saved && <span className="text-xs text-zinc-400">{saved}</span>}
+        <span className="text-xs text-zinc-400" aria-live="polite">
+          {saved}
+        </span>
       </div>
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && (
+        <p className="text-xs text-red-400" role="alert">
+          {error}
+        </p>
+      )}
     </section>
   );
 }

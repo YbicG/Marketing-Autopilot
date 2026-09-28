@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CAPTURE_KEYS, CaptureFlow, type CaptureFlowStep, type CaptureTarget } from "@mkt/contracts";
 import { postJson } from "@/lib/post-json";
-import { field, primary, secondary } from "./setup-forms";
+import { field, Note, primary, secondary, textBtn } from "./setup-forms";
 
 /** Serializable CaptureView flow (core/capture/setup.ts). */
 export interface FlowRow {
@@ -27,7 +27,6 @@ export interface FlowRow {
 }
 
 type Msg = { tone: "ok" | "err"; text: string } | null;
-const Note = ({ msg }: { msg: Msg }) => (msg ? <p className={`text-xs ${msg.tone === "ok" ? "text-emerald-400" : "text-amber-300"}`}>{msg.text}</p> : null);
 
 const STEP_LABEL: Record<CaptureFlowStep["kind"], string> = {
   goto: "Open a page",
@@ -151,7 +150,7 @@ function TargetInput({ value, onChange }: { value: CaptureTarget; onChange: (t: 
               </option>
             ))}
           </select>
-          <input value={value.name} onChange={(e) => onChange({ ...value, name: e.target.value })} placeholder="Name shown on it" className={`${field} min-w-40 flex-1`} />
+          <input value={value.name} onChange={(e) => onChange({ ...value, name: e.target.value })} placeholder="Name shown on it" aria-label="Name shown on it" className={`${field} min-w-40 flex-1`} />
         </>
       ) : (
         <input
@@ -229,6 +228,7 @@ export function FlowEditor({ slug, flow, onDone }: { slug: string; flow: FlowRow
     });
 
   async function save() {
+    if (busy) return;
     const parsed = CaptureFlow.safeParse({ name: name.trim(), steps, needsLogin });
     if (!parsed.success) {
       const issue = parsed.error.issues[0];
@@ -251,7 +251,7 @@ export function FlowEditor({ slug, flow, onDone }: { slug: string; flow: FlowRow
         Name
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Turn a syllabus into a calendar" className={field} disabled={busy} />
       </label>
-      <label className="flex items-center gap-2 text-sm text-zinc-300">
+      <label className="flex min-h-11 items-center gap-2 text-sm text-zinc-300 md:min-h-0">
         <input type="checkbox" checked={needsLogin} onChange={(e) => setNeedsLogin(e.target.checked)} disabled={busy} />
         Sign in with the demo login first
       </label>
@@ -270,13 +270,13 @@ export function FlowEditor({ slug, flow, onDone }: { slug: string; flow: FlowRow
                 </select>
               </span>
               <span className="flex gap-2 text-xs text-zinc-400">
-                <button type="button" onClick={() => move(i, -1)} disabled={busy || i === 0} className="disabled:opacity-40" aria-label={`Move step ${i + 1} up`}>
+                <button type="button" onClick={() => move(i, -1)} disabled={busy || i === 0} className="inline-flex min-h-11 min-w-11 items-center justify-center hover:text-zinc-200 disabled:opacity-40 md:min-h-0 md:min-w-0" aria-label={`Move step ${i + 1} up`}>
                   ↑
                 </button>
-                <button type="button" onClick={() => move(i, 1)} disabled={busy || i === steps.length - 1} className="disabled:opacity-40" aria-label={`Move step ${i + 1} down`}>
+                <button type="button" onClick={() => move(i, 1)} disabled={busy || i === steps.length - 1} className="inline-flex min-h-11 min-w-11 items-center justify-center hover:text-zinc-200 disabled:opacity-40 md:min-h-0 md:min-w-0" aria-label={`Move step ${i + 1} down`}>
                   ↓
                 </button>
-                <button type="button" onClick={() => setSteps((xs) => xs.filter((_, k) => k !== i))} disabled={busy || steps.length <= 1} className="hover:text-red-300 disabled:opacity-40">
+                <button type="button" onClick={() => setSteps((xs) => xs.filter((_, k) => k !== i))} disabled={busy || steps.length <= 1} className="inline-flex min-h-11 items-center hover:text-red-300 disabled:opacity-40 md:min-h-0" aria-label={`Remove step ${i + 1}`}>
                   Remove
                 </button>
               </span>
@@ -304,7 +304,7 @@ export function FlowEditor({ slug, flow, onDone }: { slug: string; flow: FlowRow
         <button type="button" onClick={() => void save()} disabled={busy} className={primary}>
           {busy ? "Saving…" : "Save flow"}
         </button>
-        <button type="button" onClick={onDone} disabled={busy} className="text-sm text-zinc-400 underline underline-offset-2">
+        <button type="button" onClick={onDone} disabled={busy} className={`${textBtn} text-sm text-zinc-400`}>
           Cancel
         </button>
       </div>
@@ -333,6 +333,7 @@ function FlowCard({ slug, flow, origin, hasLogin }: { slug: string; flow: FlowRo
   const r = flow.recording;
 
   async function act(kind: "confirm" | "record") {
+    if (busy) return;
     setBusy(kind);
     setMsg(null);
     const out = await postJson(`${base}/${kind}`, {});
@@ -398,7 +399,7 @@ function FlowCard({ slug, flow, origin, hasLogin }: { slug: string; flow: FlowRo
         <button type="button" onClick={() => setEditing(true)} disabled={busy !== null} className={secondary}>
           Edit
         </button>
-        <button type="button" onClick={() => void remove()} disabled={busy !== null} className="text-sm text-zinc-400 underline underline-offset-2 hover:text-red-300">
+        <button type="button" onClick={() => void remove()} disabled={busy !== null} className={`${textBtn} text-sm text-zinc-400 hover:text-red-300`}>
           {busy === "delete" ? "Deleting…" : "Delete"}
         </button>
       </div>
@@ -413,11 +414,11 @@ function FlowCard({ slug, flow, origin, hasLogin }: { slug: string; flow: FlowRo
             <span>
               Last recording{r.durationMs ? ` · ${secs(r.durationMs)}` : ""} · {new Date(r.createdAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
             </span>
-            <a href={`/api/media/${r.assetId}`} className="underline underline-offset-2" target="_blank" rel="noreferrer">
-              Open the file
+            <a href={`/api/media/${r.assetId}`} className={textBtn} target="_blank" rel="noreferrer">
+              Open the file<span className="sr-only"> (opens in a new tab)</span>
             </a>
           </div>
-          <video src={`/api/media/${r.assetId}`} controls preload="metadata" className="max-h-72 w-full rounded bg-black" />
+          <video src={`/api/media/${r.assetId}`} controls preload="metadata" aria-label={`Recording of ${flow.name}`} className="aspect-video max-h-72 w-full rounded bg-zinc-950 object-contain" />
           {r.piiHits ? (
             <p className="text-xs text-amber-300">
               It shows personal details{r.piiKinds.length ? ` (${r.piiKinds.map((k) => PII_LABEL[k] ?? k).join(", ")})` : ""}
@@ -448,6 +449,7 @@ export function FlowList({ slug, flows, origin, hasLogin, suggestPrice }: { slug
   const [msg, setMsg] = useState<Msg>(null);
 
   async function suggest() {
+    if (busy) return;
     setBusy(true);
     setMsg(null);
     const out = await postJson<{ flowIds: string[]; dropped: number }>(`/api/capture/${encodeURIComponent(slug)}/suggest`, {});

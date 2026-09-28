@@ -18,7 +18,7 @@ export function RescheduleForm({ postId, day, time, onDone, label = "Reschedule"
     else onDone();
   }
 
-  const input = "rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-sm";
+  const input = "min-h-11 rounded-md border border-edge bg-zinc-900 px-2 py-1 text-sm focus:border-zinc-400 md:min-h-9";
   return (
     <div className="flex flex-col gap-1">
       <div className="flex flex-wrap items-center gap-2">
@@ -28,12 +28,16 @@ export function RescheduleForm({ postId, day, time, onDone, label = "Reschedule"
           type="button"
           onClick={() => void save()}
           disabled={busy || !d || !t}
-          className="rounded-md border border-zinc-700 px-3 py-1 text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-50"
+          className="inline-flex min-h-11 items-center rounded-md border border-zinc-700 px-3 py-1 text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-50 md:min-h-9"
         >
           {busy ? "Moving…" : label}
         </button>
       </div>
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && (
+        <p className="text-xs text-red-400" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

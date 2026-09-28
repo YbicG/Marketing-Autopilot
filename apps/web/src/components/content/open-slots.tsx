@@ -26,6 +26,7 @@ export function OpenSlots({ slug, campaignId, slots }: { slug: string; campaignI
   const shown = showAll ? slots : slots.slice(0, 6);
 
   async function fill(ids: string[], key: string) {
+    if (busy) return;
     setBusy(key);
     setError(null);
     const out = await postJson<{ runId?: string; error?: string; code?: string }>(`/api/products/${encodeURIComponent(slug)}/refill`, { campaignId, slotIds: ids });
@@ -52,19 +53,20 @@ export function OpenSlots({ slug, campaignId, slots }: { slug: string; campaignI
                 type="button"
                 disabled={busy !== null}
                 onClick={() => void fill([s.slotId], s.slotId)}
-                className="shrink-0 rounded border border-zinc-600 px-2 py-0.5 text-xs text-zinc-200 hover:border-zinc-400 disabled:opacity-60"
+                aria-label={`${s.label} for day ${s.day}, ${s.platformName}`}
+                className="inline-flex min-h-11 shrink-0 items-center rounded border border-zinc-600 px-2 py-0.5 text-xs text-zinc-200 hover:border-zinc-400 disabled:opacity-60 md:min-h-0"
               >
                 {busy === s.slotId ? "Starting…" : s.label}
               </button>
             ) : (
-              <span className="text-xs text-zinc-600">{s.label}</span>
+              <span className="text-xs text-zinc-500">{s.label}</span>
             )}
           </li>
         ))}
       </ul>
       <div className="flex flex-wrap items-center gap-3 text-sm">
         {slots.length > 6 && (
-          <button type="button" onClick={() => setShowAll((v) => !v)} className="text-zinc-400 underline underline-offset-2">
+          <button type="button" onClick={() => setShowAll((v) => !v)} aria-expanded={showAll} className="inline-flex min-h-11 items-center text-zinc-400 underline underline-offset-2 md:min-h-0">
             {showAll ? "Show fewer" : `Show all ${slots.length} open`}
           </button>
         )}
@@ -73,14 +75,14 @@ export function OpenSlots({ slug, campaignId, slots }: { slug: string; campaignI
             type="button"
             disabled={busy !== null}
             onClick={() => void fill(fillable.map((s) => s.slotId), "all")}
-            className="rounded-md border border-zinc-600 px-3 py-1 text-xs text-zinc-200 hover:border-zinc-400 disabled:opacity-60"
+            className="inline-flex min-h-11 items-center rounded-md border border-zinc-600 px-3 py-1 text-xs text-zinc-200 hover:border-zinc-400 disabled:opacity-60 md:min-h-0"
           >
             {busy === "all" ? "Starting…" : `Fill all ${fillable.length} · ~${usd(total)}`}
           </button>
         )}
       </div>
       {error && (
-        <p className="text-sm text-red-400">
+        <p className="text-sm text-red-400" role="alert">
           {error.text}{" "}
           {error.overLimit && (
             <Link href="/settings" className="underline underline-offset-2">

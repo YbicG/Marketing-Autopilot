@@ -52,9 +52,11 @@ export function LiveFeed({ runId, initialStatus }: { runId: string; initialStatu
   const color = { info: "text-zinc-300", fact: "text-zinc-400", error: "text-red-400", done: "text-emerald-400" };
 
   return (
-    <div className="flex flex-col gap-3 rounded-md border border-zinc-800 p-6">
-      {lines.length === 0 && !finished && <p className="text-zinc-500">Waiting for the worker…</p>}
-      <ul className="flex flex-col gap-2 text-sm">
+    <div className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-6">
+      {lines.length === 0 && (
+        <p className="text-zinc-500">{finished ? "This stopped before it finished. Start again from Home." : "Waiting for the worker…"}</p>
+      )}
+      <ul role="log" aria-label="Progress" className="flex flex-col gap-2 text-sm">
         {lines.map((l) => (
           <li key={l.key} className={color[l.tone]}>
             {l.tone === "fact" ? `· ${l.text}` : l.text}

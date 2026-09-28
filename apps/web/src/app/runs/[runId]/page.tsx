@@ -34,16 +34,17 @@ export default async function RunPage({ params }: { params: Promise<{ runId: str
   if (run.kind === "m0_summary") {
     const parsed = ProductSummary.safeParse((run.result as { summary?: unknown } | null)?.summary);
     const summary = run.status === "completed" && parsed.success ? parsed.data : null;
+    const url = String(run.input.url ?? "");
     return (
-      <>
-        <main className="flex max-w-3xl flex-col gap-8 px-4 md:px-10 py-10">
-          <div>
-            <p className="text-sm text-zinc-500">Reading your product</p>
-            <h1 className="font-serif text-4xl tracking-tight truncate">{String(run.input.url ?? "")}</h1>
-          </div>
-          {summary ? <SummaryView summary={summary} /> : <LiveFeed runId={run.id} initialStatus={run.status} />}
-        </main>
-      </>
+      <main className="flex max-w-3xl flex-col gap-8 px-4 py-10 md:px-10">
+        <div>
+          <p className="text-sm text-zinc-500">Reading your product</p>
+          <h1 title={url} className="truncate font-serif text-4xl tracking-tight">
+            {url}
+          </h1>
+        </div>
+        {summary ? <SummaryView summary={summary} /> : <LiveFeed runId={run.id} initialStatus={run.status} />}
+      </main>
     );
   }
 
@@ -64,32 +65,33 @@ export default async function RunPage({ params }: { params: Promise<{ runId: str
     answer: q.answer,
   }));
   const links = Array.isArray(run.input.links) ? run.input.links.filter((l): l is string => typeof l === "string") : [];
+  const title = product?.name ?? (links.join(", ") || "Your product");
 
   return (
-    <>
-      <main className="flex max-w-3xl flex-col gap-8 px-4 md:px-10 py-10">
-        <div>
-          <p className="text-sm text-zinc-500">{TITLE_BY_KIND[run.kind] ?? "Working"}</p>
-          <h1 className="font-serif text-4xl tracking-tight truncate">{product?.name ?? (links.join(", ") || "Your product")}</h1>
-        </div>
-        <IngestFeed
-          runId={run.id}
-          kind={run.kind}
-          stages={STAGES_BY_KIND[run.kind] ?? []}
-          initialStatus={run.status}
-          initialQuestions={questions}
-          planHref={planHref}
-        />
-      </main>
-    </>
+    <main className="flex max-w-3xl flex-col gap-8 px-4 py-10 md:px-10">
+      <div>
+        <p className="text-sm text-zinc-500">{TITLE_BY_KIND[run.kind] ?? "Working"}</p>
+        <h1 title={title} className="truncate font-serif text-4xl tracking-tight">
+          {title}
+        </h1>
+      </div>
+      <IngestFeed
+        runId={run.id}
+        kind={run.kind}
+        stages={STAGES_BY_KIND[run.kind] ?? []}
+        initialStatus={run.status}
+        initialQuestions={questions}
+        planHref={planHref}
+      />
+    </main>
   );
 }
 
 function SummaryView({ summary }: { summary: ProductSummary }) {
   return (
-    <article className="flex flex-col gap-6 rounded-md border border-zinc-800 p-6">
+    <article className="flex flex-col gap-6 rounded-2xl border border-line bg-surface p-6">
       <div>
-        <h2 className="text-2xl font-semibold">{summary.name}</h2>
+        <h2 className="font-serif text-3xl tracking-tight">{summary.name}</h2>
         <p className="mt-1 text-zinc-300">{summary.oneLiner}</p>
       </div>
       <Section title="Who it's for">

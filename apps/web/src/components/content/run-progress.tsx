@@ -70,6 +70,7 @@ export function RunProgress({ slug, runId, status, label }: { slug: string; runI
   }, [runId, paused, router]);
 
   async function carryOn() {
+    if (busy) return;
     setBusy(true);
     setError(null);
     const out = await postJson(`/api/products/${encodeURIComponent(slug)}/package/resume`, { runId });
@@ -86,18 +87,22 @@ export function RunProgress({ slug, runId, status, label }: { slug: string; runI
           <Link href="/settings" className="underline underline-offset-2">
             Raise limit
           </Link>
-          <button type="button" onClick={() => void carryOn()} disabled={busy} className="rounded-md border border-zinc-600 px-3 py-1 text-xs hover:border-zinc-400 disabled:opacity-60">
+          <button type="button" onClick={() => void carryOn()} disabled={busy} className="inline-flex min-h-11 items-center rounded-md border border-zinc-600 px-3 py-1 text-xs hover:border-zinc-400 disabled:opacity-60 md:min-h-0">
             {busy ? "Starting…" : "Carry on"}
           </button>
         </div>
-        {error && <p className="text-red-400">{error}</p>}
+        {error && (
+          <p className="text-red-400" role="alert">
+            {error}
+          </p>
+        )}
       </div>
     );
   }
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-sky-900/70 bg-sky-950/20 px-4 py-3 text-sm" aria-live="polite">
-      <p>
-        <span className="mr-2 inline-block h-2 w-2 motion-safe:animate-pulse rounded-full bg-sky-400" />
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-sky-900/70 bg-sky-950/20 px-4 py-3 text-sm">
+      <p role="status">
+        <span className="mr-2 inline-block h-2 w-2 motion-safe:animate-pulse rounded-full bg-sky-400" aria-hidden />
         {label}: {line}
         {done > 0 && <span className="text-zinc-400"> · {done} written so far</span>}
       </p>

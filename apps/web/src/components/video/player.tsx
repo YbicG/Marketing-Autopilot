@@ -33,7 +33,7 @@ export function AdPlayer({ props, className }: { props: AdProps; className?: str
         controls
         acknowledgeRemotionLicense
         className={className}
-        style={{ width: "100%", aspectRatio: aspect, background: "#000", borderRadius: 8 }}
+        style={{ width: "100%", aspectRatio: aspect, background: "var(--color-zinc-950)", borderRadius: 8 }}
       />
     </AssetUrlContext.Provider>
   );

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { LandingAuditView } from "@mkt/contracts";
 import { postJson } from "@/lib/post-json";
 
-const BTN = "rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-60";
+const BTN = "min-h-11 md:min-h-9 rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-60";
 const POLL_MS = 4_000;
 
 const when = (iso: string) =>
@@ -45,6 +45,7 @@ export function LandingAudit({ slug, initial, price, website }: { slug: string; 
   }, [running, slug, router]);
 
   async function run() {
+    if (busy || running) return;
     setBusy(true);
     setError(null);
     const out = await postJson<{ auditId: string; url: string }>(`/api/launch/audit/${encodeURIComponent(slug)}`, {});
@@ -67,11 +68,15 @@ export function LandingAudit({ slug, initial, price, website }: { slug: string; 
           {website ? `Opens ${website} on a phone and a computer. It only costs anything if we need to look at the phone screenshot.` : "Add your website address to this project first."}
         </span>
       </div>
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && (
+        <p role="alert" className="text-xs text-red-400">
+          {error}
+        </p>
+      )}
 
       {audit && (
         <div className="flex flex-col gap-3 rounded-md border border-zinc-800 p-3">
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs text-zinc-400" role="status">
             {running
               ? "Opening your page. This takes about a minute."
               : audit.status === "failed"
@@ -82,7 +87,7 @@ export function LandingAudit({ slug, initial, price, website }: { slug: string; 
             <ul className="flex flex-col gap-1.5">
               {audit.checks.map((c) => (
                 <li key={c.id} className="flex items-start gap-2 text-sm">
-                  <span aria-hidden className={`mt-0.5 w-4 shrink-0 text-center ${c.passed ? "text-emerald-400" : c.severity === "gate" ? "text-rose-400" : "text-amber-300"}`}>
+                  <span aria-hidden className={`mt-0.5 w-4 shrink-0 text-center ${c.passed ? "text-emerald-400" : c.severity === "gate" ? "text-rose" : "text-amber-300"}`}>
                     {c.passed ? "✓" : c.severity === "gate" ? "✕" : "!"}
                   </span>
                   <span className="flex flex-col">
@@ -101,7 +106,7 @@ export function LandingAudit({ slug, initial, price, website }: { slug: string; 
             <div className="flex flex-wrap items-start gap-3">
               {shots.map((id, i) => (
                 <figure key={id} className="flex flex-col gap-1">
-                  <a href={`/api/media/${id}`} target="_blank" rel="noopener noreferrer">
+                  <a href={`/api/media/${id}`} target="_blank" rel="noopener noreferrer" className="block max-w-full">
                     <img
                       src={`/api/media/${id}`}
                       alt={`Your landing page, first screen ${shotLabels[i]?.toLowerCase() ?? ""}`}

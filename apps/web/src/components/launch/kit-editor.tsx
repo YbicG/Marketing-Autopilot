@@ -20,7 +20,7 @@ import { OUTLET_LABEL, redditRulesUrl, subredditOf } from "./kit-model";
 const LINK_HINT = "Leave {{link:landing}} as it is: it becomes your tracking link in the download.";
 const REPLY_MAX = 500;
 const REDDIT_TITLE_MAX = 300;
-const selectCls = "rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm";
+const selectCls = "min-h-11 md:min-h-9 rounded-md border border-edge bg-zinc-900 px-3 py-1.5 text-sm text-ink outline-none focus:border-zinc-400 disabled:opacity-60";
 
 /**
  * Edit a kit's body (§5.4 LC launch kit). Saving sends the whole body back; the server parses it
@@ -47,7 +47,9 @@ export function KitEditor({ kitId, body, updatedAt, locked }: { kitId: string; b
   return (
     <div className="flex flex-col gap-3">
       <EditorForm key={updatedAt} body={body} locked={locked} onSave={save} />
-      {note && <p className={`text-sm ${note.tone === "ok" ? "text-emerald-300" : "text-red-400"}`}>{note.text}</p>}
+      <p role="status" className={`text-sm empty:hidden ${note?.tone === "err" ? "text-red-400" : "text-emerald-300"}`}>
+        {note?.text ?? ""}
+      </p>
     </div>
   );
 }
@@ -62,6 +64,7 @@ function EditorForm({ body, locked, onSave }: { body: LaunchKitBody; locked: boo
       className="flex flex-col gap-4"
       onSubmit={async (e) => {
         e.preventDefault();
+        if (busy || locked || !dirty) return;
         setBusy(true);
         await onSave(draft);
         setBusy(false);
@@ -73,11 +76,11 @@ function EditorForm({ body, locked, onSave }: { body: LaunchKitBody; locked: boo
       {draft.kind === "creator" && <CreatorForm body={draft} set={setDraft} disabled={locked} />}
       {draft.kind === "reply_bank" && <ReplyBankForm body={draft} set={setDraft} disabled={locked} />}
       <div className="sticky bottom-0 flex flex-wrap items-center gap-3 border-t border-zinc-800 bg-zinc-950/95 py-3">
-        <button type="submit" disabled={locked || busy || !dirty} className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 disabled:opacity-50 hover:bg-accent-hover">
+        <button type="submit" disabled={locked || busy || !dirty} className="min-h-11 md:min-h-9 rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50">
           {busy ? "Saving and checking…" : "Save changes"}
         </button>
         {dirty && !busy && (
-          <button type="button" onClick={() => setDraft(body)} className="text-sm text-zinc-400 hover:text-zinc-200">
+          <button type="button" onClick={() => setDraft(body)} className="min-h-11 md:min-h-9 text-sm text-zinc-400 hover:text-zinc-200">
             Undo my changes
           </button>
         )}
@@ -239,7 +242,7 @@ function PressForm({ body, set, disabled }: { body: PressKitBody; set: (b: Launc
           disabled={disabled}
           onChange={(text) => set({ ...body, founderQuote: { ...body.founderQuote, text } })}
         />
-        <label className="flex items-center gap-2 text-sm text-zinc-300">
+        <label className="flex min-h-11 items-center gap-2 text-sm text-zinc-300 md:min-h-0">
           <input
             type="checkbox"
             checked={!body.founderQuote.editMe}

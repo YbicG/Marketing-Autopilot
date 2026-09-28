@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Icon } from "./icons";
+import { Icon, type IconName } from "./icons";
 
 export interface NavItem {
   href: string;
   label: string;
-  icon: string;
+  icon: IconName;
   /** Match only this exact path (Home, Overview). */
   exact?: boolean;
   /** Other paths that light this item up, e.g. the old /today under Overview. */
@@ -44,7 +44,10 @@ export function SidebarNav({ items, label }: { items: NavItem[]; label: string }
               <Icon name={it.icon} className={`size-4 ${active ? "text-accent" : "text-faint"}`} />
               <span className="flex-1">{it.label}</span>
               {it.badge ? (
-                <span className="rounded-full bg-warn-soft px-1.5 py-px text-xs font-medium tabular-nums text-warn">{it.badge}</span>
+                <span className="rounded-full bg-warn-soft px-1.5 py-px text-xs font-medium tabular-nums text-warn">
+                  {it.badge}
+                  <span className="sr-only"> waiting</span>
+                </span>
               ) : null}
             </Link>
             {active && it.children && (
@@ -54,7 +57,7 @@ export function SidebarNav({ items, label }: { items: NavItem[]; label: string }
                     key={c.href}
                     href={c.href}
                     aria-current={under(path, c.href) ? "page" : undefined}
-                    className={`flex min-h-10 items-center rounded-md px-2 py-1 text-[13px] md:min-h-8 ${under(path, c.href) ? "text-ink" : "text-faint hover:text-ink"}`}
+                    className={`flex min-h-11 items-center rounded-md px-2 py-1 text-[13px] md:min-h-8 ${under(path, c.href) ? "text-ink" : "text-faint hover:text-ink"}`}
                   >
                     {c.label}
                   </Link>

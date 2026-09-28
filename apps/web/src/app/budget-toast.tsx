@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
+import { postJson } from "@/lib/post-json";
 
 /** §7.1 step 7: the highest open budget alert, shown under the header until dismissed. */
 export function BudgetToast({ thresholdPct, limitLabel }: { thresholdPct: number; limitLabel: string }) {
@@ -11,11 +12,10 @@ export function BudgetToast({ thresholdPct, limitLabel }: { thresholdPct: number
   async function dismiss() {
     setBusy(true);
     setError(null);
-    const res = await fetch("/api/alerts/dismiss", { method: "POST" });
+    const out = await postJson("/api/alerts/dismiss", {});
     setBusy(false);
-    if (!res.ok) {
-      const body = (await res.json().catch(() => ({}))) as { error?: string };
-      setError(body.error ?? "Couldn't dismiss.");
+    if (!out.ok) {
+      setError(out.error);
       return;
     }
     setHidden(true);
@@ -32,18 +32,22 @@ export function BudgetToast({ thresholdPct, limitLabel }: { thresholdPct: number
       role="status"
       className={`border-b ${atLimit ? "border-red-900 bg-red-950/60" : "border-amber-900 bg-amber-950/60"}`}
     >
-      <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-2 text-sm">
+      <div className="flex max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-2 text-sm md:px-10">
         <p className={atLimit ? "text-red-200" : "text-amber-200"}>{message}</p>
         <div className="flex shrink-0 items-center gap-3">
-          {error && <span className="text-red-400">{error}</span>}
-          <Link href="/settings" className="underline hover:text-zinc-100">
+          {error && (
+            <span role="alert" className="text-red-300">
+              {error}
+            </span>
+          )}
+          <Link href="/settings" className="inline-flex min-h-11 items-center underline hover:text-zinc-100 md:min-h-8">
             Settings
           </Link>
           <button
             type="button"
             onClick={dismiss}
             disabled={busy}
-            className="rounded-md border border-zinc-700 px-2 py-1 text-zinc-300 hover:bg-zinc-800 disabled:opacity-50"
+            className="min-h-11 rounded-md border border-zinc-700 px-2 py-1 text-zinc-300 hover:bg-zinc-800 disabled:opacity-50 md:min-h-8"
           >
             {busy ? "Dismissing…" : "Dismiss"}
           </button>

@@ -28,7 +28,7 @@ export function GapQuestion({ runId, q }: { runId: string; q: QuestionState }) {
 
   if (state.status !== "open") {
     return (
-      <div className="rounded-md border border-zinc-800 p-3 text-sm">
+      <div className="rounded-xl border border-line bg-surface p-3 text-sm">
         <p className="text-zinc-400">{state.question}</p>
         <p className="mt-1 text-zinc-200">{state.status === "answered" ? state.answer : "Skipped"}</p>
       </div>
@@ -37,7 +37,7 @@ export function GapQuestion({ runId, q }: { runId: string; q: QuestionState }) {
 
   const inputId = `answer-${state.id}`;
   return (
-    <div className="flex flex-col gap-2 rounded-md border border-sky-900/70 bg-sky-950/20 p-3 text-sm">
+    <div className="flex flex-col gap-2 rounded-xl border border-sky-900/70 bg-info-soft p-3 text-sm">
       <p className="font-medium text-zinc-100">{state.question}</p>
       {state.options.length > 0 && (
         <div className="flex flex-wrap gap-2">
@@ -47,7 +47,7 @@ export function GapQuestion({ runId, q }: { runId: string; q: QuestionState }) {
               type="button"
               disabled={busy}
               onClick={() => void send(o)}
-              className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200 hover:border-zinc-500 disabled:opacity-60"
+              className="min-h-11 rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200 hover:border-zinc-500 disabled:opacity-60 md:min-h-8"
             >
               {o}
             </button>
@@ -70,12 +70,14 @@ export function GapQuestion({ runId, q }: { runId: string; q: QuestionState }) {
           onChange={(e) => setText(e.target.value)}
           maxLength={2_000}
           placeholder="Or type your own answer"
-          className="min-w-0 flex-1 rounded-md border border-edge bg-zinc-900 px-2.5 py-1.5 text-xs outline-none focus:border-zinc-400"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${inputId}-error` : undefined}
+          className="min-h-11 min-w-0 flex-1 rounded-md border border-edge bg-zinc-900 px-2.5 py-1.5 text-xs outline-none focus:border-zinc-400 md:min-h-8"
         />
         <button
           type="submit"
           disabled={busy || !text.trim()}
-          className="rounded-lg bg-accent-strong px-3 py-1.5 text-xs font-medium text-zinc-50 disabled:opacity-60 hover:bg-accent-hover"
+          className="min-h-11 rounded-lg bg-accent-strong px-3 py-1.5 text-xs font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60 md:min-h-8"
         >
           Send
         </button>
@@ -83,12 +85,16 @@ export function GapQuestion({ runId, q }: { runId: string; q: QuestionState }) {
           type="button"
           disabled={busy}
           onClick={() => void send(null)}
-          className="rounded-md border border-zinc-800 px-3 py-1.5 text-xs text-zinc-400 hover:border-zinc-600 disabled:opacity-60"
+          className="min-h-11 rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-400 hover:border-zinc-600 disabled:opacity-60 md:min-h-8"
         >
           Skip
         </button>
       </form>
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && (
+        <p id={`${inputId}-error`} role="alert" className="text-xs text-red-400">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

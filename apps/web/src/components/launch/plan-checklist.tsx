@@ -9,9 +9,9 @@ import { TaskActions } from "./plan-task-actions";
 
 export const MODE_TONE: Record<string, string> = {
   auto: "border-sky-800 text-sky-300",
-  assisted: "border-violet-800 text-violet-300",
+  assisted: "border-olive/40 text-olive",
   manual: "border-amber-700/70 text-amber-200",
-  gate: "border-rose-800 text-rose-300",
+  gate: "border-rose/40 text-rose",
 };
 
 const STATUS: Record<string, { label: string; tone: string }> = {
@@ -24,7 +24,7 @@ const STATUS: Record<string, { label: string; tone: string }> = {
 
 export function statusLabel(t: Pick<LaunchTaskView, "status" | "optional" | "mode">): { label: string; tone: string } {
   if (t.optional && t.status === "skipped") return { label: "Off", tone: "text-zinc-500" };
-  if (t.mode === "gate" && t.status !== "done") return { label: "Not passed yet", tone: "text-rose-300" };
+  if (t.mode === "gate" && t.status !== "done") return { label: "Not passed yet", tone: "text-rose" };
   if (t.mode === "gate") return { label: "Passed", tone: "text-emerald-400" };
   return STATUS[t.status] ?? { label: t.status, tone: "text-zinc-400" };
 }
@@ -107,7 +107,7 @@ export function TaskRow({ slug, task, today }: { slug: string; task: LaunchTaskV
           <span className={s.tone}>{s.label}</span>
           {task.overdue && <span className="text-amber-300">Late: was due {task.dueDate < today ? plainDay(task.dueDate) : "today"}</span>}
           {link && (
-            <Link href={link.href} className="text-zinc-300 underline underline-offset-2 hover:text-zinc-100">
+            <Link href={link.href} className="inline-flex min-h-11 items-center text-zinc-300 underline underline-offset-2 hover:text-zinc-100 md:min-h-0">
               {link.label}
             </Link>
           )}

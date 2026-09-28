@@ -15,6 +15,7 @@ export function UnsureList({ slug, dnaVersionId, items, confirmed }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   async function confirm() {
+    if (busy) return;
     setBusy(true);
     setError(null);
     const out = await postJson(`/api/products/${encodeURIComponent(slug)}/dna`, { action: "confirm", dnaVersionId });
@@ -51,13 +52,17 @@ export function UnsureList({ slug, dnaVersionId, items, confirmed }: Props) {
             type="button"
             onClick={() => void confirm()}
             disabled={busy}
-            className="rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60"
+            className="inline-flex min-h-11 items-center rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60"
           >
             {busy ? "Saving…" : "These look right"}
           </button>
         )}
       </div>
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && (
+        <p className="text-sm text-red-400" role="alert">
+          {error}
+        </p>
+      )}
     </section>
   );
 }

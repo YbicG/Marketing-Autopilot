@@ -43,6 +43,7 @@ export function PlanStart({
   }
 
   async function make() {
+    if (busy) return;
     setBusy(true);
     setError(null);
     const out = await postJson(`/api/launch/plan/${encodeURIComponent(slug)}`, { action: "create", optionalOn: [...on] });
@@ -61,15 +62,15 @@ export function PlanStart({
         </p>
       </div>
 
-      <dl className="grid grid-cols-3 gap-3">
+      <dl className="grid grid-cols-3 gap-2 sm:gap-3">
         {[
           ["Day 1", start],
           ["Launch day", launch],
           ["Day 30", end],
         ].map(([k, v]) => (
-          <div key={k} className="rounded-md border border-zinc-800 px-3 py-2">
+          <div key={k} className="min-w-0 rounded-md border border-zinc-800 px-2.5 py-2 sm:px-3">
             <dt className="text-xs text-zinc-500">{k}</dt>
-            <dd className="font-medium">{v}</dd>
+            <dd className="text-sm font-medium sm:text-base">{v}</dd>
           </div>
         ))}
       </dl>
@@ -80,7 +81,7 @@ export function PlanStart({
           <legend className="mb-1 text-sm font-medium">Extra places to launch (off unless you want them)</legend>
           {optional.map((o) => (
             <label key={o.key} className="flex cursor-pointer items-start gap-3 rounded-md border border-zinc-800 px-3 py-2 hover:border-zinc-700">
-              <input type="checkbox" checked={on.has(o.key)} onChange={() => flip(o.key)} className="mt-1 accent-zinc-200" />
+              <input type="checkbox" checked={on.has(o.key)} onChange={() => flip(o.key)} disabled={busy} className="mt-1" />
               <span className="flex flex-col">
                 <span className="text-sm">
                   {o.title} <span className="text-zinc-500">· by {o.due}</span>
@@ -97,11 +98,15 @@ export function PlanStart({
           type="button"
           onClick={() => void make()}
           disabled={busy}
-          className="rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60"
+          className="min-h-11 md:min-h-9 rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60"
         >
           {busy ? "Making it…" : "Make my launch checklist · free"}
         </button>
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && (
+          <p role="alert" className="text-sm text-red-400">
+            {error}
+          </p>
+        )}
       </div>
     </section>
   );

@@ -52,8 +52,8 @@ function PostLine({ p, tz }: { p: LaunchDayPost; tz: string }) {
         </span>
       </span>
       {p.platformUrl ? (
-        <a href={p.platformUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-zinc-200 underline underline-offset-2 hover:text-white">
-          Open the post and answer comments
+        <a href={p.platformUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center text-sm text-zinc-200 underline underline-offset-2 hover:text-zinc-50 md:min-h-0">
+          Open the post and answer comments<span className="sr-only"> on {platformName(p.platform)} (opens in a new tab)</span>
         </a>
       ) : (
         <span className="text-xs text-zinc-500">{p.state === "published" ? "Link not back from the platform yet" : "Not out yet"}</span>
@@ -94,15 +94,15 @@ export function LaunchDay({
           <h2 className={prominent ? "text-2xl font-semibold" : "text-lg font-semibold"}>{countdownText(c)}</h2>
           <p className="text-sm text-zinc-400">Launch day is {plainDay(c.launchDate)}.</p>
         </div>
-        <Link href={replyHref} className="rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500">
+        <Link href={replyHref} className="inline-flex min-h-11 md:min-h-9 items-center rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500">
           {replyReady ? "Open the reply bank" : view.replyBank ? "Reply bank (not ready yet)" : "Reply bank"}
         </Link>
       </div>
 
       {c.isLaunchDay ? (
         block ? (
-          <div role="alert" className="rounded-md border border-rose-800 bg-rose-950/40 px-4 py-3 text-sm text-rose-200">
-            <p className="font-medium">Posts are on hold.</p>
+          <div role="alert" className="rounded-md border border-rose/40 bg-rose-soft px-4 py-3 text-sm text-zinc-200">
+            <p className="font-medium text-rose">Posts are on hold.</p>
             <p>{block}</p>
           </div>
         ) : (

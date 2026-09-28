@@ -14,6 +14,7 @@ export function ApproveButton({ slug, postIds, label }: { slug: string; postIds:
   const [msg, setMsg] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
 
   async function approve() {
+    if (busy) return;
     setBusy(true);
     setMsg(null);
     const out = await postJson<{ approved?: number; skipped?: { postId: string; reason: string }[] }>("/api/approvals/posts", { postIds });
@@ -30,7 +31,7 @@ export function ApproveButton({ slug, postIds, label }: { slug: string; postIds:
 
   if (!postIds.length) {
     return (
-      <Link href={`/p/${encodeURIComponent(slug)}/queue`} className="text-sm text-zinc-400 underline underline-offset-2">
+      <Link href={`/p/${encodeURIComponent(slug)}/queue`} className="inline-flex min-h-11 items-center text-sm text-zinc-400 underline underline-offset-2 md:min-h-0">
         Open the Queue
       </Link>
     );
@@ -41,11 +42,13 @@ export function ApproveButton({ slug, postIds, label }: { slug: string; postIds:
         type="button"
         onClick={() => void approve()}
         disabled={busy}
-        className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60"
+        className="inline-flex min-h-11 items-center rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60 md:min-h-9"
       >
         {busy ? "Approving…" : label}
       </button>
-      {msg && <span className={`text-xs ${msg.tone === "ok" ? "text-emerald-400" : "text-amber-300"}`}>{msg.text}</span>}
+      <span className={`text-xs ${msg?.tone === "ok" ? "text-emerald-400" : "text-amber-300"}`} aria-live="polite">
+        {msg?.text}
+      </span>
     </span>
   );
 }

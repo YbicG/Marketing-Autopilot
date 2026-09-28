@@ -4,8 +4,8 @@ import type { ReactNode } from "react";
 // Form pieces for the kit editors. Every field edits a plain value; the editors put them back into
 // the contract body so a save round-trips the kind's schema.
 
-const inputCls = "w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm disabled:opacity-60";
-const small = "text-xs text-zinc-500 hover:text-zinc-200 disabled:opacity-40";
+const inputCls = "min-h-11 md:min-h-9 w-full rounded-md border border-edge bg-zinc-900 px-3 py-1.5 text-sm text-ink outline-none focus:border-zinc-400 disabled:opacity-60";
+const small = "inline-flex min-h-11 shrink-0 items-center text-xs text-zinc-500 hover:text-zinc-200 disabled:opacity-40 md:min-h-0";
 
 export function TextField({
   label,
@@ -29,12 +29,15 @@ export function TextField({
     <label className="flex flex-col gap-1 text-sm text-zinc-300">
       <span className="flex items-baseline justify-between gap-2">
         <span>{label}</span>
-        {max !== undefined && <span className={`text-xs ${over ? "text-red-400" : "text-zinc-500"}`}>{`${value.length}/${max}`}</span>}
+        {max !== undefined && <span className={`text-xs ${over ? "text-red-400" : "text-zinc-500"}`}>
+            {`${value.length}/${max}`}
+            {over && <span className="sr-only"> characters, over the limit</span>}
+          </span>}
       </span>
       {rows && rows > 1 ? (
-        <textarea rows={rows} value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} className={inputCls} />
+        <textarea rows={rows} value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} aria-invalid={over || undefined} className={inputCls} />
       ) : (
-        <input value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} className={inputCls} />
+        <input value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} aria-invalid={over || undefined} className={inputCls} />
       )}
       {hint && <span className="text-xs text-zinc-500">{hint}</span>}
     </label>
@@ -82,8 +85,8 @@ export function StringList({
               className={inputCls}
             />
           )}
-          <button type="button" disabled={disabled || values.length <= min} onClick={() => onChange(values.filter((_, n) => n !== i))} className={`${small} pt-2`}>
-            Remove
+          <button type="button" disabled={disabled || values.length <= min} onClick={() => onChange(values.filter((_, n) => n !== i))} className={small}>
+            Remove<span className="sr-only"> {label} {i + 1}</span>
           </button>
         </div>
       ))}
@@ -118,10 +121,10 @@ export function ItemList<T>({
     <div className="flex flex-col gap-3">
       {items.map((item, i) => (
         <div key={i} className="flex flex-col gap-3 rounded-xl border border-zinc-800 p-3 bg-surface">
-          <div className="flex items-baseline justify-between gap-2">
-            <p className="text-sm font-medium text-zinc-200">{title(item, i)}</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="min-w-0 break-words text-sm font-medium text-zinc-200">{title(item, i)}</p>
             <button type="button" disabled={disabled || items.length <= min} onClick={() => onChange(items.filter((_, n) => n !== i))} className={small}>
-              Remove
+              Remove<span className="sr-only"> {title(item, i)}</span>
             </button>
           </div>
           {render(item, (next) => onChange(items.map((x, n) => (n === i ? next : x))), i)}

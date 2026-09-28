@@ -28,9 +28,9 @@ export default async function LaunchKitsPage({ params }: { params: Promise<{ slu
 
   const shell = (children: ReactNode) => (
     <>
-      <main className="flex max-w-5xl flex-col gap-6 px-4 md:px-10 py-8">
+      <main className="flex max-w-5xl flex-col gap-6 px-4 py-8 md:px-10">
         <div>
-          <Link href={`/p/${product.slug}/launch`} className="text-sm text-zinc-500 hover:text-zinc-300">
+          <Link href={`/p/${product.slug}/launch`} className="inline-flex min-h-11 items-center text-sm text-zinc-500 hover:text-zinc-300 md:min-h-8">
             ← Launch
           </Link>
           <h1 className="font-serif text-4xl tracking-tight">Launch kit</h1>

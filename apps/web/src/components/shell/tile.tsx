@@ -33,7 +33,7 @@ export interface ProjectState {
 export function projectState(p: Pick<ProjectSummary, "status" | "stage" | "working" | "attention" | "waitingApproval">): ProjectState {
   if (p.status === "parked") return { label: "Parked", dot: "bg-zinc-600" };
   if (p.attention > 0) return { label: "Needs you", dot: "bg-warn" };
-  if (p.working) return { label: "Working", dot: "bg-warn motion-safe:animate-pulse" };
+  if (p.working) return { label: "Working", dot: "bg-info motion-safe:animate-pulse" };
   if (p.waitingApproval > 0) return { label: "Waiting on approval", dot: "bg-warn" };
   if (p.stage >= 4) return { label: p.stage >= 5 ? "Posting and learning" : "Posting", dot: "bg-accent" };
   if (p.stage >= 1) return { label: "Getting ready", dot: "bg-zinc-400" };

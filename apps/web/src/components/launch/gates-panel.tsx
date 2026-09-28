@@ -11,11 +11,11 @@ function GateLine({ g }: { g: LaunchGateSummary["gates"][number] }) {
   return (
     <div className="flex flex-col gap-0.5">
       <div className="flex flex-wrap items-center gap-2">
-        <span aria-hidden className={g.passed ? "text-emerald-400" : "text-rose-400"}>
+        <span aria-hidden className={g.passed ? "text-emerald-400" : "text-rose"}>
           {g.passed ? "✓" : "✕"}
         </span>
         <span className="text-sm font-medium">{g.title}</span>
-        <span className={`text-xs ${g.passed ? "text-emerald-400" : "text-rose-300"}`}>{g.passed ? "Passed" : "Not passed yet"}</span>
+        <span className={`text-xs ${g.passed ? "text-emerald-400" : "text-rose"}`}>{g.passed ? "Passed" : "Not passed yet"}</span>
       </div>
       {!g.passed &&
         g.reasons.map((r) => (
@@ -53,7 +53,7 @@ export function GatesPanel({
             On launch day nothing posts until all of these pass. They pass on their own when the check passes; you can&apos;t tick them.
           </p>
         </div>
-        <p className={`text-sm font-medium ${gates.allPassed ? "text-emerald-400" : "text-amber-300"}`}>
+        <p className={`text-sm font-medium ${gates.allPassed ? "text-emerald-400" : "text-amber-300"}`} aria-live="polite">
           {gates.allPassed ? "All passed" : `${gates.gates.filter((g) => g.passed).length} of ${gates.gates.length} passed`}
         </p>
       </div>

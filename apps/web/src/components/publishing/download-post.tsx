@@ -25,7 +25,7 @@ export function DownloadPost({ post, onDone }: { post: PostDetailJson; onDone: (
     else onDone();
   }
 
-  const step = "rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500";
+  const step = "inline-flex min-h-11 items-center rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-50 md:min-h-9";
   return (
     <section className="flex flex-col gap-3 rounded-md border border-zinc-800 p-3" aria-label="Download and post yourself">
       <div>
@@ -52,18 +52,22 @@ export function DownloadPost({ post, onDone }: { post: PostDetailJson; onDone: (
           onChange={(e) => setUrl(e.target.value)}
           placeholder="Link to your live post"
           aria-label="Link to your live post"
-          className="min-w-0 flex-1 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm"
+className="min-h-11 min-w-0 flex-1 rounded-md border border-edge bg-zinc-900 px-3 py-1.5 text-sm focus:border-zinc-400 disabled:opacity-60 md:min-h-9"
         />
         <button
           type="button"
           onClick={() => void done()}
           disabled={busy || !url.trim()}
-          className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 disabled:opacity-50 hover:bg-accent-hover"
+className="inline-flex min-h-11 items-center rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 disabled:opacity-50 hover:bg-accent-hover md:min-h-9"
         >
-          Mark as posted
+          {busy ? "Saving…" : "Mark as posted"}
         </button>
       </div>
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && (
+        <p className="text-xs text-red-400" role="alert">
+          {error}
+        </p>
+      )}
     </section>
   );
 }

@@ -10,6 +10,7 @@ export function SourceLink({ url, className = "" }: { url: string | null | undef
       className={`text-xs text-zinc-500 underline-offset-2 hover:text-zinc-300 hover:underline ${className}`}
     >
       {host}
+      <span className="sr-only"> (opens in a new tab)</span>
     </a>
   );
 }

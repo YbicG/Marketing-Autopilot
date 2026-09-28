@@ -16,7 +16,7 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <main className="flex max-w-md flex-col gap-10 px-4 md:px-10 py-10">
+      <main className="flex max-w-md flex-col gap-10 px-4 py-10 md:px-10">
         <section className="flex flex-col gap-3">
           <h1 className="font-serif text-4xl tracking-tight">Monthly spending limit</h1>
           <LimitForm initialUsd={Math.round(ws.monthlyLimitMicros / USD)} next="/settings" />
@@ -28,8 +28,8 @@ export default async function SettingsPage() {
             .
           </p>
         </section>
-        <section className="flex flex-col gap-3 rounded-md border border-red-900/60 p-4">
-          <h2 className="font-medium text-red-300">Delete everything</h2>
+        <section className="flex flex-col gap-3 rounded-md border border-red-900/60 p-4" aria-labelledby="delete-everything">
+          <h2 id="delete-everything" className="font-medium text-red-300">Delete everything</h2>
           <p className="text-sm text-zinc-400">
             Removes all runs, spending history and settings for this workspace, and signs you out. This can't be undone.
           </p>

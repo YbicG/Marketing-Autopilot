@@ -8,8 +8,8 @@ interface XWindow {
   until: string;
 }
 
-const INPUT = "rounded-md border border-edge bg-zinc-900 px-2.5 py-1.5 text-sm outline-none focus:border-zinc-400";
-const BTN = "rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-60";
+const INPUT = "min-h-11 md:min-h-9 rounded-md border border-edge bg-zinc-900 px-2.5 py-1.5 text-sm text-ink outline-none focus:border-zinc-400";
+const BTN = "min-h-11 md:min-h-9 rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-60";
 
 const nice = (d: string) => new Intl.DateTimeFormat("en-US", { timeZone: "UTC", weekday: "short", month: "short", day: "numeric" }).format(new Date(`${d}T12:00:00Z`));
 
@@ -26,6 +26,7 @@ export function XLinksCard({ slug, current, suggested, maxDays }: { slug: string
   const [msg, setMsg] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
 
   async function send(body: unknown, okText: string) {
+    if (busy) return;
     setBusy(true);
     setMsg(null);
     const out = await postJson(`/api/launch/x-links/${encodeURIComponent(slug)}`, body);
@@ -85,14 +86,16 @@ export function XLinksCard({ slug, current, suggested, maxDays }: { slug: string
               setFrom(suggested.from);
               setUntil(suggested.until);
             }}
-            className="text-xs text-zinc-400 underline underline-offset-2 hover:text-zinc-200"
+            className="inline-flex min-h-11 items-center text-xs text-zinc-400 underline underline-offset-2 hover:text-zinc-200 md:min-h-9"
           >
             Use launch week ({nice(suggested.from)} to {nice(suggested.until)})
           </button>
         )}
       </form>
       <p className="text-xs text-zinc-500">Suggested: launch day and three days either side. At most {maxDays} days.</p>
-      {msg && <p className={`text-xs ${msg.tone === "ok" ? "text-emerald-400" : "text-red-400"}`}>{msg.text}</p>}
+      <p role="status" className={`text-xs empty:hidden ${msg?.tone === "error" ? "text-red-400" : "text-emerald-400"}`}>
+        {msg?.text ?? ""}
+      </p>
     </section>
   );
 }

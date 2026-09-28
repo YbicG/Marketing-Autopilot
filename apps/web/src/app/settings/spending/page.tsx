@@ -105,24 +105,24 @@ export default async function SpendingPage({ searchParams }: { searchParams: Pro
   ]);
   const used = meter.spentMicros + meter.reservedMicros;
   const pct = meter.capMicros > 0 ? Math.min(100, Math.round((used / meter.capMicros) * 100)) : 0;
-  const tone = pct >= 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-500" : "bg-emerald-500";
+  const tone = pct >= 100 ? "bg-danger" : pct >= 80 ? "bg-warn" : "bg-accent";
   const subs = subscriptionSummary(configured);
   const isCurrent = month === current;
 
   return (
     <>
-      <main className="flex max-w-5xl flex-col gap-8 px-4 md:px-10 py-8">
+      <main className="flex max-w-5xl flex-col gap-8 px-4 py-8 md:px-10">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="font-serif text-4xl tracking-tight">Spending</h1>
             <p className="text-sm text-zinc-400">{monthLabel(month)}</p>
           </div>
-          <nav className="flex gap-3 text-sm" aria-label="Month">
-            <Link href={`/settings/spending?month=${shiftMonth(month, -1)}`} className="text-zinc-400 hover:text-zinc-200">
+          <nav className="flex flex-wrap gap-x-4 text-sm" aria-label="Month">
+            <Link href={`/settings/spending?month=${shiftMonth(month, -1)}`} className="inline-flex min-h-11 items-center text-zinc-400 hover:text-zinc-200 md:min-h-8">
               ← {monthLabel(shiftMonth(month, -1))}
             </Link>
             {!isCurrent && (
-              <Link href={`/settings/spending?month=${shiftMonth(month, 1)}`} className="text-zinc-400 hover:text-zinc-200">
+              <Link href={`/settings/spending?month=${shiftMonth(month, 1)}`} className="inline-flex min-h-11 items-center text-zinc-400 hover:text-zinc-200 md:min-h-8">
                 {monthLabel(shiftMonth(month, 1))} →
               </Link>
             )}
@@ -136,7 +136,7 @@ export default async function SpendingPage({ searchParams }: { searchParams: Pro
             </p>
             <p className="text-sm text-zinc-400">Subscriptions: {formatMonthlyRange(subs)}</p>
           </div>
-          <div className="h-2 overflow-hidden rounded bg-zinc-800">
+          <div className="h-2 overflow-hidden rounded bg-zinc-800" aria-hidden>
             <div className={`h-full ${tone}`} style={{ width: `${pct}%` }} />
           </div>
           <p className="text-xs text-zinc-500">
@@ -162,16 +162,16 @@ export default async function SpendingPage({ searchParams }: { searchParams: Pro
           {entries.length === 0 ? (
             <p className="text-sm text-zinc-500">Nothing spent this month.</p>
           ) : (
-            <div className="overflow-x-auto rounded-md border border-zinc-800">
+            <div className="overflow-x-auto rounded-md border border-zinc-800" role="region" aria-label="Every paid call table" tabIndex={0}>
               <table className="w-full min-w-[760px] text-left text-sm">
                 <thead className="bg-zinc-900/60 text-xs text-zinc-400">
                   <tr>
-                    <th className="px-3 py-2 font-medium">When</th>
-                    <th className="px-3 py-2 font-medium">What</th>
-                    <th className="px-3 py-2 font-medium">Project</th>
-                    <th className="px-3 py-2 font-medium">Status</th>
-                    <th className="px-3 py-2 text-right font-medium">Estimate</th>
-                    <th className="px-3 py-2 text-right font-medium">Actual</th>
+                    <th scope="col" className="px-3 py-2 font-medium">When</th>
+                    <th scope="col" className="px-3 py-2 font-medium">What</th>
+                    <th scope="col" className="px-3 py-2 font-medium">Project</th>
+                    <th scope="col" className="px-3 py-2 font-medium">Status</th>
+                    <th scope="col" className="px-3 py-2 text-right font-medium">Estimate</th>
+                    <th scope="col" className="px-3 py-2 text-right font-medium">Actual</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800">

@@ -51,7 +51,7 @@ export default async function PostEditorPage({ params }: { params: Promise<{ slu
       <main className="flex max-w-5xl flex-col gap-6 px-4 md:px-10 py-8">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <Link href={board} className="text-sm text-zinc-500 hover:text-zinc-300">
+            <Link href={board} className="inline-flex min-h-11 items-center text-sm text-zinc-500 hover:text-zinc-300 md:min-h-0">
               ← Campaign board
             </Link>
             <h1 className="font-serif text-4xl tracking-tight">

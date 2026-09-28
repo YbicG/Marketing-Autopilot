@@ -18,7 +18,7 @@ export interface SenderSettingsValue {
 type Audience = { id: string; name: string };
 type Count = { subscribed: number; unsubscribed: number; more: boolean };
 
-const input = "w-full rounded-md border border-edge bg-zinc-900 px-3 py-2 text-sm outline-none focus:border-zinc-400 disabled:opacity-60";
+const input = "min-h-11 md:min-h-9 w-full rounded-md border border-edge bg-zinc-900 px-3 py-2 text-sm outline-none focus:border-zinc-400 disabled:opacity-60";
 const labelCls = "flex flex-col gap-1 text-sm";
 
 function countLine(c: Count): string {
@@ -103,6 +103,7 @@ export function SenderSettings({
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    if (busy) return;
     setBusy(true);
     setError(null);
     const out = await postJson("/api/email/settings", { slug, settings: v });
@@ -116,9 +117,9 @@ export function SenderSettings({
   const knownPick = !v.audienceId || listOptions.some((a) => a.id === v.audienceId);
 
   return (
-    <form onSubmit={save} className="flex flex-col gap-4 rounded-md border border-zinc-800 p-4" aria-label="Sender settings">
+    <form onSubmit={save} className="flex flex-col gap-4 rounded-md border border-zinc-800 p-4" aria-labelledby="sender-settings">
       <div>
-        <h2 className="font-semibold">Who it&apos;s from and who gets it</h2>
+        <h2 id="sender-settings" className="font-semibold">Who it&apos;s from and who gets it</h2>
         <p className="mt-1 text-sm text-zinc-400">
           Every email carries these in its footer, with a one-click unsubscribe link Resend fills in. Changing them sends any approved or scheduled
           email back for your approval.
@@ -174,7 +175,9 @@ export function SenderSettings({
       </div>
 
       <div className="flex flex-col gap-2">
-        <span className="text-sm">Which Resend list it goes to</span>
+        <span id="list-label" className="text-sm">
+          Which Resend list it goes to
+        </span>
         {!hasResendKey ? (
           <p className="text-sm text-zinc-400">
             Add your Resend API key in{" "}
@@ -189,7 +192,7 @@ export function SenderSettings({
               value={v.audienceId ?? ""}
               onChange={(e) => pick(e.target.value)}
               disabled={loadingLists && !audiences}
-              aria-label="Resend list"
+              aria-labelledby="list-label"
               className={`${input} sm:w-auto sm:min-w-64`}
             >
               <option value="">{loadingLists && !audiences ? "Loading your lists…" : "Pick a list"}</option>
@@ -203,16 +206,22 @@ export function SenderSettings({
               type="button"
               onClick={() => void loadLists()}
               disabled={loadingLists}
-              className="rounded-md border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:border-zinc-500 disabled:opacity-50"
+              className="min-h-11 md:min-h-9 rounded-md border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:border-zinc-500 disabled:opacity-50"
             >
               {loadingLists ? "Loading…" : "Reload lists"}
             </button>
           </div>
         )}
-        {listError && <p className="text-sm text-red-400">{listError}</p>}
+        {listError && (
+          <p role="alert" className="text-sm text-red-400">
+            {listError}
+          </p>
+        )}
         {audiences && audiences.length === 0 && <p className="text-sm text-zinc-400">Your Resend account has no lists yet. Make one in Resend with your past buyers, then reload.</p>}
         {!knownPick && audiences && <p className="text-sm text-amber-300">The saved list isn&apos;t in your Resend account any more. Pick another.</p>}
-        {count && <p className="text-xs text-zinc-400">{countLine(count)}</p>}
+        <p className="text-xs text-zinc-400 empty:hidden" aria-live="polite">
+          {count ? countLine(count) : ""}
+        </p>
         {countError && <p className="text-xs text-zinc-500">{countError}</p>}
       </div>
 
@@ -229,17 +238,23 @@ export function SenderSettings({
       </label>
 
       <label className="flex items-start gap-2 text-sm">
-        <input type="checkbox" checked={v.euConsentAck === true} onChange={(e) => set({ euConsentAck: e.target.checked })} className="mt-1" />
+        <input type="checkbox" checked={v.euConsentAck === true} onChange={(e) => set({ euConsentAck: e.target.checked })} className="mt-1 size-5 shrink-0 md:size-4" />
         <span>Everyone on this list in the EU or UK agreed to hear from me by email. (If you&apos;re not sure, leave them off the list.)</span>
       </label>
 
       <div className="flex items-center gap-3">
-        <button type="submit" disabled={busy} className="rounded-lg bg-accent-strong px-3 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50">
+        <button type="submit" disabled={busy} className="min-h-11 md:min-h-9 rounded-lg bg-accent-strong px-3 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50">
           {busy ? "Saving…" : "Save sender settings"}
         </button>
-        {saved && !error && <span className="text-xs text-emerald-400">Saved.</span>}
+        <span role="status" className="text-xs text-emerald-400">
+          {saved && !error ? "Saved." : ""}
+        </span>
       </div>
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-red-400">
+          {error}
+        </p>
+      )}
     </form>
   );
 }

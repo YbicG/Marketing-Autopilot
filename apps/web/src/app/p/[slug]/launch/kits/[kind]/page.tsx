@@ -39,9 +39,9 @@ export default async function LaunchKitPage({ params }: { params: Promise<{ slug
 
   const shell = (chips: ReactNode, children: ReactNode) => (
     <>
-      <main className="flex max-w-5xl flex-col gap-6 px-4 md:px-10 py-8">
+      <main className="flex max-w-5xl flex-col gap-6 px-4 py-8 md:px-10">
         <div>
-          <Link href={`/p/${product.slug}/launch/kits`} className="text-sm text-zinc-500 hover:text-zinc-300">
+          <Link href={`/p/${product.slug}/launch/kits`} className="inline-flex min-h-11 items-center text-sm text-zinc-500 hover:text-zinc-300 md:min-h-8">
             ← Launch kit
           </Link>
           <div className="flex flex-wrap items-center gap-3">
@@ -111,7 +111,7 @@ export default async function LaunchKitPage({ params }: { params: Promise<{ slug
           <>
             <ReplyBank replies={replies} />
             <details className="rounded-xl border border-zinc-800 p-4 bg-surface">
-              <summary className="cursor-pointer text-sm text-zinc-300">Edit the replies</summary>
+              <summary className="flex min-h-11 cursor-pointer items-center text-sm text-zinc-300 md:min-h-0">Edit the replies</summary>
               <div className="mt-4">{editor}</div>
             </details>
           </>
@@ -145,7 +145,7 @@ export default async function LaunchKitPage({ params }: { params: Promise<{ slug
       {writing && kit.runId && <KitLive runIds={[kit.runId]} />}
       {kit.needsYouReason && <p className="rounded-md border border-amber-800 bg-amber-950/20 px-4 py-3 text-sm text-amber-200">{kit.needsYouReason}</p>}
 
-      <section className="grid gap-4 md:grid-cols-[2fr_1fr]">
+      <section className="grid gap-4 md:grid-cols-[2fr_1fr]" aria-label="Checks and download">
         <div className="flex flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-950 p-4">
           <h2 className="font-medium">Checks</h2>
           {writing ? <p className="text-sm text-zinc-400">Checks run when it&apos;s written.</p> : <KitIssues issues={kit.issues} />}

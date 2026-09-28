@@ -32,13 +32,13 @@ export default async function BroadcastPage({ params }: { params: Promise<{ slug
 
   return (
     <>
-      <main className="flex max-w-6xl flex-col gap-6 px-4 md:px-10 py-8">
+      <main className="flex max-w-6xl flex-col gap-6 px-4 py-8 md:px-10">
         <div className="flex flex-col gap-2">
-          <Link href={`/p/${encodeURIComponent(slug)}/email`} className="text-sm text-zinc-400 hover:text-zinc-200">
+          <Link href={`/p/${encodeURIComponent(slug)}/email`} className="inline-flex min-h-11 items-center self-start text-sm text-zinc-400 hover:text-zinc-200 md:min-h-8">
             ← All emails
           </Link>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="font-serif text-4xl tracking-tight">{view.name}</h1>
+            <h1 className="min-w-0 break-words font-serif text-4xl tracking-tight">{view.name}</h1>
             <StatusPill status={view.status} />
           </div>
         </div>

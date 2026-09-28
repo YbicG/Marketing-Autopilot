@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { postJson } from "@/lib/post-json";
 import { CopyButton } from "./copy-button";
 import { DownloadPost } from "./download-post";
@@ -8,6 +8,7 @@ import { CANCELABLE_STATES, MOVABLE_STATES, platformName, stateName, STATE_TONE 
 import { RescheduleForm } from "./reschedule-form";
 import { TikTokComposer } from "./tiktok-composer";
 import type { PostDetailJson } from "./types";
+import { useModalFocus } from "./use-modal-focus";
 
 /** The Queue / Today post drawer: preview, settings, approve, move, cancel, post it yourself. */
 export function PostDrawer({ postId, onClose }: { postId: string; onClose: () => void }) {
@@ -18,6 +19,9 @@ export function PostDrawer({ postId, onClose }: { postId: string; onClose: () =>
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [draftUrl, setDraftUrl] = useState("");
+  const panel = useRef<HTMLElement>(null);
+  const titleId = useId();
+  useModalFocus(panel, onClose);
 
   const load = useCallback(async () => {
     try {
@@ -34,18 +38,13 @@ export function PostDrawer({ postId, onClose }: { postId: string; onClose: () =>
     void load();
   }, [load]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   const changed = useCallback(async () => {
     await load();
     router.refresh();
   }, [load, router]);
 
   async function act(key: string, url: string, body: unknown, ok?: (d: Record<string, unknown>) => string | null) {
+    if (busy) return;
     setBusy(key);
     setError(null);
     setNote(null);
@@ -59,39 +58,51 @@ export function PostDrawer({ postId, onClose }: { postId: string; onClose: () =>
     await changed();
   }
 
-  const btn = "rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-50";
-  const primary = "rounded-md bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-900 disabled:opacity-50";
+  const btn = "inline-flex min-h-11 items-center justify-center rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-50 md:min-h-9";
+  const primary = "inline-flex min-h-11 items-center justify-center rounded-md bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-zinc-50 disabled:opacity-50 md:min-h-9";
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-end bg-black/50" onClick={onClose} role="presentation">
+    <div className="fixed inset-0 z-40 flex justify-end bg-zinc-950/60" onClick={onClose} role="presentation">
       <aside
-        className="flex h-full w-full max-w-lg flex-col gap-4 overflow-y-auto border-l border-zinc-800 bg-zinc-950 p-5"
+        ref={panel}
+        tabIndex={-1}
+        className="flex h-full w-full max-w-lg flex-col gap-4 overflow-y-auto overscroll-contain border-l border-zinc-800 bg-zinc-950 p-5 focus:outline-none"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label="Post"
+        aria-labelledby={titleId}
       >
         <div className="flex items-start justify-between gap-3">
           <div>
             {post ? (
               <>
-                <h2 className="text-lg font-semibold">
+                <h2 id={titleId} className="text-lg font-semibold">
                   {platformName(post.platform)}
                   {post.connection?.handle ? <span className="text-zinc-400"> · @{post.connection.handle.replace(/^@/, "")}</span> : null}
                 </h2>
                 <p className="text-sm text-zinc-400">{post.slot}</p>
               </>
             ) : (
-              <h2 className="text-lg font-semibold">Post</h2>
+              <h2 id={titleId} className="text-lg font-semibold">
+                Post
+              </h2>
             )}
           </div>
-          <button type="button" onClick={onClose} className="text-sm text-zinc-400 hover:text-zinc-200" aria-label="Close">
+          <button type="button" onClick={onClose} className="-mr-2 inline-flex min-h-11 items-center px-2 text-sm text-zinc-400 hover:text-zinc-200 md:min-h-9">
             Close
           </button>
         </div>
 
-        {loadError && <p className="text-sm text-red-400">{loadError}</p>}
-        {!post && !loadError && <p className="text-sm text-zinc-500">Loading…</p>}
+        {loadError && (
+          <p className="text-sm text-red-400" role="alert">
+            {loadError}
+          </p>
+        )}
+        {!post && !loadError && (
+          <p className="text-sm text-zinc-500" role="status">
+            Loading…
+          </p>
+        )}
 
         {post && (
           <>
@@ -129,11 +140,11 @@ export function PostDrawer({ postId, onClose }: { postId: string; onClose: () =>
               )}
               {post.media.length > 0 && (
                 <div className="flex gap-2 overflow-x-auto">
-                  {post.media.map((m) =>
+                  {post.media.map((m, i) =>
                     m.mime.startsWith("video/") ? (
-                      <video key={m.assetId} src={`/api/media/${m.assetId}`} controls className="h-48 rounded border border-zinc-800" />
+                      <video key={m.assetId} src={`/api/media/${m.assetId}`} controls preload="metadata" className="h-48 shrink-0 rounded border border-zinc-800 bg-zinc-950" />
                     ) : m.mime.startsWith("image/") ? (
-                      <img key={m.assetId} src={`/api/media/${m.assetId}?v=preview`} alt="" className="h-32 rounded border border-zinc-800" />
+                      <img key={m.assetId} src={`/api/media/${m.assetId}?v=preview`} alt={`Image ${i + 1} in this post`} className="h-32 shrink-0 rounded border border-zinc-800" />
                     ) : (
                       <span key={m.assetId} className="rounded border border-zinc-800 px-2 py-1 text-xs text-zinc-400">
                         {m.filename}
@@ -186,7 +197,7 @@ export function PostDrawer({ postId, onClose }: { postId: string; onClose: () =>
                       onChange={(e) => setDraftUrl(e.target.value)}
                       placeholder="Link to the live post (optional)"
                       aria-label="Link to the live post"
-                      className="min-w-0 flex-1 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm"
+                      className="min-h-11 min-w-0 flex-1 rounded-md border border-edge bg-zinc-900 px-3 py-1.5 text-sm focus:border-zinc-400 md:min-h-9"
                     />
                     <button
                       type="button"
@@ -194,7 +205,7 @@ export function PostDrawer({ postId, onClose }: { postId: string; onClose: () =>
                       className={primary}
                       onClick={() => void act("done", `/api/posts/${post.id}/manual-done`, draftUrl.trim() ? { url: draftUrl.trim() } : {}, () => "Marked as posted.")}
                     >
-                      Mark as done
+                      {busy === "done" ? "Saving…" : "Mark as done"}
                     </button>
                   </div>
                 </div>
@@ -220,17 +231,26 @@ export function PostDrawer({ postId, onClose }: { postId: string; onClose: () =>
                     className={btn}
                     onClick={() => void act("void", "/api/approvals/void", { postId: post.id, reason: "You took the approval back" }, () => "Approval taken back. It won't go out until you approve it again.")}
                   >
-                    Take approval back
+                    {busy === "void" ? "Taking it back…" : "Take approval back"}
                   </button>
                 )}
                 {CANCELABLE_STATES.has(post.state) && (
-                  <button type="button" disabled={!!busy} className={`${btn} text-red-300`} onClick={() => void act("cancel", `/api/posts/${post.id}/cancel`, {}, () => "Canceled.")}>
+                  <button
+                    type="button"
+                    disabled={!!busy}
+                    className={`${btn} text-red-300`}
+                    onClick={() => {
+                      if (window.confirm("Cancel this post? It won't go out.")) void act("cancel", `/api/posts/${post.id}/cancel`, {}, () => "Canceled.");
+                    }}
+                  >
                     {busy === "cancel" ? "Canceling…" : "Cancel this post"}
                   </button>
                 )}
               </div>
-              {note && <p className="text-sm text-zinc-300">{note}</p>}
-              {error && <p className="text-sm text-red-400">{error}</p>}
+              <div aria-live="polite">
+                {note && <p className="text-sm text-zinc-300">{note}</p>}
+                {error && <p className="text-sm text-red-400">{error}</p>}
+              </div>
             </section>
           </>
         )}

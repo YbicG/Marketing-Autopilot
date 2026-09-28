@@ -74,7 +74,7 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <main className="flex max-w-5xl flex-col gap-8 px-4 md:px-10 py-8">
+      <main className="flex max-w-5xl flex-col gap-8 px-4 py-8 md:px-10">
         <div>
           <h1 className="font-serif text-4xl tracking-tight">Where to post</h1>
           <p className="mt-1 text-sm text-zinc-400">
@@ -85,16 +85,18 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
 
         {connected === "1" && <SyncOnReturn />}
         {!vault.ready && (
-          <p className="rounded-md border border-amber-900/70 bg-amber-950/20 px-4 py-3 text-sm text-amber-200">{vault.message}</p>
+          <p role="alert" className="rounded-md border border-amber-900/70 bg-amber-950/20 px-4 py-3 text-sm text-amber-200">
+            {vault.message}
+          </p>
         )}
 
         <Step n={1} title="Add your Upload-Post key" done={hasKey && hasWebhook}>
           <p className="text-sm text-zinc-400">
             Upload-Post Basic costs $16–24/mo. Sign up on{" "}
             <a href="https://www.upload-post.com/" target="_blank" rel="noreferrer" className="underline underline-offset-2">
-              their site
+              their site<span className="sr-only"> (opens in a new tab)</span>
             </a>
-            , copy the API key, and set the webhook to <span className="font-mono text-zinc-300">{env().APP_BASE_URL}/api/webhooks/upload-post</span>.
+            , copy the API key, and set the webhook to <span className="break-all font-mono text-zinc-300">{env().APP_BASE_URL}/api/webhooks/upload-post</span>.
             Turn on their email notifications too.
           </p>
           <div className="grid gap-3 md:grid-cols-2">
@@ -122,7 +124,7 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
           ) : (
             <ul className="flex flex-col gap-2">
               {active.map((p) => (
-                <li key={p.id} className="flex items-center justify-between gap-3 text-sm">
+                <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 text-sm">
                   <span>{p.name}</span>
                   <ProfileButton productId={p.id} ready={connections.some((c) => c.productId === p.id)} disabled={!hasKey} />
                 </li>
@@ -160,7 +162,7 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
           <ul className="flex flex-wrap gap-3 text-sm">
             {active.map((p) => (
               <li key={p.id}>
-                <Link href={`/p/${p.slug}/content`} className="underline underline-offset-2">
+                <Link href={`/p/${p.slug}/content`} className="inline-flex min-h-11 items-center underline underline-offset-2 md:min-h-0">
                   {p.name}: bio and pinned post drafts
                 </Link>
               </li>
@@ -176,7 +178,7 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
           <ul className="flex flex-wrap gap-3 text-sm">
             {active.map((p) => (
               <li key={p.id}>
-                <Link href={`/p/${p.slug}/queue`} className="underline underline-offset-2">
+                <Link href={`/p/${p.slug}/queue`} className="inline-flex min-h-11 items-center underline underline-offset-2 md:min-h-0">
                   {p.name}: open the Queue
                 </Link>
               </li>
@@ -198,13 +200,15 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
 
 function Step({ n, title, done, children }: { n: number; title: string; done?: boolean; children: React.ReactNode }) {
   return (
-    <section className="flex flex-col gap-3 rounded-md border border-zinc-800 p-4" aria-label={title}>
-      <h2 className="flex items-center gap-3 font-semibold">
+    <section className="flex flex-col gap-3 rounded-md border border-zinc-800 p-4" aria-labelledby={`step-${n}`}>
+      <h2 id={`step-${n}`} className="flex items-center gap-3 font-semibold">
         <span
-          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs ${done ? "bg-emerald-600 text-white" : "bg-zinc-800 text-zinc-300"}`}
+          aria-hidden
+          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs ${done ? "bg-accent-strong text-zinc-50" : "bg-zinc-800 text-zinc-300"}`}
         >
           {done ? "✓" : n}
         </span>
+        <span className="sr-only">{done ? `Step ${n}, done:` : `Step ${n}:`}</span>
         {title}
       </h2>
       {children}

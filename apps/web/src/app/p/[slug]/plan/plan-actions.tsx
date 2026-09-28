@@ -49,6 +49,7 @@ export function PlanActions({
   const wouldBreak = !!est && est.high > choice.leftMicros;
 
   async function regenerate() {
+    if (busy) return;
     setBusy("regen");
     setError(null);
     const out = await postJson<{ runId?: string }>(`${base}/regenerate`, {});
@@ -61,6 +62,7 @@ export function PlanActions({
   }
 
   async function make() {
+    if (busy) return;
     setBusy("make");
     setError(null);
     setOverLimit(null);
@@ -75,7 +77,7 @@ export function PlanActions({
   }
 
   const toggle = (id: string) => setPlatforms((xs) => (xs.includes(id) ? xs.filter((x) => x !== id) : [...xs, id]));
-  const secondary = "rounded-md border border-zinc-700 px-4 py-2 text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-60";
+  const secondary = "inline-flex min-h-11 items-center rounded-md border border-zinc-700 px-4 py-2 text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-60";
   const canMake = hasProfile && hasAngles && platforms.length > 0 && !!est;
   const picker = (
     <div className="flex flex-col gap-4">
@@ -95,7 +97,7 @@ export function PlanActions({
                   <span className="text-zinc-300">{e ? `~${usd(e.expected)}` : "—"}</span>
                 </span>
                 <span className="text-xs text-zinc-500">{t.blurb}</span>
-                {e && <span className="text-xs text-zinc-600">Stops at {usd(e.capMicros)}</span>}
+                {e && <span className="text-xs text-zinc-500">Stops at {usd(e.capMicros)}</span>}
               </label>
             );
           })}
@@ -105,7 +107,7 @@ export function PlanActions({
         <legend className="mb-1 text-sm text-zinc-400">Where to post</legend>
         <div className="flex flex-wrap gap-2">
           {choice.platforms.map((p) => (
-            <label key={p.id} className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 text-sm ${platforms.includes(p.id) ? "border-zinc-400" : "border-zinc-800 text-zinc-500"}`}>
+            <label key={p.id} className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-3 py-1 text-sm md:min-h-9 ${platforms.includes(p.id) ? "border-zinc-400" : "border-zinc-700 text-zinc-500 hover:border-zinc-500"}`}>
               <input type="checkbox" checked={platforms.includes(p.id)} onChange={() => toggle(p.id)} className="accent-zinc-100" />
               {p.name}
             </label>
@@ -117,7 +119,7 @@ export function PlanActions({
         <p className="text-sm text-amber-300">
           This could cost up to {usd(est.high)} and you have {usd(choice.leftMicros)} left this month.{" "}
           {tier !== "quick" && quickEst && quickEst.high <= choice.leftMicros && (
-            <button type="button" onClick={() => setTier("quick")} className="underline underline-offset-2">
+            <button type="button" onClick={() => setTier("quick")} className="inline-flex min-h-11 items-center underline underline-offset-2 md:min-h-0">
               Switch to Quick
             </button>
           )}{" "}
@@ -131,7 +133,7 @@ export function PlanActions({
           type="button"
           onClick={() => void make()}
           disabled={!canMake || busy !== null}
-          className="rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50"
+          className="inline-flex min-h-11 items-center rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50"
         >
           {busy === "make" ? "Starting…" : `${campaignHref ? "Make a new campaign" : "Make my campaign"} · ~${est ? usd(est.expected) : "$0.00"}`}
         </button>
@@ -146,12 +148,12 @@ export function PlanActions({
       {campaignHref ? (
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-3">
-            <Link href={campaignHref} className="rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover">
+            <Link href={campaignHref} className="inline-flex min-h-11 items-center rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover">
               Open your campaign
             </Link>
           </div>
           <details>
-            <summary className="cursor-pointer text-sm text-zinc-400">Make a fresh campaign instead</summary>
+            <summary className="flex min-h-11 cursor-pointer items-center text-sm text-zinc-400 md:min-h-0">Make a fresh campaign instead</summary>
             <p className="mt-2 text-xs text-zinc-500">Your current campaign stays as it is. Skip its posts in the Queue if you don&apos;t want both.</p>
             <div className="mt-3">{picker}</div>
           </details>
@@ -171,7 +173,7 @@ export function PlanActions({
       </div>
       <p className="text-xs text-zinc-500">Regenerating keeps anything you pinned or fixed.</p>
       {error && (
-        <p className="text-sm text-red-400">
+        <p className="text-sm text-red-400" role="alert">
           {error}{" "}
           {overLimit?.quickFits && (
             <button

@@ -89,7 +89,7 @@ export default async function Home() {
                 Needs you
               </h2>
               {cards.length > 3 && (
-                <Link href="/needs-you" className="text-sm text-muted hover:text-ink">
+                <Link href="/needs-you" className="inline-flex min-h-11 items-center text-sm text-muted hover:text-ink md:min-h-9">
                   See all {cards.length}
                 </Link>
               )}
@@ -129,11 +129,11 @@ export default async function Home() {
                       <span className="text-xs text-faint">{KIND_LABEL[r.kind] ?? r.kind}</span>
                     </Link>
                     {slug && r.status === "completed" && (
-                      <Link href={`/p/${slug}/plan`} className="shrink-0 text-sm text-accent hover:underline">
+                      <Link href={`/p/${slug}/plan`} className="inline-flex min-h-11 shrink-0 items-center text-sm text-accent hover:underline md:min-h-9">
                         Your plan
                       </Link>
                     )}
-                    <span className={`shrink-0 text-xs ${r.status === "failed" ? "text-red-300" : r.status === "running" ? "text-warn" : "text-faint"}`}>
+                    <span className={`shrink-0 text-xs ${r.status === "failed" ? "text-danger" : r.status === "running" ? "text-info" : "text-faint"}`}>
                       {STATUS_LABEL[r.status] ?? r.status}
                     </span>
                   </li>

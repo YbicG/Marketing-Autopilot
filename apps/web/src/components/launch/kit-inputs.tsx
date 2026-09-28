@@ -2,7 +2,7 @@
 import type { KitKind } from "@mkt/contracts";
 import { emptyTarget, OUTLET_LABEL, OUTLET_TYPES, type InputDraft, type PressTargetDraft } from "./kit-model";
 
-const input = "w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm";
+const input = "min-h-11 md:min-h-9 w-full rounded-md border border-edge bg-zinc-900 px-3 py-1.5 text-sm text-ink outline-none focus:border-zinc-400";
 const labelCls = "flex flex-col gap-1 text-sm text-zinc-300";
 const hint = "text-xs text-zinc-500";
 
@@ -82,12 +82,12 @@ function PressTargets({ targets, onChange }: { targets: PressTargetDraft[]; onCh
           </select>
           <input aria-label="Who to write to" placeholder="Editor's name" value={t.contactName} onChange={(e) => edit(i, { contactName: e.target.value })} className={input} />
           <input aria-label="Their email" type="email" placeholder="Email" value={t.email} onChange={(e) => edit(i, { email: e.target.value })} className={input} />
-          <button type="button" onClick={() => onChange(rows.filter((_, n) => n !== i))} className="rounded-md px-2 text-xs text-zinc-500 hover:text-zinc-200">
-            Remove
+          <button type="button" onClick={() => onChange(rows.filter((_, n) => n !== i))} className="min-h-11 md:min-h-9 rounded-md px-2 text-xs text-zinc-500 hover:text-zinc-200">
+            Remove<span className="sr-only"> {t.outlet || `outlet ${i + 1}`}</span>
           </button>
         </div>
       ))}
-      <button type="button" onClick={() => onChange([...rows, emptyTarget()])} className="self-start text-xs text-zinc-400 underline underline-offset-2 hover:text-zinc-200">
+      <button type="button" onClick={() => onChange([...rows, emptyTarget()])} className="inline-flex min-h-11 items-center self-start text-xs text-zinc-400 underline underline-offset-2 hover:text-zinc-200 md:min-h-0">
         Add another
       </button>
     </div>

@@ -33,7 +33,7 @@ export function WritingProgress({ runId, status }: { runId: string; status: stri
   }, [runId, router]);
 
   return (
-    <p className="rounded-md border border-zinc-800 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-300" role="status">
+    <p className="rounded-md border border-sky-900/70 bg-sky-950/20 px-4 py-3 text-sm text-sky-200" role="status">
       {line} This takes about half a minute.
     </p>
   );

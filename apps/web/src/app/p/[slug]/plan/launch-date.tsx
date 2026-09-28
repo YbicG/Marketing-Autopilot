@@ -12,7 +12,7 @@ export function LaunchDate({ slug, strategyId, initial, reason }: { slug: string
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    if (!date) return;
+    if (!date || busy) return;
     setBusy(true);
     setMsg(null);
     const out = await postJson(`/api/products/${encodeURIComponent(slug)}/dna`, { action: "launch_date", strategyId, date });
@@ -26,7 +26,7 @@ export function LaunchDate({ slug, strategyId, initial, reason }: { slug: string
     <section className="flex flex-col gap-2 rounded-md border border-zinc-800 p-5" aria-label="Launch day">
       <h2 className="text-lg font-semibold">Launch day</h2>
       {reason && <p className="text-sm text-zinc-400">{reason}</p>}
-      <form onSubmit={save} className="flex items-center gap-2">
+      <form onSubmit={save} className="flex flex-wrap items-center gap-2">
         <label htmlFor="launch-date" className="sr-only">
           Launch day
         </label>
@@ -35,16 +35,18 @@ export function LaunchDate({ slug, strategyId, initial, reason }: { slug: string
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="rounded-md border border-edge bg-zinc-900 px-2.5 py-1.5 text-sm outline-none focus:border-zinc-400"
+          className="min-h-11 rounded-md border border-edge bg-zinc-900 px-2.5 py-1.5 text-sm focus:border-zinc-400 md:min-h-9"
         />
         <button
           type="submit"
           disabled={busy || !date || date === initial}
-          className="rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-60"
+          className="inline-flex min-h-11 items-center rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-60 md:min-h-9"
         >
           {busy ? "Saving…" : "Change"}
         </button>
-        {msg && <span className={`text-xs ${msg.tone === "ok" ? "text-emerald-400" : "text-red-400"}`}>{msg.text}</span>}
+        <span className={`text-xs ${msg?.tone === "ok" ? "text-emerald-400" : "text-red-400"}`} aria-live="polite">
+          {msg?.text}
+        </span>
       </form>
     </section>
   );

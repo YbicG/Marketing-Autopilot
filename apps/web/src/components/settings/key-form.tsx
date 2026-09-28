@@ -3,9 +3,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { postJson } from "@/lib/post-json";
 
-const input = "w-full rounded-md border border-edge bg-zinc-900 px-3 py-2 text-sm outline-none focus:border-zinc-400";
-const primary = "rounded-md bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-900 hover:bg-white disabled:opacity-50";
-const quiet = "rounded-md border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:border-zinc-500 disabled:opacity-50";
+const input = "min-h-11 md:min-h-9 w-full rounded-md border border-edge bg-zinc-900 px-3 py-2 text-sm outline-none focus:border-zinc-400 disabled:opacity-60";
+const primary = "min-h-11 md:min-h-9 shrink-0 rounded-md bg-accent-strong px-3 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50";
+const quiet = "min-h-11 md:min-h-9 shrink-0 rounded-md border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:border-zinc-500 disabled:opacity-50";
 
 /**
  * Add or replace one vault secret. The value only ever travels browser → server; the page never
@@ -20,7 +20,7 @@ export function KeyForm({ purpose, label, stored, disabled }: { purpose: string;
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    if (!value.trim()) return;
+    if (busy || disabled || !value.trim()) return;
     setBusy(true);
     setError(null);
     const out = await postJson("/api/settings/keys", { action: "put", purpose, value: value.trim() });
@@ -32,9 +32,10 @@ export function KeyForm({ purpose, label, stored, disabled }: { purpose: string;
   }
 
   async function remove() {
-    if (!window.confirm(`Remove the saved ${label.toLowerCase()}? Anything that uses it stops until you add it again.`)) return;
+    if (busy || !window.confirm(`Remove the saved ${label.toLowerCase()}? Anything that uses it stops until you add it again.`)) return;
     setBusy(true);
     setError(null);
+    setSaved(false);
     const out = await postJson("/api/settings/keys", { action: "delete", purpose });
     setBusy(false);
     if (!out.ok) return setError(out.error);
@@ -44,7 +45,7 @@ export function KeyForm({ purpose, label, stored, disabled }: { purpose: string;
 
   return (
     <form onSubmit={save} className="flex flex-col gap-2">
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2 sm:flex-nowrap">
         <input
           type="password"
           autoComplete="off"
@@ -65,8 +66,14 @@ export function KeyForm({ purpose, label, stored, disabled }: { purpose: string;
           </button>
         )}
       </div>
-      {saved && !error && <p className="text-xs text-emerald-400">Saved. It&apos;s encrypted and won&apos;t be shown again.</p>}
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      <p role="status" className="text-xs text-emerald-400 empty:hidden">
+        {saved && !error ? "Saved. It's encrypted and won't be shown again." : ""}
+      </p>
+      {error && (
+        <p role="alert" className="text-sm text-red-400">
+          {error}
+        </p>
+      )}
     </form>
   );
 }
@@ -79,11 +86,14 @@ export function LoginForm({ productId, stored, disabled }: { productId: string; 
   const [loginPath, setLoginPath] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    if (busy || disabled || !username.trim() || !password) return;
     setBusy(true);
     setError(null);
+    setSaved(false);
     const out = await postJson("/api/settings/keys", {
       action: "put_login",
       productId,
@@ -96,12 +106,15 @@ export function LoginForm({ productId, stored, disabled }: { productId: string; 
     setUsername("");
     setPassword("");
     setLoginPath("");
+    setSaved(true);
     router.refresh();
   }
 
   async function remove() {
-    if (!window.confirm("Remove this test login? Recorded demos stop until you add it again.")) return;
+    if (busy || !window.confirm("Remove this test login? Recorded demos stop until you add it again.")) return;
     setBusy(true);
+    setError(null);
+    setSaved(false);
     const out = await postJson("/api/settings/keys", { action: "delete", purpose: `capture.login.${productId}` });
     setBusy(false);
     if (!out.ok) return setError(out.error);
@@ -112,11 +125,11 @@ export function LoginForm({ productId, stored, disabled }: { productId: string; 
   return (
     <form onSubmit={save} className="flex flex-col gap-2">
       <div className="grid gap-2 sm:grid-cols-3">
-        <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="off" placeholder="Test username or email" aria-label="Test username" disabled={off} className={input} />
+        <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="off" spellCheck={false} placeholder="Test username or email" aria-label="Test username" disabled={off} className={input} />
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" placeholder="Test password" aria-label="Test password" disabled={off} className={input} />
-        <input value={loginPath} onChange={(e) => setLoginPath(e.target.value)} autoComplete="off" placeholder="Sign-in page, e.g. /login (optional)" aria-label="Sign-in page path" disabled={off} className={input} />
+        <input value={loginPath} onChange={(e) => setLoginPath(e.target.value)} autoComplete="off" spellCheck={false} placeholder="Sign-in page, e.g. /login (optional)" aria-label="Sign-in page path" disabled={off} className={input} />
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button type="submit" disabled={off || !username.trim() || !password} className={primary}>
           {busy ? "Saving…" : stored ? "Replace login" : "Save login"}
         </button>
@@ -126,7 +139,14 @@ export function LoginForm({ productId, stored, disabled }: { productId: string; 
           </button>
         )}
       </div>
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      <p role="status" className="text-xs text-emerald-400 empty:hidden">
+        {saved && !error ? "Saved. It's encrypted and won't be shown again." : ""}
+      </p>
+      {error && (
+        <p role="alert" className="text-sm text-red-400">
+          {error}
+        </p>
+      )}
     </form>
   );
 }

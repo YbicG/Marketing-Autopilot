@@ -4,7 +4,7 @@ import { useState } from "react";
 import { CopyButton } from "@/components/publishing/copy-button";
 import { postJson } from "@/lib/post-json";
 
-const BTN = "rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-60";
+const BTN = "inline-flex min-h-11 md:min-h-9 items-center rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-60";
 
 /**
  * Tracking test gate: make a test link, open it logged out (private window or phone), then Check
@@ -17,6 +17,7 @@ export function TrackingTest({ slug, testUrl, passed }: { slug: string; testUrl:
   const [msg, setMsg] = useState<{ tone: "ok" | "error" | "info"; text: string } | null>(null);
 
   async function start() {
+    if (busy !== null) return;
     setBusy("start");
     setMsg(null);
     const out = await postJson<{ url: string; alreadyPassed: boolean }>(`/api/launch/tracking/${encodeURIComponent(slug)}`, { action: "start" });
@@ -27,6 +28,7 @@ export function TrackingTest({ slug, testUrl, passed }: { slug: string; testUrl:
   }
 
   async function check() {
+    if (busy !== null) return;
     setBusy("check");
     setMsg(null);
     const out = await postJson<{ passed: boolean; reasons: string[] }>(`/api/launch/tracking/${encodeURIComponent(slug)}`, { action: "check" });
@@ -57,18 +59,20 @@ export function TrackingTest({ slug, testUrl, passed }: { slug: string; testUrl:
             <code className="max-w-full truncate rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs text-zinc-300">{url}</code>
             <CopyButton text={url} label="Copy link" className={BTN} />
             <a href={url} target="_blank" rel="noopener noreferrer" className={BTN}>
-              Open
+              Open<span className="sr-only"> the test link (opens in a new tab)</span>
             </a>
             <button type="button" onClick={() => void check()} disabled={busy !== null} className={BTN}>
               {busy === "check" ? "Checking…" : "Check now"}
             </button>
-            <button type="button" onClick={() => void start()} disabled={busy !== null} className="text-xs text-zinc-500 underline underline-offset-2 hover:text-zinc-300">
+            <button type="button" onClick={() => void start()} disabled={busy !== null} className="inline-flex min-h-11 items-center text-xs text-zinc-500 underline underline-offset-2 hover:text-zinc-300 disabled:opacity-50 md:min-h-0">
               Make a new link
             </button>
           </div>
         </>
       )}
-      {msg && <p className={`text-xs ${msg.tone === "ok" ? "text-emerald-400" : msg.tone === "error" ? "text-red-400" : "text-zinc-300"}`}>{msg.text}</p>}
+      <p role="status" className={`text-xs empty:hidden ${msg?.tone === "ok" ? "text-emerald-400" : msg?.tone === "error" ? "text-red-400" : "text-zinc-300"}`}>
+        {msg?.text ?? ""}
+      </p>
     </div>
   );
 }

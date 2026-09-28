@@ -32,7 +32,7 @@ export function FootageThumb({ f, className = "" }: { f: FootageItem; className?
       </span>
     );
   }
-  return <img src={`/api/media/${f.id}?v=preview`} alt={f.caption ?? "Screenshot"} className={`object-cover ${className}`} loading="lazy" />;
+  return <img src={`/api/media/${f.id}?v=preview`} alt={f.caption ?? "Screenshot"} className={`object-cover ${className}`} loading="lazy" decoding="async" />;
 }
 
 export function originLabel(origin: string): string {
@@ -68,7 +68,7 @@ export function AssetPicker({
         <div className="flex flex-col gap-1 text-xs text-zinc-400">
           {current && <span>{current.caption ?? (current.kind === "recording" ? "Screen recording" : "Screenshot")}</span>}
           {value && !current && <span className="text-amber-300">This picture was removed or shows personal details. Pick another.</span>}
-          <button type="button" onClick={() => setOpen((o) => !o)} className="self-start text-zinc-300 underline underline-offset-2">
+          <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="inline-flex min-h-11 items-center self-start text-zinc-300 underline underline-offset-2 md:min-h-0">
             {open ? "Close" : "Change picture"}
           </button>
         </div>
@@ -86,7 +86,8 @@ export function AssetPicker({
                       setOpen(false);
                     }}
                     className={`flex w-full flex-col gap-1 rounded border p-1 text-left text-[11px] ${f.id === value ? "border-zinc-200" : "border-zinc-800 hover:border-zinc-500"}`}
-                    aria-label={`Use ${f.caption ?? f.kind}`}
+                    aria-label={`Use ${f.caption ?? (f.kind === "recording" ? "screen recording" : "screenshot")}`}
+                    aria-pressed={f.id === value}
                   >
                     <FootageThumb f={f} className="h-16 w-full rounded" />
                     <span className="truncate text-zinc-400">{f.caption ?? (f.kind === "recording" ? "Screen recording" : "Screenshot")}</span>
@@ -104,7 +105,7 @@ export function AssetPicker({
                 onPick(null);
                 setOpen(false);
               }}
-              className="self-start text-xs text-zinc-400 underline underline-offset-2"
+              className="inline-flex min-h-11 items-center self-start text-xs text-zinc-400 underline underline-offset-2 md:min-h-0"
             >
               Use text only
             </button>

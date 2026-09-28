@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { countChars, type RunEvent, type SocialPlatform } from "@mkt/contracts";
 import { postJson } from "@/lib/post-json";
 import { ApproveButton } from "./approve-button";
@@ -38,9 +38,9 @@ export function PostEditor({ slug, variants, rewritePrice }: { slug: string; var
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-zinc-400">Edit any version. Saving an approved post sends it back for approval.</p>
-        <span className="flex items-center gap-3">
+        <span className="flex flex-wrap items-center gap-3">
           <ApproveButton slug={slug} postIds={pending} label={`Approve ${pending.length === 1 ? "it" : `all ${pending.length}`}`} />
-          <Link href={`/p/${encodeURIComponent(slug)}/queue`} className="text-sm text-zinc-400 underline underline-offset-2">
+          <Link href={`/p/${encodeURIComponent(slug)}/queue`} className="inline-flex min-h-11 items-center text-sm text-zinc-400 underline underline-offset-2 md:min-h-0">
             Skip or move it in the Queue
           </Link>
         </span>
@@ -65,6 +65,7 @@ function VariantColumn({ slug, v, rewritePrice }: { slug: string; v: EditorVaria
   const [busy, setBusy] = useState<"save" | "rewrite" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ask, setAsk] = useState("");
+  const uid = useId();
   const rewriting = v.lastRewrite && (v.lastRewrite.status === "queued" || v.lastRewrite.status === "running") ? v.lastRewrite.runId : null;
 
   useEffect(() => {
@@ -100,6 +101,7 @@ function VariantColumn({ slug, v, rewritePrice }: { slug: string; v: EditorVaria
   const locked = !!v.lockedReason;
 
   async function save() {
+    if (busy) return;
     setBusy("save");
     setError(null);
     const out = await postJson(`/api/variants/${v.id}`, {
@@ -114,6 +116,7 @@ function VariantColumn({ slug, v, rewritePrice }: { slug: string; v: EditorVaria
   }
 
   async function rewrite() {
+    if (busy) return;
     setBusy("rewrite");
     setError(null);
     const out = await postJson(`/api/variants/${v.id}/rewrite`, ask.trim() ? { ask: ask.trim() } : {});
@@ -123,7 +126,8 @@ function VariantColumn({ slug, v, rewritePrice }: { slug: string; v: EditorVaria
     router.refresh();
   }
 
-  const field = "w-full rounded-md border border-edge bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-zinc-400 focus:outline-none disabled:opacity-60";
+  const field = "w-full rounded-md border border-edge bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-zinc-400 disabled:opacity-60";
+  const small = "inline-flex min-h-11 items-center md:min-h-0";
   return (
     <section className="flex flex-col gap-3 rounded-md border border-zinc-800 p-4" aria-label={v.platformLabel}>
       <div className="flex items-baseline justify-between gap-2">
@@ -143,12 +147,13 @@ function VariantColumn({ slug, v, rewritePrice }: { slug: string; v: EditorVaria
                 rows={4}
                 disabled={locked}
                 aria-label={`Part ${i + 1}`}
+                aria-describedby={`${uid}-count-${i}`}
                 className={field}
               />
               <span className="flex justify-between text-xs">
-                <Counter n={counts[i] ?? 0} limit={v.limit} />
+                <Counter id={`${uid}-count-${i}`} n={counts[i] ?? 0} limit={v.limit} />
                 {parts.length > 2 && !locked && (
-                  <button type="button" onClick={() => setParts((xs) => xs.filter((_, k) => k !== i))} className="text-zinc-500 hover:text-zinc-300">
+                  <button type="button" onClick={() => setParts((xs) => xs.filter((_, k) => k !== i))} aria-label={`Remove part ${i + 1}`} className={`${small} text-zinc-500 hover:text-zinc-300`}>
                     Remove part
                   </button>
                 )}
@@ -156,15 +161,23 @@ function VariantColumn({ slug, v, rewritePrice }: { slug: string; v: EditorVaria
             </li>
           ))}
           {!locked && parts.length < 25 && (
-            <button type="button" onClick={() => setParts((xs) => [...xs, ""])} className="self-start text-xs text-zinc-400 underline underline-offset-2">
+            <button type="button" onClick={() => setParts((xs) => [...xs, ""])} className={`${small} self-start text-xs text-zinc-400 underline underline-offset-2`}>
               Add a part
             </button>
           )}
         </ol>
       ) : (
         <div className="flex flex-col gap-1">
-          <textarea value={text} onChange={(e) => setText(e.target.value)} rows={v.kind === "bio" ? 3 : 7} disabled={locked} aria-label={`${v.platformLabel} text`} className={field} />
-          <Counter n={counts[0] ?? 0} limit={v.limit} />
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={v.kind === "bio" ? 3 : 7}
+            disabled={locked}
+            aria-label={`${v.platformLabel} text`}
+            aria-describedby={`${uid}-count-0`}
+            className={field}
+          />
+          <Counter id={`${uid}-count-0`} n={counts[0] ?? 0} limit={v.limit} />
         </div>
       )}
 
@@ -193,7 +206,7 @@ function VariantColumn({ slug, v, rewritePrice }: { slug: string; v: EditorVaria
               type="button"
               onClick={() => void save()}
               disabled={busy !== null || !dirty}
-              className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50"
+              className="inline-flex min-h-11 items-center rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50 md:min-h-9"
             >
               {busy === "save" ? "Saving…" : "Save"}
             </button>
@@ -202,7 +215,7 @@ function VariantColumn({ slug, v, rewritePrice }: { slug: string; v: EditorVaria
                 type="button"
                 onClick={() => void rewrite()}
                 disabled={busy !== null || !!rewriting}
-                className="rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-60"
+                className="inline-flex min-h-11 items-center rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-60 md:min-h-9"
               >
                 {rewriting ? "Rewriting…" : busy === "rewrite" ? "Starting…" : `Rewrite for ${v.platformLabel} · ~${rewritePrice}`}
               </button>
@@ -210,13 +223,20 @@ function VariantColumn({ slug, v, rewritePrice }: { slug: string; v: EditorVaria
             {dirty && <span className="text-xs text-zinc-500">Not saved yet</span>}
           </div>
           {(v.kind === "post" || v.kind === "thread") && !rewriting && (
-            <input value={ask} onChange={(e) => setAsk(e.target.value)} maxLength={500} placeholder="Anything to change? (optional, e.g. shorter, more casual)" className={field} />
+            <input
+              value={ask}
+              onChange={(e) => setAsk(e.target.value)}
+              maxLength={500}
+              aria-label={`What to change in the ${v.platformLabel} rewrite (optional)`}
+              placeholder="Anything to change? (optional, e.g. shorter, more casual)"
+              className={field}
+            />
           )}
           {v.lastRewrite?.message && !rewriting && <p className="text-xs text-zinc-400">Last rewrite: {v.lastRewrite.message}</p>}
         </div>
       )}
       {error && (
-        <p className="text-sm text-red-400">
+        <p className="text-sm text-red-400" role="alert">
           {error}{" "}
           {/limit/i.test(error) && (
             <Link href="/settings" className="underline underline-offset-2">
@@ -240,11 +260,14 @@ function VariantColumn({ slug, v, rewritePrice }: { slug: string; v: EditorVaria
   );
 }
 
-function Counter({ n, limit }: { n: number; limit: number }) {
+/** Characters used. Tied to its box with aria-describedby rather than a live region, which would speak on every keystroke. */
+function Counter({ id, n, limit }: { id: string; n: number; limit: number }) {
   const over = n > limit;
   return (
-    <span className={`text-xs ${over ? "text-red-400" : n > limit * 0.9 ? "text-amber-300" : "text-zinc-500"}`} aria-live="polite">
+    <span id={id} className={`text-xs ${over ? "text-red-400" : n > limit * 0.9 ? "text-amber-300" : "text-zinc-500"}`}>
       {n} / {limit}
+      <span className="sr-only"> characters</span>
+      {over ? ` · ${n - limit} over` : ""}
     </span>
   );
 }

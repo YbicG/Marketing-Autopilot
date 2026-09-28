@@ -42,6 +42,12 @@ const HEADLINE_WORDS = 12;
 const BODY_WORDS = 40;
 const MAX = 10;
 const MIN = 3;
+/** Rendered slide sizes (render.still), so the strip keeps its space while the images load. */
+const SLIDE_SIZE: Partial<Record<SocialPlatform, { width: number; height: number }>> = {
+  instagram: { width: 1080, height: 1350 },
+  tiktok: { width: 1080, height: 1920 },
+};
+
 const words = (s: string | null) => (s ? s.trim().split(/\s+/).filter(Boolean).length : 0);
 const parseTags = (s: string) =>
   s
@@ -95,7 +101,7 @@ export function CarouselEditor({
 
   async function save() {
     const first = variants[0];
-    if (!first) return;
+    if (!first || busy) return;
     setBusy(true);
     setError(null);
     const out = await postJson(`/api/variants/${first.id}/slides`, {
@@ -108,16 +114,17 @@ export function CarouselEditor({
   }
 
   const pending = variants.flatMap((v) => v.posts.filter((p) => p.state === "pending_approval").map((p) => p.id));
-  const field = "w-full rounded-md border border-edge bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-zinc-400 focus:outline-none disabled:opacity-60";
+  const field = "w-full rounded-md border border-edge bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-zinc-400 disabled:opacity-60";
+  const small = "inline-flex min-h-11 min-w-11 items-center justify-center md:min-h-0 md:min-w-0";
 
   return (
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-3" aria-label="Rendered slides">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold">What gets posted</h2>
-          <span className="flex items-center gap-3">
+          <span className="flex flex-wrap items-center gap-3">
             <ApproveButton slug={slug} postIds={pending} label={`Approve ${pending.length === 1 ? "it" : `all ${pending.length}`}`} />
-            <Link href={`/p/${encodeURIComponent(slug)}/queue`} className="text-sm text-zinc-400 underline underline-offset-2">
+            <Link href={`/p/${encodeURIComponent(slug)}/queue`} className="inline-flex min-h-11 items-center text-sm text-zinc-400 underline underline-offset-2 md:min-h-0">
               Skip or move it in the Queue
             </Link>
           </span>
@@ -126,7 +133,7 @@ export function CarouselEditor({
           <div key={v.id} className="flex flex-col gap-2 rounded-md border border-zinc-800 p-3">
             <p className="text-sm">
               <span className="font-medium">{v.label}</span> <span className="text-zinc-500">· {v.output}</span>
-              {v.rendering && <span className="ml-2 text-xs text-sky-300">{v.renderedAssetIds.length ? "Updating the images…" : "Making the images…"}</span>}
+              {v.rendering && <span className="ml-2 text-xs text-sky-300" role="status">{v.renderedAssetIds.length ? "Updating the images…" : "Making the images…"}</span>}
             </p>
             {v.pdf ? (
               v.renderedAssetIds[0] ? (
@@ -138,7 +145,14 @@ export function CarouselEditor({
               <ul className="flex gap-2 overflow-x-auto pb-1">
                 {v.renderedAssetIds.map((id, i) => (
                   <li key={id} className="shrink-0">
-                    <img src={`/api/media/${id}`} alt={`Slide ${i + 1} for ${v.label}`} loading="lazy" className="h-48 rounded border border-zinc-800 bg-zinc-900 object-contain" />
+                    <img
+                      src={`/api/media/${id}`}
+                      alt={`Slide ${i + 1} for ${v.label}`}
+                      loading="lazy"
+                      decoding="async"
+                      {...(SLIDE_SIZE[v.platform] ?? {})}
+                      className="h-48 w-auto rounded border border-zinc-800 bg-zinc-900 object-contain"
+                    />
                   </li>
                 ))}
               </ul>
@@ -177,18 +191,18 @@ export function CarouselEditor({
                   {s.assetId ? (
                     <img src={`/api/media/${s.assetId}?v=preview`} alt="Screenshot on this slide" className="h-20 w-28 rounded border border-zinc-800 object-cover object-top" />
                   ) : (
-                    <span className="flex h-20 w-28 items-center justify-center rounded border border-dashed border-zinc-800 text-xs text-zinc-600">Text only</span>
+                    <span className="flex h-20 w-28 items-center justify-center rounded border border-dashed border-zinc-700 text-xs text-zinc-500">Text only</span>
                   )}
                   {!locked && (
-                    <span className="flex gap-2 text-xs text-zinc-500">
-                      <button type="button" onClick={() => move(i, -1)} disabled={i === 0} className="hover:text-zinc-200 disabled:opacity-30" aria-label={`Move slide ${i + 1} up`}>
+                    <span className="flex flex-wrap gap-x-2 text-xs text-zinc-500">
+                      <button type="button" onClick={() => move(i, -1)} disabled={i === 0} className={`${small} hover:text-zinc-200 disabled:opacity-30`} aria-label={`Move slide ${i + 1} up`}>
                         ↑
                       </button>
-                      <button type="button" onClick={() => move(i, 1)} disabled={i === slides.length - 1} className="hover:text-zinc-200 disabled:opacity-30" aria-label={`Move slide ${i + 1} down`}>
+                      <button type="button" onClick={() => move(i, 1)} disabled={i === slides.length - 1} className={`${small} hover:text-zinc-200 disabled:opacity-30`} aria-label={`Move slide ${i + 1} down`}>
                         ↓
                       </button>
                       {slides.length > MIN && (
-                        <button type="button" onClick={() => setSlides((xs) => xs.filter((_, k) => k !== i))} className="hover:text-zinc-200">
+                        <button type="button" onClick={() => setSlides((xs) => xs.filter((_, k) => k !== i))} className={`${small} hover:text-zinc-200`} aria-label={`Remove slide ${i + 1}`}>
                           Remove
                         </button>
                       )}
@@ -245,7 +259,7 @@ export function CarouselEditor({
           <button
             type="button"
             onClick={() => setSlides((xs) => [...xs.slice(0, -1), { template: "feature", headline: "", body: null, assetId: null }, ...xs.slice(-1)])}
-            className="self-start text-sm text-zinc-400 underline underline-offset-2"
+            className={`${small} self-start text-sm text-zinc-400 underline underline-offset-2`}
           >
             Add a slide
           </button>
@@ -268,10 +282,13 @@ export function CarouselEditor({
                   rows={4}
                   disabled={!!locked}
                   aria-label={`${v.label} caption`}
+                  aria-describedby={`caption-count-${v.id}`}
                   className={field}
                 />
-                <span className={`text-xs ${n > v.captionLimit ? "text-red-400" : "text-zinc-500"}`}>
+                <span id={`caption-count-${v.id}`} className={`text-xs ${n > v.captionLimit ? "text-red-400" : "text-zinc-500"}`}>
                   {n} / {v.captionLimit}
+                  <span className="sr-only"> characters</span>
+                  {n > v.captionLimit ? ` · ${n - v.captionLimit} over` : ""}
                 </span>
                 <input
                   value={c.tags}
@@ -292,13 +309,17 @@ export function CarouselEditor({
         <p className="text-sm text-zinc-400">{locked}</p>
       ) : (
         <div className="flex flex-wrap items-center gap-3">
-          <button type="button" onClick={() => void save()} disabled={busy} className="rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60">
+          <button type="button" onClick={() => void save()} disabled={busy} className="inline-flex min-h-11 items-center rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60">
             {busy ? "Saving…" : "Save and remake the images"}
           </button>
           <span className="text-xs text-zinc-500">Images are made on your server for free. Saving sends approved versions back for approval.</span>
         </div>
       )}
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && (
+        <p className="text-sm text-red-400" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

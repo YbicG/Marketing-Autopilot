@@ -108,6 +108,7 @@ function WeekStrip({ days, slug, tz }: { days: { day: string; posts: QueuePost[]
               >
                 <span className="block tabular-nums text-faint">{localTime(p.scheduledAt, tz)}</span>
                 <span className="block truncate text-ink">{PLATFORM_LABEL[p.platform] ?? p.platform}</span>
+                <span className="sr-only">, {STATE_LABEL[p.state] ?? p.state}</span>
               </Link>
             ))}
           </div>
@@ -154,7 +155,7 @@ export default async function OverviewPage({ params }: { params: Promise<{ slug:
         <div className="flex max-w-2xl flex-col gap-3">
           {state && (
             <span className="flex items-center gap-1.5 self-start rounded-full border border-line bg-surface px-2.5 py-0.5 text-xs text-muted">
-              <span className={`size-1.5 rounded-full ${state.dot}`} />
+              <span aria-hidden className={`size-1.5 rounded-full ${state.dot}`} />
               {state.label}
             </span>
           )}
@@ -169,10 +170,10 @@ export default async function OverviewPage({ params }: { params: Promise<{ slug:
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Link href={`/p/${product.slug}/plan`} className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm hover:border-zinc-500">
+          <Link href={`/p/${product.slug}/plan`} className="inline-flex min-h-11 items-center rounded-lg border border-zinc-700 px-3 py-1.5 text-sm hover:border-zinc-500 md:min-h-9">
             Edit plan
           </Link>
-          <Link href={`/p/${product.slug}/content`} className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover">
+          <Link href={`/p/${product.slug}/content`} className="inline-flex min-h-11 items-center rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover md:min-h-9">
             Make more content
           </Link>
         </div>
@@ -186,7 +187,7 @@ export default async function OverviewPage({ params }: { params: Promise<{ slug:
             </h2>
             <p className="text-sm text-muted">Nothing goes out until you approve it.</p>
           </div>
-          <Link href={`/p/${product.slug}/queue`} className="rounded-lg bg-warn px-3 py-1.5 text-sm font-medium text-zinc-950 hover:bg-warn/90">
+          <Link href={`/p/${product.slug}/queue`} className="inline-flex min-h-11 items-center rounded-lg bg-warn px-3 py-1.5 text-sm font-medium text-zinc-950 hover:bg-warn/90 md:min-h-9">
             Review in Calendar
           </Link>
         </section>
@@ -199,7 +200,7 @@ export default async function OverviewPage({ params }: { params: Promise<{ slug:
           </h2>
           <div className="flex items-center gap-4">
             <PauseControls slug={product.slug} pausedCount={counts.paused} />
-            <Link href={`/p/${product.slug}/queue`} className="text-sm text-accent hover:underline">
+            <Link href={`/p/${product.slug}/queue`} className="inline-flex min-h-11 items-center text-sm text-accent hover:underline md:min-h-9">
               Open calendar
             </Link>
           </div>
@@ -233,7 +234,7 @@ export default async function OverviewPage({ params }: { params: Promise<{ slug:
           <h2 id="numbers" className="font-serif text-2xl">
             {yesterdayLabel}&apos;s numbers
           </h2>
-          <Link href={`/p/${product.slug}/results`} className="text-sm text-accent hover:underline">
+          <Link href={`/p/${product.slug}/results`} className="inline-flex min-h-11 items-center text-sm text-accent hover:underline md:min-h-9">
             All results
           </Link>
         </div>

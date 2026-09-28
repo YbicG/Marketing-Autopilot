@@ -36,7 +36,7 @@ export default async function LaunchPage({ params }: { params: Promise<{ slug: s
 
   const shell = (body: React.ReactNode) => (
     <>
-      <main className="flex max-w-5xl flex-col gap-8 px-4 md:px-10 py-8">{body}</main>
+      <main className="flex max-w-5xl flex-col gap-8 px-4 py-8 md:px-10">{body}</main>
     </>
   );
 
@@ -116,8 +116,8 @@ export default async function LaunchPage({ params }: { params: Promise<{ slug: s
             Posts for days {a.fromDay}–{a.toDay}: {a.approved} of {a.total} approved ({a.pct}%). Aim for {a.targetPct}% by {plainDay(a.dueDate)}.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Link href={`/p/${product.slug}/launch/kits`} className="rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:bg-zinc-800">
+        <div className="flex items-start gap-3">
+          <Link href={`/p/${product.slug}/launch/kits`} className="inline-flex min-h-11 md:min-h-9 items-center rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500">
             Launch kit
           </Link>
           <PlanRefresh slug={product.slug} />
@@ -149,8 +149,8 @@ export default async function LaunchPage({ params }: { params: Promise<{ slug: s
         <div>
           <h2 className="text-lg font-semibold">Checklist</h2>
           <p className="text-sm text-zinc-400">
-            <span className="text-sky-300">Auto</span> the app does it · <span className="text-violet-300">Assisted</span> the app writes it, you post it ·{" "}
-            <span className="text-amber-200">You</span> only you can do it · <span className="text-rose-300">Gate</span> a check that has to pass
+            <span className="text-sky-300">Auto</span> the app does it · <span className="text-olive">Assisted</span> the app writes it, you post it ·{" "}
+            <span className="text-amber-200">You</span> only you can do it · <span className="text-rose">Gate</span> a check that has to pass
           </p>
         </div>
         <PlanChecklist slug={product.slug} groups={view.groups} startDate={view.plan.startDate} today={view.countdown.today} />

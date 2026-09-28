@@ -26,6 +26,7 @@ function useKitWrite(launchPlanId: string) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   async function write(kinds: KitKind[], draft: InputDraft): Promise<boolean> {
+    if (busy) return false;
     const parsed = inputsFor(kinds, draft);
     if (parsed.error !== null) {
       setError(parsed.error);
@@ -45,8 +46,8 @@ function useKitWrite(launchPlanId: string) {
   return { busy, error, write };
 }
 
-const primary = "rounded-md bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-900 disabled:opacity-50";
-const secondary = "rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-50";
+const primary = "min-h-11 md:min-h-9 rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50";
+const secondary = "inline-flex min-h-11 md:min-h-9 items-center rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-50";
 
 /** The overview (§5.4 LC launch kit): one card per part, "Write it" per card and "Write all" for the rest. */
 export function KitOverview({
@@ -77,7 +78,11 @@ export function KitOverview({
           </button>
         </div>
       )}
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-red-400">
+          {error}
+        </p>
+      )}
       <div className="grid gap-4 md:grid-cols-2">
         {cards.map((c) => {
           const canWrite = c.status === "missing" || c.status === "failed";
@@ -103,7 +108,7 @@ export function KitOverview({
               )}
               {canWrite && TAKES_INPUT.has(c.kind) && (
                 <details className="rounded-md border border-zinc-800 p-3">
-                  <summary className="cursor-pointer text-sm text-zinc-300">Tell us more (optional)</summary>
+                  <summary className="flex min-h-11 cursor-pointer items-center text-sm text-zinc-300 md:min-h-0">Tell us more (optional)</summary>
                   <div className="mt-3">
                     <KitInputFields kind={c.kind} draft={draft} onChange={setDraft} />
                   </div>
@@ -118,6 +123,7 @@ export function KitOverview({
                 {c.status !== "missing" && (
                   <Link href={c.href} className={secondary}>
                     {inProgress ? "Watch it" : "Open"}
+                    <span className="sr-only"> {c.label}</span>
                   </Link>
                 )}
               </div>
@@ -179,7 +185,11 @@ export function KitWriteAgain({
           </button>
         )}
       </div>
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-red-400">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

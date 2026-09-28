@@ -48,7 +48,7 @@ export function ProjectCard({ p, tz }: { p: ProjectSummary; tz: string }) {
         <div className="min-w-0 flex-1">
           <p className="truncate font-serif text-2xl leading-tight">{p.name}</p>
           <p className="mt-1 flex items-center gap-1.5 text-xs text-muted">
-            <span className={`size-1.5 rounded-full ${state.dot}`} />
+            <span aria-hidden className={`size-1.5 rounded-full ${state.dot}`} />
             {state.label}
           </p>
         </div>

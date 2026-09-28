@@ -153,7 +153,7 @@ export function IngestFeed({ runId, kind, stages, initialStatus, initialQuestion
 
   return (
     <div className="flex flex-col gap-6">
-      <ol className="flex flex-col gap-2 rounded-md border border-zinc-800 p-4" aria-label="Steps">
+      <ol className="flex flex-col gap-2 rounded-2xl border border-line bg-surface p-4" aria-label="Steps" aria-live="polite">
         {steps.map((s) => (
           <li key={s.id} className="flex items-start gap-3 text-sm">
             <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${STATE_DOT[s.state]}`} aria-hidden />
@@ -173,7 +173,7 @@ export function IngestFeed({ runId, kind, stages, initialStatus, initialQuestion
       </ol>
 
       {failure && (
-        <div role="alert" className="flex flex-col gap-3 rounded-md border border-red-900/70 p-4 text-sm">
+        <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-red-900/70 bg-danger-soft p-4 text-sm">
           <p className="text-red-300">{failure.message}</p>
           {failure.retryable && kind === "ingest" && (
             <div className="flex items-center gap-3">
@@ -181,7 +181,7 @@ export function IngestFeed({ runId, kind, stages, initialStatus, initialQuestion
                 type="button"
                 onClick={() => void retry()}
                 disabled={retrying}
-                className="rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60"
+                className="min-h-11 rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60 md:min-h-9"
               >
                 {retrying ? "Starting…" : "Try again"}
               </button>
@@ -212,7 +212,7 @@ export function IngestFeed({ runId, kind, stages, initialStatus, initialQuestion
                   src={`/api/media/${a.id}?v=preview`}
                   alt={a.caption ?? "Screenshot of your product"}
                   loading="lazy"
-                  className="h-28 w-48 rounded border border-zinc-800 bg-zinc-900 object-cover object-top"
+                  className="h-28 w-48 rounded-lg border border-line bg-surface object-cover object-top"
                 />
                 {a.caption && <p className="mt-1 line-clamp-2 text-xs text-zinc-500">{a.caption}</p>}
               </li>
@@ -226,7 +226,7 @@ export function IngestFeed({ runId, kind, stages, initialStatus, initialQuestion
         {feed.length === 0 && !failure && (
           <p className="text-sm text-zinc-500">{initialStatus === "queued" ? "Waiting for the worker…" : "Reading…"}</p>
         )}
-        <ul className="flex flex-col gap-1.5 text-sm">
+        <ul role="log" aria-label="Found so far" className="flex flex-col gap-1.5 text-sm">
           {feed.map((f) => (
             <li key={f.key} className="flex flex-wrap items-baseline gap-x-2 text-zinc-300">
               {f.kind === "competitor" && <span className="text-xs text-zinc-500">Similar product:</span>}

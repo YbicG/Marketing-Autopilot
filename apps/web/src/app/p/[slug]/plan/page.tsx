@@ -146,7 +146,9 @@ export default async function PlanPage({ params }: { params: Promise<{ slug: str
             )}
 
             <details className="rounded-md border border-zinc-800 p-5">
-              <summary className="cursor-pointer text-lg font-semibold">Your profile</summary>
+              <summary className="cursor-pointer">
+                <h2 className="inline text-lg font-semibold">Your profile</h2>
+              </summary>
               <p className="mt-1 text-sm text-zinc-500">
                 Everything we learned, with where it came from. Fix anything that&apos;s wrong, or pin it to keep it as is.
               </p>
@@ -246,6 +248,7 @@ function AngleView({ n, card, shots }: { n: number; card: AngleCard; shots: stri
                 src={`/api/media/${id}?v=preview`}
                 alt="Screenshot for this angle"
                 loading="lazy"
+                decoding="async"
                 className="h-24 w-40 rounded border border-zinc-800 bg-zinc-900 object-cover object-top"
               />
             </li>
@@ -364,7 +367,7 @@ function RecordLine({ rec }: { rec: Record<string, unknown> }) {
 
 function SourceChips({ ids, sourceMap }: { ids: string[]; sourceMap: Record<string, SourceRef> }) {
   const refs = ids.flatMap((id) => (sourceMap[id] ? [{ id, ref: sourceMap[id] }] : []));
-  if (!refs.length) return <p className="text-xs text-zinc-600">No source found</p>;
+  if (!refs.length) return <p className="text-xs text-zinc-500">No source found</p>;
   return (
     <ul className="flex flex-wrap gap-1.5" aria-label="Sources">
       {refs.map(({ id, ref }) => {
@@ -379,7 +382,7 @@ function SourceChips({ ids, sourceMap }: { ids: string[]; sourceMap: Record<stri
             ) : (
               <span>{label}</span>
             )}
-            {internal && <span className="ml-1 text-zinc-600">private — never quoted</span>}
+            {internal && <span className="ml-1 text-zinc-500">private — never quoted</span>}
           </li>
         );
       })}

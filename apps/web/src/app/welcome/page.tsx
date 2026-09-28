@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { USD, configuredPurposes, formatMonthlyRange, subscriptionSummary } from "@mkt/core/cost";
 import { getWorkspace } from "@mkt/core/tenancy";
 import { getDb } from "@/lib/db";
@@ -10,7 +11,8 @@ export const dynamic = "force-dynamic";
 export default async function WelcomePage() {
   const s = await requireWorkspace();
   const ws = await getWorkspace(getDb(), s.workspaceId);
-  const current = Math.round((ws?.monthlyLimitMicros ?? 60 * USD) / USD);
+  if (!ws) redirect("/signin");
+  const current = Math.round(ws.monthlyLimitMicros / USD);
   const subs = formatMonthlyRange(subscriptionSummary(await configuredPurposes(getDb(), s.workspaceId)));
 
   return (

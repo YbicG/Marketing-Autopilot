@@ -66,12 +66,12 @@ export function KitLive({ runIds }: { runIds: string[] }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-sky-900/70 bg-sky-950/20 px-4 py-3 text-sm" role="status">
       <span className="flex items-center gap-2">
-        <span className="h-2 w-2 motion-safe:animate-pulse rounded-full bg-sky-400" />
+        <span aria-hidden className="h-2 w-2 shrink-0 rounded-full bg-sky-400 motion-safe:animate-pulse" />
         Writing your launch kit. {line}
       </span>
       <span className="flex items-center gap-3 text-xs text-zinc-400">
         {total > 0 && <span>{usd(total)} so far</span>}
-        <button type="button" onClick={() => router.refresh()} className="underline underline-offset-2 hover:text-zinc-200">
+        <button type="button" onClick={() => router.refresh()} className="inline-flex min-h-11 items-center underline underline-offset-2 hover:text-zinc-200 md:min-h-0">
           Refresh
         </button>
       </span>

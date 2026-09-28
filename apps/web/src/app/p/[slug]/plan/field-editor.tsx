@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { postJson } from "@/lib/post-json";
 
 type Mode = "line" | "text" | "lines" | "json";
@@ -46,10 +46,13 @@ export function FieldEditor({ slug, dnaVersionId, path, label, value, onDone, au
   const [text, setText] = useState(() => toText(value, mode));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const id = `edit-${path.replace(/\W/g, "-")}`;
+  // The same field can be open twice (the unsure list and the profile), so ids must be per instance.
+  const id = useId();
+  const errorId = `${id}-error`;
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    if (busy) return;
     const parsed = fromText(text, mode);
     if (!parsed.ok) return setError(parsed.error);
     setBusy(true);
@@ -66,14 +69,15 @@ export function FieldEditor({ slug, dnaVersionId, path, label, value, onDone, au
     router.refresh();
   }
 
-  const box = "w-full rounded-md border border-edge bg-zinc-900 px-2.5 py-1.5 text-sm outline-none focus:border-zinc-400";
+  const box = "w-full rounded-md border border-edge bg-zinc-900 px-2.5 py-1.5 text-sm focus:border-zinc-400";
+  const invalid = error ? { "aria-invalid": true, "aria-describedby": errorId } : {};
   return (
     <form onSubmit={save} className="flex flex-col gap-2">
       <label htmlFor={id} className="sr-only">
         {label}
       </label>
       {mode === "line" ? (
-        <input id={id} value={text} onChange={(e) => setText(e.target.value)} autoFocus={autoFocus} className={box} />
+        <input id={id} value={text} onChange={(e) => setText(e.target.value)} autoFocus={autoFocus} className={box} {...invalid} />
       ) : (
         <textarea
           id={id}
@@ -83,6 +87,7 @@ export function FieldEditor({ slug, dnaVersionId, path, label, value, onDone, au
           rows={mode === "json" ? 8 : 4}
           spellCheck={mode !== "json"}
           className={`${box} ${mode === "json" ? "font-mono text-xs" : ""}`}
+          {...invalid}
         />
       )}
       {mode === "lines" && <p className="text-xs text-zinc-500">One per line.</p>}
@@ -90,17 +95,21 @@ export function FieldEditor({ slug, dnaVersionId, path, label, value, onDone, au
         <button
           type="submit"
           disabled={busy}
-          className="rounded-lg bg-accent-strong px-3 py-1.5 text-xs font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60"
+          className="inline-flex min-h-11 items-center rounded-lg bg-accent-strong px-3 py-1.5 text-xs font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60 md:min-h-0"
         >
           {busy ? "Saving…" : "Save"}
         </button>
         {onDone && (
-          <button type="button" onClick={onDone} className="rounded-md border border-zinc-800 px-3 py-1.5 text-xs text-zinc-400 hover:border-zinc-600">
+          <button type="button" onClick={onDone} className="inline-flex min-h-11 items-center rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-400 hover:border-zinc-500 md:min-h-0">
             Cancel
           </button>
         )}
       </div>
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && (
+        <p id={errorId} className="text-xs text-red-400" role="alert">
+          {error}
+        </p>
+      )}
     </form>
   );
 }

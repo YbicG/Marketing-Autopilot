@@ -73,7 +73,7 @@ export async function AppShell({ workspaceId, limitMicros, userName, projectSlug
   ]);
   const used = m.spentMicros + m.reservedMicros;
   const pct = m.capMicros > 0 ? Math.min(100, Math.round((used / m.capMicros) * 100)) : 0;
-  const bar = pct >= 100 ? "bg-red-400" : pct >= 80 ? "bg-warn" : "bg-accent";
+  const bar = pct >= 100 ? "bg-danger" : pct >= 80 ? "bg-warn" : "bg-accent";
   const subs = formatMonthlyRange(subscriptionSummary(configured));
   const alert = alerts[0]; // highest threshold first
   const current = projectSlug ? projects.find((p) => p.slug === projectSlug) : undefined;
@@ -81,15 +81,15 @@ export async function AppShell({ workspaceId, limitMicros, userName, projectSlug
 
   const body = (
     <div className="flex h-full flex-col gap-6 px-3 py-4">
-      <Link href="/" className="flex items-center gap-2.5 px-1.5">
-        <span className="flex size-7 items-center justify-center rounded-lg bg-accent-strong font-serif text-lg leading-none text-zinc-50">A</span>
+      <Link href="/" className="flex min-h-11 items-center gap-2.5 px-1.5 md:min-h-9">
+        <span aria-hidden className="flex size-7 items-center justify-center rounded-lg bg-accent-strong font-serif text-lg leading-none text-zinc-50">A</span>
         <span className="font-serif text-xl tracking-tight">Autopilot</span>
       </Link>
 
       {current ? (
         <>
           <div className="flex flex-col gap-3">
-            <Link href="/" className="flex min-h-10 items-center gap-1.5 px-1.5 text-xs text-faint hover:text-ink md:min-h-7">
+            <Link href="/" className="flex min-h-11 items-center gap-1.5 px-1.5 text-xs text-faint hover:text-ink md:min-h-7">
               <Icon name="back" className="size-3.5" /> All projects
             </Link>
             <div className="flex items-center gap-3 rounded-xl border border-line bg-surface px-3 py-2.5">
@@ -97,7 +97,7 @@ export async function AppShell({ workspaceId, limitMicros, userName, projectSlug
               <div className="min-w-0">
                 <p className="truncate font-medium">{current.name}</p>
                 <p className="flex items-center gap-1.5 text-xs text-muted">
-                  <span className={`size-1.5 rounded-full ${projectState(current).dot}`} />
+                  <span aria-hidden className={`size-1.5 rounded-full ${projectState(current).dot}`} />
                   {projectState(current).label}
                 </p>
               </div>
@@ -125,11 +125,12 @@ export async function AppShell({ workspaceId, limitMicros, userName, projectSlug
               >
                 <ProjectTile slug={p.slug} name={p.name} />
                 <span className="min-w-0 flex-1 truncate">{p.name}</span>
-                <span title={projectState(p).label} className={`size-1.5 rounded-full ${projectState(p).dot}`} />
+                <span aria-hidden title={projectState(p).label} className={`size-1.5 rounded-full ${projectState(p).dot}`} />
+                <span className="sr-only">, {projectState(p).label}</span>
               </Link>
             ))}
             <Link href="/#new" className="flex min-h-11 items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm text-faint hover:bg-surface hover:text-ink md:min-h-9">
-              <span className="flex size-6 items-center justify-center rounded-md border border-dashed border-zinc-700">
+              <span aria-hidden className="flex size-6 items-center justify-center rounded-md border border-dashed border-zinc-700">
                 <Icon name="plus" className="size-3.5" />
               </span>
               New project
@@ -154,7 +155,7 @@ export async function AppShell({ workspaceId, limitMicros, userName, projectSlug
           <span className="text-[11px] text-faint">Subscriptions {subs}</span>
         </Link>
         <div className="flex items-center gap-2.5 px-1.5">
-          <span className="flex size-7 items-center justify-center rounded-full bg-raised text-xs font-medium text-ink">{initials(userName)}</span>
+          <span aria-hidden className="flex size-7 items-center justify-center rounded-full bg-raised text-xs font-medium text-ink">{initials(userName)}</span>
           <span className="min-w-0 flex-1 truncate text-sm text-muted">{userName}</span>
           <Link href="/settings" aria-label="Settings" className="flex size-11 items-center justify-center rounded-md text-faint hover:bg-surface hover:text-ink md:size-8">
             <Icon name="gear" />

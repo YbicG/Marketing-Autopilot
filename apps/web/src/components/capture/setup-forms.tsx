@@ -3,12 +3,22 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { postJson } from "@/lib/post-json";
 
-export const field = "w-full rounded-md border border-edge bg-zinc-950 px-2.5 py-1.5 text-sm text-zinc-100 focus:border-zinc-400 focus:outline-none disabled:opacity-60";
-export const primary = "rounded-md bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-white disabled:opacity-50";
-export const secondary = "rounded-md border border-zinc-600 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-400 disabled:opacity-50";
+export const field = "w-full rounded-md border border-edge bg-zinc-950 px-2.5 py-1.5 text-sm text-zinc-100 focus:border-zinc-400 disabled:opacity-60";
+export const primary = "inline-flex min-h-11 items-center rounded-md bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-zinc-50 disabled:opacity-50 md:min-h-9";
+export const secondary = "inline-flex min-h-11 items-center rounded-md border border-zinc-600 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-400 disabled:opacity-50 md:min-h-9";
+/** Text-style buttons: phone-sized tap area, desktop density. */
+export const textBtn = "inline-flex min-h-11 items-center underline underline-offset-2 md:min-h-0";
 
 type Msg = { tone: "ok" | "err"; text: string } | null;
-const Note = ({ msg }: { msg: Msg }) => (msg ? <p className={`text-xs ${msg.tone === "ok" ? "text-emerald-400" : "text-amber-300"}`}>{msg.text}</p> : null);
+/** The visible note, plus an always-present live region so screen readers hear it. */
+export const Note = ({ msg }: { msg: Msg }) => (
+  <>
+    {msg && <p className={`text-xs ${msg.tone === "ok" ? "text-emerald-400" : "text-amber-300"}`}>{msg.text}</p>}
+    <p className="sr-only" aria-live="polite">
+      {msg?.text}
+    </p>
+  </>
+);
 
 /** The demo site's internal address and the pages the recorder must never open. */
 export function OriginForm({ slug, origin, denylist, suggestion }: { slug: string; origin: string | null; denylist: string[]; suggestion: string[] }) {
@@ -24,6 +34,8 @@ export function OriginForm({ slug, origin, denylist, suggestion }: { slug: strin
   const missing = suggestion.filter((x) => !list.includes(x));
 
   async function save(nextOrigin: string | null) {
+    if (busy) return;
+    if (nextOrigin === null && origin && !window.confirm("Turn recording off? The demo site's address is cleared; add it again to record.")) return;
     setBusy(true);
     setMsg(null);
     const out = await postJson<{ origin: string | null; denylist: string[] }>(`/api/capture/${encodeURIComponent(slug)}/origin`, { origin: nextOrigin, denylist: list });
@@ -54,7 +66,7 @@ export function OriginForm({ slug, origin, denylist, suggestion }: { slug: strin
         </span>
       </label>
       {missing.length > 0 && (
-        <button type="button" onClick={() => setRoutes([...list, ...missing].join("\n"))} disabled={busy} className="self-start text-xs text-zinc-300 underline underline-offset-2">
+        <button type="button" onClick={() => setRoutes([...list, ...missing].join("\n"))} disabled={busy} className={`${textBtn} self-start text-xs text-zinc-300`}>
           Add the suggested ones for SyllaCal ({missing.length})
         </button>
       )}
@@ -63,7 +75,7 @@ export function OriginForm({ slug, origin, denylist, suggestion }: { slug: strin
           {busy ? "Saving…" : "Save"}
         </button>
         {origin && (
-          <button type="button" onClick={() => void save(null)} disabled={busy} className="text-sm text-zinc-400 underline underline-offset-2">
+          <button type="button" onClick={() => void save(null)} disabled={busy} className={`${textBtn} text-sm text-zinc-400`}>
             Turn recording off
           </button>
         )}
@@ -84,6 +96,7 @@ export function LoginForm({ slug, hasLogin }: { slug: string; hasLogin: boolean 
   const [msg, setMsg] = useState<Msg>(null);
 
   async function save() {
+    if (busy) return;
     setBusy(true);
     setMsg(null);
     const out = await postJson(`/api/capture/${encodeURIComponent(slug)}/login`, { username, password, ...(loginPath.trim() ? { loginPath: loginPath.trim() } : {}) });
@@ -132,7 +145,7 @@ export function LoginForm({ slug, hasLogin }: { slug: string; hasLogin: boolean 
               {busy ? "Saving…" : hasLogin ? "Replace login" : "Save login"}
             </button>
             {hasLogin && (
-              <button type="button" onClick={() => setOpen(false)} className="text-sm text-zinc-400 underline underline-offset-2">
+              <button type="button" onClick={() => setOpen(false)} className={`${textBtn} text-sm text-zinc-400`}>
                 Cancel
               </button>
             )}

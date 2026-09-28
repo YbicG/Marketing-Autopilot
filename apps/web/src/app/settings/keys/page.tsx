@@ -62,7 +62,7 @@ export default async function KeysPage() {
 
   return (
     <>
-      <main className="flex max-w-5xl flex-col gap-8 px-4 md:px-10 py-8">
+      <main className="flex max-w-5xl flex-col gap-8 px-4 py-8 md:px-10">
         <div>
           <h1 className="font-serif text-4xl tracking-tight">Keys</h1>
           <p className="mt-1 text-sm text-zinc-400">
@@ -72,7 +72,9 @@ export default async function KeysPage() {
         </div>
 
         {!vault.ready && (
-          <p className="rounded-md border border-amber-900/70 bg-amber-950/20 px-4 py-3 text-sm text-amber-200">{vault.message}</p>
+          <p role="alert" className="rounded-md border border-amber-900/70 bg-amber-950/20 px-4 py-3 text-sm text-amber-200">
+            {vault.message}
+          </p>
         )}
 
         <section className="grid gap-4 md:grid-cols-2" aria-label="Services">
@@ -109,7 +111,7 @@ export default async function KeysPage() {
               const stored = byPurpose.get(captureLoginPurpose(p.id));
               return (
                 <div key={p.id} className="flex flex-col gap-2 rounded-md border border-zinc-800 p-4">
-                  <div className="flex items-baseline justify-between gap-3">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
                     <h3 className="font-medium">{p.name}</h3>
                     <span className={`text-xs ${stored ? "text-emerald-400" : "text-zinc-500"}`}>
                       {stored ? `Saved · ${stored.rotatedAt ? `replaced ${shortDate(stored.rotatedAt)}` : `added ${shortDate(stored.createdAt)}`}` : "Not set"}
@@ -129,7 +131,7 @@ export default async function KeysPage() {
             {other.map((x) => (
               <div key={x.purpose} className="flex flex-col gap-2 rounded-md border border-zinc-800 p-4">
                 <p className="text-sm">
-                  <span className="font-mono text-zinc-300">{x.purpose}</span>
+                  <span className="break-all font-mono text-zinc-300">{x.purpose}</span>
                   <span className="text-zinc-500"> · added {shortDate(x.createdAt)}</span>
                 </p>
                 <KeyForm purpose={x.purpose} label="Key" stored disabled />
@@ -157,7 +159,7 @@ function CapabilityCard({
 }) {
   return (
     <article className={`flex flex-col gap-3 rounded-md border p-4 ${connected ? "border-emerald-900/70" : "border-zinc-800"}`}>
-      <div className="flex items-baseline justify-between gap-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <h2 className="font-semibold">
           {c.name}
           {c.optional && <span className="ml-2 text-xs font-normal text-zinc-500">optional</span>}
@@ -182,7 +184,7 @@ function CapabilityCard({
           const line = sourceLine(stored, sec.envName);
           return (
             <div key={sec.purpose} className="flex flex-col gap-1.5">
-              <div className="flex items-baseline justify-between gap-3 text-sm">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-sm">
                 <span>{sec.label}</span>
                 <span className={`text-xs ${line.tone}`}>{line.text}</span>
               </div>
@@ -191,8 +193,9 @@ function CapabilityCard({
           );
         })}
       </div>
-      <a href={c.signupUrl} target="_blank" rel="noreferrer" className="text-xs text-zinc-400 underline underline-offset-2 hover:text-zinc-200">
+      <a href={c.signupUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center self-start text-xs text-zinc-400 underline underline-offset-2 hover:text-zinc-200 md:min-h-0">
         Sign up or find your key on {c.name.split(" ")[0]}&apos;s site
+        <span className="sr-only"> (opens in a new tab)</span>
       </a>
     </article>
   );

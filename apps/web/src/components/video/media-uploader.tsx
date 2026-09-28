@@ -83,7 +83,7 @@ export function MediaUploader({ slug, onUploaded, compact = false }: { slug: str
           type="button"
           onClick={() => input.current?.click()}
           disabled={progress !== null}
-          className="rounded-md border border-zinc-600 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-400 disabled:opacity-60"
+          className="inline-flex min-h-11 items-center rounded-md border border-zinc-600 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-400 disabled:opacity-60 md:min-h-9"
         >
           {progress !== null ? `Uploading… ${progress}%` : "Upload a screenshot or recording"}
         </button>
@@ -91,6 +91,9 @@ export function MediaUploader({ slug, onUploaded, compact = false }: { slug: str
       </div>
       <input ref={input} type="file" accept={ACCEPT} multiple={!compact} className="hidden" onChange={(e) => void upload(e.target.files)} aria-label="Choose files to upload" />
       {msg && <p className={`text-xs ${msg.tone === "ok" ? "text-emerald-400" : "text-amber-300"}`}>{msg.text}</p>}
+      <p className="sr-only" aria-live="polite">
+        {msg?.text}
+      </p>
     </div>
   );
 }

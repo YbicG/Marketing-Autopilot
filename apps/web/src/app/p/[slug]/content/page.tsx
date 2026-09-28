@@ -135,15 +135,17 @@ function Strip({ slug, strip }: { slug: string; strip: BoardDay[] }) {
             {d.launch && <span className="font-medium text-amber-300">Launch</span>}
             <span className="flex flex-wrap gap-1">
               {d.entries.map((e) => {
-                const dot = <span className={`block h-2.5 w-2.5 rounded-full ${DOT[e.status]}`} />;
+                const dot = <span aria-hidden className={`block h-2.5 w-2.5 rounded-full ${DOT[e.status]}`} />;
                 const label = `${PLATFORM_NAME[e.platform] ?? e.platform} ${e.time}: ${e.status}`;
                 return e.contentItemId ? (
-                  <Link key={e.slotId} href={editorHref(slug, { kind: e.kind, contentItemId: e.contentItemId })} title={label} aria-label={label}>
+                  <Link key={e.slotId} href={editorHref(slug, { kind: e.kind, contentItemId: e.contentItemId })} title={label} className="-m-1 rounded-full p-1">
                     {dot}
+                    <span className="sr-only">{label}</span>
                   </Link>
                 ) : (
-                  <span key={e.slotId} title={label} aria-label={label}>
+                  <span key={e.slotId} title={label}>
                     {dot}
+                    <span className="sr-only">{label}</span>
                   </span>
                 );
               })}
@@ -154,7 +156,7 @@ function Strip({ slug, strip }: { slug: string; strip: BoardDay[] }) {
       <p className="flex flex-wrap gap-3 text-xs text-zinc-500">
         {(["Drafting", "Ready", "Needs you", "Approved", "Scheduled", "Posted", "Failed", "Open"] as const).map((k) => (
           <span key={k} className="flex items-center gap-1">
-            <span className={`inline-block h-2 w-2 rounded-full ${DOT[k]}`} />
+            <span aria-hidden className={`inline-block h-2 w-2 rounded-full ${DOT[k]}`} />
             {k}
           </span>
         ))}
@@ -168,10 +170,10 @@ function Card({ slug, card }: { slug: string; card: BoardCard }) {
   return (
     <Link href={editorHref(slug, card)} className="flex h-full flex-col gap-2 rounded-md border border-zinc-800 p-3 hover:border-zinc-600">
       {img ? (
-        <img src={img} alt={`${card.typeLabel} preview`} loading="lazy" className="h-32 w-full rounded bg-zinc-900 object-cover object-top" />
+        <img src={img} alt="" loading="lazy" decoding="async" className="h-32 w-full rounded bg-zinc-900 object-cover object-top" />
       ) : (
         (card.kind === "carousel" || card.kind === "video") && (
-          <div className="flex h-32 w-full items-center justify-center rounded bg-zinc-900 text-xs text-zinc-600">
+          <div className="flex h-32 w-full items-center justify-center rounded bg-zinc-900 text-xs text-zinc-500">
             {card.status === "Drafting" ? "Being made…" : "No preview yet"}
           </div>
         )

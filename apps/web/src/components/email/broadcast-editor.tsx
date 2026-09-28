@@ -7,9 +7,9 @@ import type { BroadcastView } from "@mkt/core/email";
 import { postJson } from "@/lib/post-json";
 import { sendTime, tzName } from "./labels";
 
-const input = "w-full rounded-md border border-edge bg-zinc-900 px-3 py-2 text-sm outline-none focus:border-zinc-400 disabled:opacity-60";
-const primary = "rounded-md bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-900 hover:bg-white disabled:opacity-50";
-const quiet = "rounded-md border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:border-zinc-500 disabled:opacity-50";
+const input = "min-h-11 md:min-h-9 w-full rounded-md border border-edge bg-zinc-900 px-3 py-2 text-sm outline-none focus:border-zinc-400 disabled:opacity-60";
+const primary = "min-h-11 md:min-h-9 rounded-lg bg-accent-strong px-3 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50";
+const quiet = "min-h-11 md:min-h-9 rounded-md border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:border-zinc-500 disabled:opacity-50";
 const PREVIEW_DEBOUNCE_MS = 500;
 
 type Busy = "save" | "approve" | "void" | "cancel" | "retry" | "audience" | null;
@@ -81,6 +81,7 @@ export function BroadcastEditor({ slug, tz, view, initialDay, initialTime, setti
   const preview = contentDirty && draftPreview ? draftPreview : { html: view.preview.html, issues: view.issues };
 
   async function run(kind: Exclude<Busy, null>, url: string, payload: unknown = {}) {
+    if (busy !== null) return false;
     setBusy(kind);
     setError(null);
     const out = await postJson(url, payload);
@@ -211,8 +212,8 @@ export function BroadcastEditor({ slug, tz, view, initialDay, initialTime, setti
             </span>
           </label>
 
-          <div className="flex flex-col gap-1 text-sm">
-            <span>
+          <div className="flex flex-col gap-1 text-sm" role="group" aria-labelledby="send-time-label">
+            <span id="send-time-label">
               Send time <span className="text-zinc-500">({tzName(tz)} time)</span>
             </span>
             <div className="flex flex-wrap gap-2">
@@ -268,14 +269,16 @@ export function BroadcastEditor({ slug, tz, view, initialDay, initialTime, setti
         <section className="flex flex-col gap-3" aria-label="Preview">
           <div className="flex items-baseline justify-between gap-3">
             <h2 className="font-semibold">Preview</h2>
-            <span className="text-xs text-zinc-500">{previewing ? "Updating…" : contentDirty ? "Unsaved changes" : "As it will be sent"}</span>
+            <span className="text-xs text-zinc-500" aria-live="polite">
+              {previewing ? "Updating…" : contentDirty ? "Unsaved changes" : "As it will be sent"}
+            </span>
           </div>
           <p className="text-xs text-zinc-400">
             From {view.preview.from ?? <span className="text-amber-300">no sender yet</span>}
             {view.preview.replyTo ? ` · replies to ${view.preview.replyTo}` : ""}
           </p>
-          <iframe title="Email preview" sandbox="" srcDoc={preview.html} className="h-[560px] w-full rounded-md border border-zinc-800 bg-white" />
-          <div className="flex flex-col gap-2">
+          <iframe title="Email preview" sandbox="" srcDoc={preview.html} className="h-[420px] w-full rounded-md border border-zinc-800 bg-white sm:h-[560px]" />
+          <div className="flex flex-col gap-2" aria-live="polite">
             <h3 className="text-sm font-medium">Checks</h3>
             <Issues issues={preview.issues} />
           </div>
@@ -312,12 +315,16 @@ export function BroadcastEditor({ slug, tz, view, initialDay, initialTime, setti
             </button>
           )}
           {view.canCancel && (
-            <button type="button" onClick={() => void cancel()} disabled={busy !== null} className={`${quiet} hover:border-red-800 hover:text-red-300`}>
+            <button type="button" onClick={() => void cancel()} disabled={busy !== null} className={`${quiet} hover:border-red-600 hover:text-red-300`}>
               {busy === "cancel" ? "Canceling…" : "Cancel this email"}
             </button>
           )}
         </div>
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && (
+          <p role="alert" className="text-sm text-red-400">
+            {error}
+          </p>
+        )}
       </section>
     </div>
   );

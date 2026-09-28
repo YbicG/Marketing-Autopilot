@@ -44,72 +44,86 @@ export function QueueBoard({ days, view }: { days: BoardDay[]; view: "week" | "m
           {error}
         </p>
       )}
-      <div className="grid grid-cols-7 gap-1 text-xs text-zinc-500">
-        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-          <div key={d} className="px-1">
-            {d}
+      <p className="sr-only" aria-live="polite">
+        {moving ? "Moving the post…" : ""}
+      </p>
+      {/* Seven columns don't fit a phone: the calendar scrolls sideways instead of squashing. */}
+      <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:px-0">
+        <div className="flex min-w-[44rem] flex-col gap-1">
+          <div className="grid grid-cols-7 gap-1 text-xs text-zinc-500" aria-hidden>
+            {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
+              <div key={d} className="px-1">
+                {d}
+              </div>
+            ))}
           </div>
-        ))}
+          <div className="grid grid-cols-7 gap-1">
+            {days.map((d) => {
+              const droppable = !d.isPast && !!dragging;
+              return (
+                <div
+                  key={d.day}
+                  onDragOver={(e) => {
+                    if (!droppable) return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    setOver(d.day);
+                  }}
+                  onDragLeave={() => setOver((cur) => (cur === d.day ? null : cur))}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const id = e.dataTransfer.getData("text/plain");
+                    if (id && droppable) void drop(d.day, id);
+                  }}
+                  className={`flex flex-col gap-1 rounded-md border p-1.5 ${view === "week" ? "min-h-48" : "min-h-24"} ${
+                    over === d.day ? "border-sky-600 bg-sky-950/30" : d.isToday ? "border-zinc-500" : "border-zinc-800"
+                  } ${d.inRange ? "" : "opacity-60"} ${d.isPast ? "bg-zinc-950" : ""}`}
+                >
+                  <div className={`text-xs ${d.isToday ? "font-semibold text-zinc-100" : "text-zinc-500"}`}>
+                    {d.label}
+                    {d.isToday && <span className="sr-only"> (today)</span>}
+                  </div>
+                  {d.chips.map((c) => {
+                    const movable = MOVABLE_STATES.has(c.state);
+                    const conflict = c.conflicts.length > 0;
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        draggable={movable}
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData("text/plain", c.id);
+                          e.dataTransfer.effectAllowed = "move";
+                          setDragging(c.id);
+                        }}
+                        onDragEnd={() => {
+                          setDragging(null);
+                          setOver(null);
+                        }}
+                        onClick={() => setOpen(c.id)}
+                        aria-label={`${c.time}, ${platformName(c.platform)}, ${stateName(c.state)}${conflict ? `. ${c.conflicts.join(" ")}` : ""}`}
+                        title={conflict ? c.conflicts.join(" ") : `${platformName(c.platform)} · ${stateName(c.state)}`}
+                        className={`flex min-h-11 flex-col items-start rounded border px-1.5 py-1 text-left text-xs md:min-h-0 ${
+                          conflict ? "border-red-600 bg-red-950/40 text-red-100" : STATE_TONE[c.state] ?? "border-zinc-700"
+                        } ${movable ? "cursor-grab" : ""} ${moving === c.id ? "opacity-50" : ""}`}
+                      >
+                        <span className="font-medium">
+                          {c.time} · {platformName(c.platform)}
+                        </span>
+                        {view === "week" && <span className="text-[11px] opacity-80">{stateName(c.state)}</span>}
+                        {view === "week" && conflict && <span className="text-[11px] text-red-300">{c.conflicts[0]}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
-      <div className="grid grid-cols-7 gap-1">
-        {days.map((d) => {
-          const droppable = !d.isPast && !!dragging;
-          return (
-            <div
-              key={d.day}
-              onDragOver={(e) => {
-                if (!droppable) return;
-                e.preventDefault();
-                e.dataTransfer.dropEffect = "move";
-                setOver(d.day);
-              }}
-              onDragLeave={() => setOver((cur) => (cur === d.day ? null : cur))}
-              onDrop={(e) => {
-                e.preventDefault();
-                const id = e.dataTransfer.getData("text/plain");
-                if (id && droppable) void drop(d.day, id);
-              }}
-              className={`flex flex-col gap-1 rounded-md border p-1.5 ${view === "week" ? "min-h-48" : "min-h-24"} ${
-                over === d.day ? "border-sky-600 bg-sky-950/30" : d.isToday ? "border-zinc-500" : "border-zinc-800"
-              } ${d.inRange ? "" : "opacity-40"} ${d.isPast ? "bg-zinc-950" : ""}`}
-            >
-              <div className={`text-xs ${d.isToday ? "font-semibold text-zinc-100" : "text-zinc-500"}`}>{d.label}</div>
-              {d.chips.map((c) => {
-                const movable = MOVABLE_STATES.has(c.state);
-                const conflict = c.conflicts.length > 0;
-                return (
-                  <button
-                    key={c.id}
-                    type="button"
-                    draggable={movable}
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData("text/plain", c.id);
-                      e.dataTransfer.effectAllowed = "move";
-                      setDragging(c.id);
-                    }}
-                    onDragEnd={() => {
-                      setDragging(null);
-                      setOver(null);
-                    }}
-                    onClick={() => setOpen(c.id)}
-                    title={conflict ? c.conflicts.join(" ") : `${platformName(c.platform)} · ${stateName(c.state)}`}
-                    className={`flex flex-col items-start rounded border px-1.5 py-1 text-left text-xs ${
-                      conflict ? "border-red-600 bg-red-950/40 text-red-100" : STATE_TONE[c.state] ?? "border-zinc-700"
-                    } ${movable ? "cursor-grab" : ""} ${moving === c.id ? "opacity-50" : ""}`}
-                  >
-                    <span className="font-medium">
-                      {c.time} · {platformName(c.platform)}
-                    </span>
-                    {view === "week" && <span className="text-[11px] opacity-80">{stateName(c.state)}</span>}
-                    {view === "week" && conflict && <span className="text-[11px] text-red-300">{c.conflicts[0]}</span>}
-                  </button>
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
-      <p className="text-xs text-zinc-500">Drag a post to another day to move it. It keeps its time; red means it would break a daily limit.</p>
+      <p className="text-xs text-zinc-500">
+        Drag a post to another day to move it; it keeps its time. Open a post to change its time too. Red means it would break a daily limit.
+      </p>
       {open && <PostDrawer postId={open} onClose={() => setOpen(null)} />}
     </div>
   );

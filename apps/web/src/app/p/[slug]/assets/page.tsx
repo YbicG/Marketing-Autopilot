@@ -29,7 +29,7 @@ const ORIGIN_LABEL: Record<string, string> = {
 const TIER: Record<string, { label: string; note: string; tone: string }> = {
   A: { label: "Real screens", note: "Captured, uploaded or a template. No AI label needed.", tone: "border-emerald-800 text-emerald-300" },
   B: { label: "AI voice or sound", note: "Includes an AI voice, music or a checked non-photo AI image. Posts using it get the platform's AI label.", tone: "border-amber-800 text-amber-300" },
-  C: { label: "AI images", note: "Includes AI-made images or video. Posts using it get the platform's AI label.", tone: "border-fuchsia-900 text-fuchsia-300" },
+  C: { label: "AI images", note: "Includes AI-made images or video. Posts using it get the platform's AI label.", tone: "border-rose/40 text-rose" },
 };
 
 const secs = (ms: number | null) => (ms ? `${Math.floor(ms / 60_000)}:${String(Math.round((ms % 60_000) / 1000)).padStart(2, "0")}` : "");
@@ -78,9 +78,9 @@ export default async function AssetsPage({ params }: { params: Promise<{ slug: s
               return (
                 <li key={a.id} className="flex flex-col gap-2 rounded-md border border-zinc-800 p-3">
                   {isVisual(a) ? (
-                    <img src={`/api/media/${a.id}?v=preview`} alt={KIND_LABEL[a.kind] ?? "Asset"} className="h-40 w-full rounded bg-zinc-900 object-contain" loading="lazy" />
+                    <img src={`/api/media/${a.id}?v=preview`} alt={KIND_LABEL[a.kind] ?? "Asset"} className="h-40 w-full rounded bg-zinc-900 object-contain" loading="lazy" decoding="async" />
                   ) : isPlayable(a) ? (
-                    <video src={`/api/media/${a.id}`} controls preload="none" className="h-40 w-full rounded bg-black" />
+                    <video src={`/api/media/${a.id}`} controls preload="none" className="h-40 w-full rounded bg-zinc-950" aria-label={KIND_LABEL[a.kind] ?? "Video"} />
                   ) : (
                     <div className="flex h-40 items-center justify-center rounded bg-zinc-900 text-xs text-zinc-500">{KIND_LABEL[a.kind] ?? a.kind}</div>
                   )}
