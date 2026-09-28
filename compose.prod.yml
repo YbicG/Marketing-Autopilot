@@ -93,6 +93,8 @@ services:
     volumes: [mkt-data:/data]
     # mkt-capture: the internal-only network the SyllaCal demo instance joins (D26, M3b).
     networks: [mkt, mkt-capture]
+    # tini as PID 1: forwards SIGTERM through pnpm/tsx and reaps Chromium/ffmpeg zombies.
+    init: true
     shm_size: 1gb
     mem_limit: 5g
     cpus: 3

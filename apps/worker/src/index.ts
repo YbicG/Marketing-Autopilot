@@ -194,6 +194,8 @@ const workers: Worker[] = [];
 function start(name: string, processor: (job: Job) => Promise<unknown>, concurrency: number) {
   const w = new Worker(name, processor, { connection: bullConnection, concurrency });
   w.on("failed", failed);
+  // BullMQ: without an error listener a Redis blip surfaces as an unhandled 'error' event.
+  w.on("error", (err) => console.error(`[worker] ${name} worker error`, err.message));
   workers.push(w);
   console.log(`[worker] ${name} queue ready (concurrency ${concurrency})`);
 }

@@ -20,6 +20,8 @@ const MAX_BODY = 256 * 1024;
  * is 401; a repeat is 200.
  */
 export async function POST(req: Request) {
+  // Refuse an oversized body before buffering it; the length check after covers chunked bodies.
+  if (Number(req.headers.get("content-length") ?? 0) > MAX_BODY) return json(413, { error: "too large" });
   const raw = await req.text();
   if (raw.length > MAX_BODY) return json(413, { error: "too large" });
   const headers: Record<string, string> = {};

@@ -49,6 +49,10 @@ export function env(): Env {
   if (parsed.NODE_ENV === "production" && parsed.SSRF_ALLOWLIST) {
     throw new Error("SSRF_ALLOWLIST is for tests only and is refused in production");
   }
+  // The localhost default would make every same-origin check fail (a silent 403 on each write).
+  if (parsed.NODE_ENV === "production" && /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(parsed.APP_BASE_URL)) {
+    throw new Error("APP_BASE_URL must be set to the app's public https URL in production");
+  }
   cached = parsed;
   return cached;
 }

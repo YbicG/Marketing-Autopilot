@@ -8,3 +8,8 @@ node_modules
 data
 .git
 **/.remotion
+**/.env*
+!**/.env.example
+.claude
+.impeccable
+**/.impeccable
