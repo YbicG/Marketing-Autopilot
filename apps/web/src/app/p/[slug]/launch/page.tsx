@@ -12,10 +12,8 @@ import { PlanChecklist, TaskRow } from "@/components/launch/plan-checklist";
 import { PlanStart } from "@/components/launch/plan-start";
 import { PlanRefresh } from "@/components/launch/plan-task-actions";
 import { XLinksCard } from "@/components/launch/x-links-card";
-import { ProjectTabs } from "@/components/project-tabs";
 import { getDb } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
-import { Header } from "../../../header";
 
 export const dynamic = "force-dynamic";
 
@@ -38,9 +36,7 @@ export default async function LaunchPage({ params }: { params: Promise<{ slug: s
 
   const shell = (body: React.ReactNode) => (
     <>
-      <Header workspaceId={s.workspaceId} limitMicros={ws.monthlyLimitMicros} />
-      <ProjectTabs slug={product.slug} />
-      <main className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-8">{body}</main>
+      <main className="flex max-w-5xl flex-col gap-8 px-4 md:px-10 py-8">{body}</main>
     </>
   );
 
@@ -49,7 +45,7 @@ export default async function LaunchPage({ params }: { params: Promise<{ slug: s
       return shell(
         <div className="flex flex-col gap-2">
           <p className="text-sm text-zinc-500">{product.name}</p>
-          <h1 className="text-2xl font-semibold">Launch</h1>
+          <h1 className="font-serif text-4xl tracking-tight">Launch</h1>
           <p className="text-zinc-400">
             The launch checklist is worked back from your campaign&apos;s dates.{" "}
             <Link href={`/p/${encodeURIComponent(product.slug)}/plan`} className="underline underline-offset-2">
@@ -75,7 +71,7 @@ export default async function LaunchPage({ params }: { params: Promise<{ slug: s
       <>
         <div>
           <p className="text-sm text-zinc-500">{product.name}</p>
-          <h1 className="text-2xl font-semibold">Launch</h1>
+          <h1 className="font-serif text-4xl tracking-tight">Launch</h1>
         </div>
         <PlanStart
           slug={product.slug}
@@ -112,7 +108,7 @@ export default async function LaunchPage({ params }: { params: Promise<{ slug: s
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-sm text-zinc-500">{product.name}</p>
-          <h1 className="text-2xl font-semibold">Launch</h1>
+          <h1 className="font-serif text-4xl tracking-tight">Launch</h1>
           <p className="text-sm text-zinc-400">
             {countdownText(view.countdown)} · launch day {plainDay(view.plan.launchDate)} · {view.counts.done + view.counts.skipped} of {view.counts.total} finished
           </p>

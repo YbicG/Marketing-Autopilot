@@ -16,10 +16,8 @@ import { KitCostChip, KitDisclosureStatus, KitIssues, KitStatusChip } from "@/co
 import { SubredditTasks } from "@/components/launch/kit-subreddit";
 import { KitWriteAgain } from "@/components/launch/kit-write";
 import { ReplyBank } from "@/components/launch/reply-bank";
-import { ProjectTabs } from "@/components/project-tabs";
 import { getDb } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
-import { Header } from "../../../../../header";
 
 export const dynamic = "force-dynamic";
 
@@ -41,15 +39,13 @@ export default async function LaunchKitPage({ params }: { params: Promise<{ slug
 
   const shell = (chips: ReactNode, children: ReactNode) => (
     <>
-      <Header workspaceId={s.workspaceId} limitMicros={ws.monthlyLimitMicros} />
-      <ProjectTabs slug={product.slug} />
-      <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8">
+      <main className="flex max-w-5xl flex-col gap-6 px-4 md:px-10 py-8">
         <div>
           <Link href={`/p/${product.slug}/launch/kits`} className="text-sm text-zinc-500 hover:text-zinc-300">
             ← Launch kit
           </Link>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-semibold">{label}</h1>
+            <h1 className="font-serif text-4xl tracking-tight">{label}</h1>
             {chips}
           </div>
           <p className="mt-1 text-sm text-zinc-400">{KIND_BLURB[kind]}</p>
@@ -114,7 +110,7 @@ export default async function LaunchKitPage({ params }: { params: Promise<{ slug
         content = (
           <>
             <ReplyBank replies={replies} />
-            <details className="rounded-lg border border-zinc-800 p-4">
+            <details className="rounded-xl border border-zinc-800 p-4 bg-surface">
               <summary className="cursor-pointer text-sm text-zinc-300">Edit the replies</summary>
               <div className="mt-4">{editor}</div>
             </details>

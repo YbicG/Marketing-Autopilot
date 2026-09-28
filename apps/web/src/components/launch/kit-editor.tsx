@@ -73,7 +73,7 @@ function EditorForm({ body, locked, onSave }: { body: LaunchKitBody; locked: boo
       {draft.kind === "creator" && <CreatorForm body={draft} set={setDraft} disabled={locked} />}
       {draft.kind === "reply_bank" && <ReplyBankForm body={draft} set={setDraft} disabled={locked} />}
       <div className="sticky bottom-0 flex flex-wrap items-center gap-3 border-t border-zinc-800 bg-zinc-950/95 py-3">
-        <button type="submit" disabled={locked || busy || !dirty} className="rounded-md bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-900 disabled:opacity-50">
+        <button type="submit" disabled={locked || busy || !dirty} className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 disabled:opacity-50 hover:bg-accent">
           {busy ? "Saving and checking…" : "Save changes"}
         </button>
         {dirty && !busy && (

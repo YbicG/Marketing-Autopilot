@@ -40,7 +40,7 @@ export function taskHref(slug: string, t: Pick<LaunchTaskView, "key" | "ref">): 
   }
   if (ref.kind === "tracking_test" || ref.kind === "landing_audit") return { href: "#checks", label: "Go to the check" };
   if (ref.contentItemId) return { href: `${base}/content/post/${ref.contentItemId}`, label: "Open the post" };
-  if (ref.assistedTaskId) return { href: `${base}/today`, label: "Open in Today" };
+  if (ref.assistedTaskId) return { href: base, label: "Open in Overview" };
   switch (t.key) {
     case "launch.subreddit_posts":
       return { href: `${base}/launch/kits/subreddit`, label: "Open the drafts" };

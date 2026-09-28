@@ -58,7 +58,7 @@ export function DownloadPost({ post, onDone }: { post: PostDetailJson; onDone: (
           type="button"
           onClick={() => void done()}
           disabled={busy || !url.trim()}
-          className="rounded-md bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-900 disabled:opacity-50"
+          className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 disabled:opacity-50 hover:bg-accent"
         >
           Mark as posted
         </button>

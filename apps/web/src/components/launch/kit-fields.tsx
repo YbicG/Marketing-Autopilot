@@ -117,7 +117,7 @@ export function ItemList<T>({
   return (
     <div className="flex flex-col gap-3">
       {items.map((item, i) => (
-        <div key={i} className="flex flex-col gap-3 rounded-lg border border-zinc-800 p-3">
+        <div key={i} className="flex flex-col gap-3 rounded-xl border border-zinc-800 p-3 bg-surface">
           <div className="flex items-baseline justify-between gap-2">
             <p className="text-sm font-medium text-zinc-200">{title(item, i)}</p>
             <button type="button" disabled={disabled || items.length <= min} onClick={() => onChange(items.filter((_, n) => n !== i))} className={small}>

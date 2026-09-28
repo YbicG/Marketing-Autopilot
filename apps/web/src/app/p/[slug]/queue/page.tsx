@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation";
 import { productBySlug } from "@mkt/core/ingest";
 import { addDays, approvalCounts, assistedCards, dayBounds, localDay, mondayOf, queueView, shortSlot } from "@mkt/core/publishing";
 import { getWorkspace } from "@mkt/core/tenancy";
-import { ProjectTabs } from "@/components/project-tabs";
 import { BulkApprove } from "@/components/publishing/bulk-approve";
 import { CopyOpenList } from "@/components/publishing/copy-open";
 import { NeedsYouList } from "@/components/publishing/needs-you";
@@ -11,7 +10,6 @@ import { PauseControls } from "@/components/publishing/pause-controls";
 import type { QueueChip } from "@/components/publishing/types";
 import { getDb } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
-import { Header } from "../../../header";
 import { QueueBoard, type BoardDay } from "./queue-board";
 
 export const dynamic = "force-dynamic";
@@ -105,12 +103,10 @@ export default async function QueuePage({
 
   return (
     <>
-      <Header workspaceId={s.workspaceId} limitMicros={ws.monthlyLimitMicros} />
-      <ProjectTabs slug={product.slug} />
-      <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8">
+      <main className="flex max-w-5xl flex-col gap-6 px-4 md:px-10 py-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold">Queue</h1>
+            <h1 className="font-serif text-4xl tracking-tight">Queue</h1>
             <p className="text-sm text-zinc-400">Posting from your server · {status}</p>
           </div>
           <PauseControls slug={product.slug} pausedCount={counts.paused} />

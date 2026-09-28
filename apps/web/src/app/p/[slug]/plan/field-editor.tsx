@@ -90,7 +90,7 @@ export function FieldEditor({ slug, dnaVersionId, path, label, value, onDone, au
         <button
           type="submit"
           disabled={busy}
-          className="rounded-md bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-900 hover:bg-white disabled:opacity-60"
+          className="rounded-lg bg-accent-strong px-3 py-1.5 text-xs font-medium text-zinc-50 hover:bg-accent disabled:opacity-60"
         >
           {busy ? "Saving…" : "Save"}
         </button>

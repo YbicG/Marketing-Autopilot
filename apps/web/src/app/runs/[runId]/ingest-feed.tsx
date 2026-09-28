@@ -181,7 +181,7 @@ export function IngestFeed({ runId, kind, stages, initialStatus, initialQuestion
                 type="button"
                 onClick={() => void retry()}
                 disabled={retrying}
-                className="rounded-md bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-white disabled:opacity-60"
+                className="rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent disabled:opacity-60"
               >
                 {retrying ? "Starting…" : "Try again"}
               </button>

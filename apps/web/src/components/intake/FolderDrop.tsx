@@ -208,7 +208,7 @@ export function FolderDrop({ onReady }: Props) {
               type="button"
               onClick={confirmFiles}
               disabled={confirmed || manifest.included.length === 0}
-              className="rounded-md bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-white disabled:opacity-60"
+              className="rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent disabled:opacity-60"
             >
               {confirmed ? "Files selected" : "Use these files"}
             </button>

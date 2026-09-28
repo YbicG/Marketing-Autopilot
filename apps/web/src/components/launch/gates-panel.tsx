@@ -45,7 +45,7 @@ export function GatesPanel({
   const tracking = gates.gates.find((g) => g.key === TRACKING);
   const landing = gates.gates.filter((g) => g.key !== TRACKING);
   return (
-    <section id="checks" className="flex scroll-mt-4 flex-col gap-4 rounded-lg border border-zinc-800 p-5" aria-label="Launch-day checks">
+    <section id="checks" className="flex scroll-mt-4 flex-col gap-4 rounded-xl border border-zinc-800 p-5 bg-surface" aria-label="Launch-day checks">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
           <h2 className="text-lg font-semibold">Launch-day checks</h2>

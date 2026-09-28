@@ -9,10 +9,8 @@ import { NewBroadcast } from "@/components/email/new-broadcast";
 import { sendTime, tzName } from "@/components/email/labels";
 import { SenderSettings } from "@/components/email/sender-settings";
 import { StatusPill } from "@/components/email/status-pill";
-import { ProjectTabs } from "@/components/project-tabs";
 import { getDb } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
-import { Header } from "../../../header";
 
 export const dynamic = "force-dynamic";
 
@@ -37,11 +35,9 @@ export default async function EmailPage({ params }: { params: Promise<{ slug: st
 
   return (
     <>
-      <Header workspaceId={s.workspaceId} limitMicros={ws.monthlyLimitMicros} />
-      <ProjectTabs slug={slug} />
-      <main className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-8">
+      <main className="flex max-w-5xl flex-col gap-8 px-4 md:px-10 py-8">
         <div>
-          <h1 className="text-xl font-semibold">Email</h1>
+          <h1 className="font-serif text-4xl tracking-tight">Email</h1>
           <p className="mt-1 text-sm text-zinc-400">
             One seasonal email to people who already bought {product.name}, sent through your Resend account. Nothing goes out until you approve it.
           </p>

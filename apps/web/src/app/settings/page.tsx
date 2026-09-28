@@ -2,10 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { USD } from "@mkt/core/cost";
 import { getWorkspace } from "@mkt/core/tenancy";
-import { SettingsTabs } from "@/components/project-tabs";
 import { getDb } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
-import { Header } from "../header";
 import { LimitForm } from "../welcome/limit-form";
 import { DeleteWorkspace } from "./delete-workspace";
 
@@ -18,11 +16,9 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <Header workspaceId={s.workspaceId} limitMicros={ws.monthlyLimitMicros} />
-      <SettingsTabs />
-      <main className="mx-auto flex max-w-md flex-col gap-10 px-4 py-10">
+      <main className="flex max-w-md flex-col gap-10 px-4 md:px-10 py-10">
         <section className="flex flex-col gap-3">
-          <h1 className="text-xl font-semibold">Monthly spending limit</h1>
+          <h1 className="font-serif text-4xl tracking-tight">Monthly spending limit</h1>
           <LimitForm initialUsd={Math.round(ws.monthlyLimitMicros / USD)} next="/settings" />
           <p className="text-sm text-zinc-400">
             See where it goes on{" "}

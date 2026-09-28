@@ -234,7 +234,7 @@ export function SenderSettings({
       </label>
 
       <div className="flex items-center gap-3">
-        <button type="submit" disabled={busy} className="rounded-md bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-900 hover:bg-white disabled:opacity-50">
+        <button type="submit" disabled={busy} className="rounded-lg bg-accent-strong px-3 py-2 text-sm font-medium text-zinc-50 hover:bg-accent disabled:opacity-50">
           {busy ? "Saving…" : "Save sender settings"}
         </button>
         {saved && !error && <span className="text-xs text-emerald-400">Saved.</span>}

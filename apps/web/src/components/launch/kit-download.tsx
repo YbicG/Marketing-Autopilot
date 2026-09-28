@@ -27,7 +27,7 @@ export function KitDownload({ kitId, blockedReason, label = "Download kit" }: { 
         type="button"
         disabled={busy || !!blockedReason}
         onClick={() => void download()}
-        className="self-start rounded-md bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-900 disabled:opacity-50"
+        className="self-start rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 disabled:opacity-50 hover:bg-accent"
       >
         {busy ? "Putting it together…" : label}
       </button>

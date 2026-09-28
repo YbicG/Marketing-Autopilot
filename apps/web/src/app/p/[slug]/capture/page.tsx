@@ -5,10 +5,8 @@ import { productBySlug } from "@mkt/core/ingest";
 import { getWorkspace } from "@mkt/core/tenancy";
 import { FlowList, type FlowRow } from "@/components/capture/flows";
 import { LoginForm, OriginForm } from "@/components/capture/setup-forms";
-import { ProjectTabs } from "@/components/project-tabs";
 import { getDb } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
-import { Header } from "../../../header";
 
 export const dynamic = "force-dynamic";
 
@@ -39,11 +37,9 @@ export default async function CapturePage({ params }: { params: Promise<{ slug: 
 
   return (
     <>
-      <Header workspaceId={s.workspaceId} limitMicros={ws.monthlyLimitMicros} />
-      <ProjectTabs slug={slug} />
-      <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8">
+      <main className="flex max-w-5xl flex-col gap-6 px-4 md:px-10 py-8">
         <div className="flex flex-col gap-1">
-          <h1 className="text-xl font-semibold">Record your demo</h1>
+          <h1 className="font-serif text-4xl tracking-tight">Record your demo</h1>
           <p className="text-sm text-zinc-400">
             Record short screen videos of {product.name} to use in videos. The recorder follows steps you check, on a demo copy of your app, and every recording is checked for
             personal details before it can be used.

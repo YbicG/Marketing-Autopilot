@@ -6,12 +6,10 @@ import { configuredPurposes } from "@mkt/core/cost";
 import { listSecrets } from "@mkt/core/security";
 import { getWorkspace, listConnections, listProducts } from "@mkt/core/tenancy";
 import { SECRET_API_KEY, SECRET_WEBHOOK } from "@mkt/providers";
-import { SettingsTabs } from "@/components/project-tabs";
 import { KeyForm } from "@/components/settings/key-form";
 import { shortDate, vaultStatus } from "@/components/settings/vault";
 import { getDb } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
-import { Header } from "../../header";
 import { ConnectPanel, ProfileButton, type PlatformRow } from "./connect-panel";
 import { HealthList, SyncOnReturn, type HealthRow } from "./health-list";
 
@@ -76,11 +74,9 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <Header workspaceId={s.workspaceId} limitMicros={ws.monthlyLimitMicros} />
-      <SettingsTabs />
-      <main className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-8">
+      <main className="flex max-w-5xl flex-col gap-8 px-4 md:px-10 py-8">
         <div>
-          <h1 className="text-xl font-semibold">Where to post</h1>
+          <h1 className="font-serif text-4xl tracking-tight">Where to post</h1>
           <p className="mt-1 text-sm text-zinc-400">
             Posts go out from your server through Upload-Post, at the times you approve. You sign in to each platform on its own page; this app never
             sees those logins. Until this is set up, approved posts wait for you to download and post them yourself.

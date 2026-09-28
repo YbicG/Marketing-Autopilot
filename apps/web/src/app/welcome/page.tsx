@@ -16,7 +16,7 @@ export default async function WelcomePage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-6 px-4">
       <div>
-        <h1 className="text-2xl font-semibold">Monthly spending limit</h1>
+        <h1 className="font-serif text-4xl tracking-tight">Monthly spending limit</h1>
         <p className="mt-2 text-sm text-zinc-400">
           The most the app may spend on AI in a calendar month. You'll get a heads-up at 50% and 80%, and everything
           stops at 100% until you raise it.

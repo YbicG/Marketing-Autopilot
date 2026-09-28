@@ -9,10 +9,8 @@ import { getWorkspace } from "@mkt/core/tenancy";
 import { KitLive } from "@/components/launch/kit-live";
 import { draftFromInputs, kindSlug, kitSummary, launchDayLabel, writeAllKinds } from "@/components/launch/kit-model";
 import { KitOverview, type KitOverviewCard } from "@/components/launch/kit-write";
-import { ProjectTabs } from "@/components/project-tabs";
 import { getDb } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
-import { Header } from "../../../../header";
 
 export const dynamic = "force-dynamic";
 
@@ -30,14 +28,12 @@ export default async function LaunchKitsPage({ params }: { params: Promise<{ slu
 
   const shell = (children: ReactNode) => (
     <>
-      <Header workspaceId={s.workspaceId} limitMicros={ws.monthlyLimitMicros} />
-      <ProjectTabs slug={product.slug} />
-      <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8">
+      <main className="flex max-w-5xl flex-col gap-6 px-4 md:px-10 py-8">
         <div>
           <Link href={`/p/${product.slug}/launch`} className="text-sm text-zinc-500 hover:text-zinc-300">
             ← Launch
           </Link>
-          <h1 className="text-2xl font-semibold">Launch kit</h1>
+          <h1 className="font-serif text-4xl tracking-tight">Launch kit</h1>
           <p className="mt-1 text-sm text-zinc-400">
             Everything you send or post yourself around launch day. Nothing here is sent or posted for you.
           </p>

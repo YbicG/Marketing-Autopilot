@@ -29,7 +29,7 @@ export function NeedsYouList({ items, empty }: { items: NeedsYouJson[]; empty?: 
   const btn = "rounded-md border border-zinc-700 px-2.5 py-1 text-xs text-zinc-200 hover:border-zinc-500 disabled:opacity-50";
   return (
     <>
-      <ul className="flex flex-col divide-y divide-zinc-800 rounded-lg border border-zinc-800">
+      <ul className="flex flex-col divide-y divide-zinc-800 rounded-xl border border-zinc-800 bg-surface">
         {items.map((it, i) => (
           <li key={`${it.kind}-${it.postId ?? it.connectionId ?? i}`} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
             <p className={`text-sm ${it.kind === "failed" || it.kind === "missed" ? "text-red-200" : "text-zinc-200"}`}>{it.message}</p>

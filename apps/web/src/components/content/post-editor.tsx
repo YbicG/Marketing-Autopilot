@@ -193,7 +193,7 @@ function VariantColumn({ slug, v, rewritePrice }: { slug: string; v: EditorVaria
               type="button"
               onClick={() => void save()}
               disabled={busy !== null || !dirty}
-              className="rounded-md bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-white disabled:opacity-50"
+              className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent disabled:opacity-50"
             >
               {busy === "save" ? "Saving…" : "Save"}
             </button>

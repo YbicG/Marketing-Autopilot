@@ -2,11 +2,9 @@ import { notFound, redirect } from "next/navigation";
 import { productBySlug } from "@mkt/core/ingest";
 import { getWorkspace } from "@mkt/core/tenancy";
 import { projectAssets, type LibraryAsset } from "@mkt/core/video";
-import { ProjectTabs } from "@/components/project-tabs";
 import { MediaUploader } from "@/components/video/media-uploader";
 import { getDb } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
-import { Header } from "../../../header";
 
 export const dynamic = "force-dynamic";
 
@@ -51,11 +49,9 @@ export default async function AssetsPage({ params }: { params: Promise<{ slug: s
 
   return (
     <>
-      <Header workspaceId={s.workspaceId} limitMicros={ws.monthlyLimitMicros} />
-      <ProjectTabs slug={slug} />
-      <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8">
+      <main className="flex max-w-5xl flex-col gap-6 px-4 md:px-10 py-8">
         <div className="flex flex-col gap-1">
-          <h1 className="text-xl font-semibold">Assets</h1>
+          <h1 className="font-serif text-4xl tracking-tight">Assets</h1>
           <p className="text-sm text-zinc-400">
             Screenshots, screen recordings and finished videos for {product.name}. Each shows where it came from, which decides whether a post needs an AI label.
           </p>

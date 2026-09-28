@@ -46,7 +46,7 @@ export function LimitForm({ initialUsd, next }: { initialUsd: number; next: stri
       <button
         type="submit"
         disabled={busy}
-        className="rounded-md bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-900 hover:bg-white disabled:opacity-60"
+        className="rounded-lg bg-accent-strong px-4 py-2.5 text-sm font-medium text-zinc-50 hover:bg-accent disabled:opacity-60"
       >
         {busy ? "Saving…" : "Save and continue"}
       </button>

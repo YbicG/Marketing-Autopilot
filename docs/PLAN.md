@@ -101,6 +101,7 @@ Approval then happens in weekly batches. The server publishes posts on schedule,
 | D26 | **Capture safety:**<br>- Capture prefers a **trusted origin with seeded demo data**. For SyllaCal, that is a demo instance on Dokploy, reachable only on the internal network.<br>- Login uses `storageState` and is never recorded.<br>- An action denylist blocks risky clicks, and non-GET requests are blocked.<br>- Frames are scanned for personal data. |
 | D27 | **Freeze:** Dec 18 → Jan 29. Work after launch starts Feb 1 |
 | D28 | **Second AI provider (OpenRouter), per feature and opt-in:**<br>- Every feature defaults to Anthropic. `AI_MODEL_OVERRIDES` (`feature=openrouter:model[@effort]`) moves single features to an OpenRouter model; the Opus judge (`eval.judge`) can't be moved.<br>- OpenRouter requests require zero data retention, `data_collection: deny` and providers that support every parameter sent. Calls settle at OpenRouter's reported `usage.cost`.<br>- Research on OpenRouter swaps the server web tools for client `web_search` (Exa, else Brave) and `web_fetch` (through safe-fetch).<br>- A feature only moves after the model eval (`AI_CAPTURE_PROMPTS=1`, then `eval:models`) shows the cheaper model holding up against the current one, judged blind by Opus. |
+| D29 | **Studio UI:** one sidebar layout (Next.js layouts under `/p/[slug]`, `/settings`, `/runs`) with every project listed, a projects home, and a project Overview that replaces Today. Old `/today` links redirect to the Overview. Chosen from three mockups (Studio, Control room, Guided), in its dark variant |
 
 ### 1.3 Open questions (each answer changes only the decisions named)
 1. Will there be EU audiences? This affects the consent rules and how strictly the AI Act's marking rules apply (§8).
@@ -122,18 +123,21 @@ Approval then happens in weekly batches. The server publishes posts on schedule,
 7. **Always on.** Runs on the server, so posts, analytics pulls and renders don't depend on the laptop. Tabs survive a refresh, and **Pause all posting** always works.
 
 ### 2.2 Information architecture
+The Studio layout (D29): a sidebar on every signed-in page, the page on the right.
 ```
-Home (one project until M7; then Portfolio + a Today view across projects)
-└─ Project
-   ├─ Today    approvals, assisted tasks due, new-comment links, yesterday's numbers, next scheduled post, server health
-   ├─ Plan     profile + angles, launch date, 30-day checklist
-   ├─ Content  board ⇄ calendar/queue → editors (video, swipe post, post, email)
-   ├─ Results  table per angle (weekly report from M5)
-   └─ Launch (M4-LC) · Inbox (M5)
-Settings: Where to post · Spending · Keys  (+ API tokens M5, AI models M7)
+Sidebar: Home · Needs you (count) · Spending · every project (tile + status dot) · New project · month spend meter · settings
+Home       greeting + summary, Needs you cards across projects, project cards (5-stage bar, next post, launch, next 7 days), "What are we marketing next?"
+└─ Project (sidebar swaps to the project's sections)
+   ├─ Overview        status, stage bar, this week's posts, approvals, Needs you, post-it-yourself tasks, yesterday's numbers, server health (was Today)
+   ├─ Calendar        the Queue: week/month, drag to reschedule, bulk approve, pause
+   ├─ Content         Posts & videos (board → editors) · Email
+   ├─ Plan & profile  profile + angles, launch date, 30-day checklist
+   ├─ Launch · Results
+   └─ Library         Screens & clips · Demo recording
+Settings: Limit · Where to post · Keys · Spending  (+ API tokens M5, AI models M7)
 ```
-- The header holds a spend meter (`$7.40 / $60 this month · Subscriptions $16/mo`) and a running-jobs indicator.
-- Dark mode, shadcn + Tailwind 4.
+- Stages on a project card: Understood → Plan → Content → Posting → Learning (3 days after the first post).
+- Dark and warm: charcoal ground, cream ink, a pine-green accent, amber for "needs you". Instrument Serif headings, Geist body. Tailwind 4 tokens in `globals.css`; the zinc scale is remapped to the warm neutrals.
 - Swipe keys: A (approve) / E (edit) / S (skip).
 
 ### 2.3 Core screens

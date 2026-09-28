@@ -5,7 +5,6 @@ import { getRun } from "@mkt/core/runs";
 import { getWorkspace } from "@mkt/core/tenancy";
 import { getDb } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
-import { Header } from "../../header";
 import { IngestFeed } from "./ingest-feed";
 import { LiveFeed } from "./live-feed";
 import type { QuestionState } from "./gap-question";
@@ -37,11 +36,10 @@ export default async function RunPage({ params }: { params: Promise<{ runId: str
     const summary = run.status === "completed" && parsed.success ? parsed.data : null;
     return (
       <>
-        <Header workspaceId={s.workspaceId} limitMicros={ws.monthlyLimitMicros} />
-        <main className="mx-auto flex max-w-3xl flex-col gap-8 px-4 py-10">
+        <main className="flex max-w-3xl flex-col gap-8 px-4 md:px-10 py-10">
           <div>
             <p className="text-sm text-zinc-500">Reading your product</p>
-            <h1 className="truncate text-xl font-semibold">{String(run.input.url ?? "")}</h1>
+            <h1 className="font-serif text-4xl tracking-tight truncate">{String(run.input.url ?? "")}</h1>
           </div>
           {summary ? <SummaryView summary={summary} /> : <LiveFeed runId={run.id} initialStatus={run.status} />}
         </main>
@@ -69,11 +67,10 @@ export default async function RunPage({ params }: { params: Promise<{ runId: str
 
   return (
     <>
-      <Header workspaceId={s.workspaceId} limitMicros={ws.monthlyLimitMicros} />
-      <main className="mx-auto flex max-w-3xl flex-col gap-8 px-4 py-10">
+      <main className="flex max-w-3xl flex-col gap-8 px-4 md:px-10 py-10">
         <div>
           <p className="text-sm text-zinc-500">{TITLE_BY_KIND[run.kind] ?? "Working"}</p>
-          <h1 className="truncate text-xl font-semibold">{product?.name ?? (links.join(", ") || "Your product")}</h1>
+          <h1 className="font-serif text-4xl tracking-tight truncate">{product?.name ?? (links.join(", ") || "Your product")}</h1>
         </div>
         <IngestFeed
           runId={run.id}

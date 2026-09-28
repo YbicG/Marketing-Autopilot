@@ -38,7 +38,7 @@ export function XLinksCard({ slug, current, suggested, maxDays }: { slug: string
   const unchanged = !!current && current.from === from && current.until === until;
 
   return (
-    <section id="x-links" className="flex scroll-mt-4 flex-col gap-3 rounded-lg border border-zinc-800 p-5" aria-label="X links in launch week">
+    <section id="x-links" className="flex scroll-mt-4 flex-col gap-3 rounded-xl border border-zinc-800 p-5 bg-surface" aria-label="X links in launch week">
       <div>
         <h2 className="text-lg font-semibold">X links in launch week</h2>
         <p className="text-sm text-zinc-400">

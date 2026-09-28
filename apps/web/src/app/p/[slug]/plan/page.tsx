@@ -9,7 +9,6 @@ import { PLATFORM_NAME } from "@/components/content/status";
 import { SourceLink } from "@/components/source-link";
 import { getDb } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
-import { Header } from "../../../header";
 import { FieldActions } from "./field-actions";
 import { LaunchDate } from "./launch-date";
 import { PlanActions } from "./plan-actions";
@@ -79,11 +78,10 @@ export default async function PlanPage({ params }: { params: Promise<{ slug: str
 
   return (
     <>
-      <Header workspaceId={s.workspaceId} limitMicros={ws.monthlyLimitMicros} />
-      <main className="mx-auto flex max-w-3xl flex-col gap-8 px-4 py-10">
+      <main className="flex max-w-3xl flex-col gap-8 px-4 md:px-10 py-10">
         <div>
           <p className="text-sm text-zinc-500">Here&apos;s your plan</p>
-          <h1 className="text-2xl font-semibold">{dna?.dna.identity.name || product.name}</h1>
+          <h1 className="font-serif text-4xl tracking-tight">{dna?.dna.identity.name || product.name}</h1>
           {dna?.dna.identity.oneLiner && <p className="mt-1 text-zinc-300">{dna.dna.identity.oneLiner}</p>}
         </div>
 

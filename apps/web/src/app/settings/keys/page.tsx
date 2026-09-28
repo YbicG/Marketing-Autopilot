@@ -2,14 +2,12 @@ import { redirect } from "next/navigation";
 import { CAPABILITIES, CAPTURE_LOGIN_RE, captureLoginPurpose, isConnected, KNOWN_PURPOSES, type Capability } from "@mkt/core/cost";
 import { listSecrets } from "@mkt/core/security";
 import { getWorkspace, listProducts } from "@mkt/core/tenancy";
-import { SettingsTabs } from "@/components/project-tabs";
 import { KeyForm, LoginForm } from "@/components/settings/key-form";
 import { shortDate, vaultStatus } from "@/components/settings/vault";
 import { env } from "@mkt/core/config";
 import { RESEND_API_KEY, RESEND_WEBHOOK_SECRET } from "@mkt/providers";
 import { getDb } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
-import { Header } from "../../header";
 
 export const dynamic = "force-dynamic";
 
@@ -64,11 +62,9 @@ export default async function KeysPage() {
 
   return (
     <>
-      <Header workspaceId={s.workspaceId} limitMicros={ws.monthlyLimitMicros} />
-      <SettingsTabs />
-      <main className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-8">
+      <main className="flex max-w-5xl flex-col gap-8 px-4 md:px-10 py-8">
         <div>
-          <h1 className="text-xl font-semibold">Keys</h1>
+          <h1 className="font-serif text-4xl tracking-tight">Keys</h1>
           <p className="mt-1 text-sm text-zinc-400">
             Add a service when you want what it unlocks. Keys are encrypted on your server and never shown again after you save them. A key set in
             Dokploy&apos;s Environment tab works too; one saved here takes priority.

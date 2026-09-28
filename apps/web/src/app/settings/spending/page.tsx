@@ -16,11 +16,9 @@ import {
   type SpendGroup,
 } from "@mkt/core/cost";
 import { getWorkspace } from "@mkt/core/tenancy";
-import { SettingsTabs } from "@/components/project-tabs";
 import { shortDate } from "@/components/settings/vault";
 import { getDb } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
-import { Header } from "../../header";
 import { LimitForm } from "../../welcome/limit-form";
 
 export const dynamic = "force-dynamic";
@@ -113,12 +111,10 @@ export default async function SpendingPage({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <Header workspaceId={s.workspaceId} limitMicros={ws.monthlyLimitMicros} />
-      <SettingsTabs />
-      <main className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-8">
+      <main className="flex max-w-5xl flex-col gap-8 px-4 md:px-10 py-8">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-xl font-semibold">Spending</h1>
+            <h1 className="font-serif text-4xl tracking-tight">Spending</h1>
             <p className="text-sm text-zinc-400">{monthLabel(month)}</p>
           </div>
           <nav className="flex gap-3 text-sm" aria-label="Month">

@@ -131,7 +131,7 @@ export function PlanActions({
           type="button"
           onClick={() => void make()}
           disabled={!canMake || busy !== null}
-          className="rounded-md bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-white disabled:opacity-50"
+          className="rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent disabled:opacity-50"
         >
           {busy === "make" ? "Starting…" : `${campaignHref ? "Make a new campaign" : "Make my campaign"} · ~${est ? usd(est.expected) : "$0.00"}`}
         </button>
@@ -146,7 +146,7 @@ export function PlanActions({
       {campaignHref ? (
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-3">
-            <Link href={campaignHref} className="rounded-md bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-white">
+            <Link href={campaignHref} className="rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent">
               Open your campaign
             </Link>
           </div>

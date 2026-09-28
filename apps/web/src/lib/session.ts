@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { env } from "@mkt/core/config";
 import { ensureWorkspaceForUser, workspaceIdForUser } from "@mkt/core/tenancy";
 import { getAuth } from "./auth";
@@ -22,9 +23,12 @@ async function load(h: Headers): Promise<SessionWorkspace | null> {
   return { userId: session.user.id, name: session.user.name, workspaceId };
 }
 
+/** One session lookup per render, shared by the layout's sidebar and the page. */
+const loadForRender = cache(async () => load(await headers()));
+
 /** Pages: redirect to sign-in when there's no session. */
 export async function requireWorkspace(): Promise<SessionWorkspace> {
-  const s = await load(await headers());
+  const s = await loadForRender();
   if (!s) redirect("/signin");
   return s;
 }

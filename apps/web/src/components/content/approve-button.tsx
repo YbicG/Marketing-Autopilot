@@ -41,7 +41,7 @@ export function ApproveButton({ slug, postIds, label }: { slug: string; postIds:
         type="button"
         onClick={() => void approve()}
         disabled={busy}
-        className="rounded-md bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-white disabled:opacity-60"
+        className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent disabled:opacity-60"
       >
         {busy ? "Approving…" : label}
       </button>

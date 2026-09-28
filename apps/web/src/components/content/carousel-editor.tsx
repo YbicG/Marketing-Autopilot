@@ -292,7 +292,7 @@ export function CarouselEditor({
         <p className="text-sm text-zinc-400">{locked}</p>
       ) : (
         <div className="flex flex-wrap items-center gap-3">
-          <button type="button" onClick={() => void save()} disabled={busy} className="rounded-md bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-white disabled:opacity-60">
+          <button type="button" onClick={() => void save()} disabled={busy} className="rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent disabled:opacity-60">
             {busy ? "Saving…" : "Save and remake the images"}
           </button>
           <span className="text-xs text-zinc-500">Images are made on your server for free. Saving sends approved versions back for approval.</span>

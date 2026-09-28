@@ -8,10 +8,8 @@ import { getWorkspace } from "@mkt/core/tenancy";
 import { BroadcastEditor } from "@/components/email/broadcast-editor";
 import { StatusPill } from "@/components/email/status-pill";
 import { WritingProgress } from "@/components/email/writing-progress";
-import { ProjectTabs } from "@/components/project-tabs";
 import { getDb } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
-import { Header } from "../../../../header";
 
 export const dynamic = "force-dynamic";
 
@@ -34,15 +32,13 @@ export default async function BroadcastPage({ params }: { params: Promise<{ slug
 
   return (
     <>
-      <Header workspaceId={s.workspaceId} limitMicros={ws.monthlyLimitMicros} />
-      <ProjectTabs slug={slug} />
-      <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8">
+      <main className="flex max-w-6xl flex-col gap-6 px-4 md:px-10 py-8">
         <div className="flex flex-col gap-2">
           <Link href={`/p/${encodeURIComponent(slug)}/email`} className="text-sm text-zinc-400 hover:text-zinc-200">
             ← All emails
           </Link>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-xl font-semibold">{view.name}</h1>
+            <h1 className="font-serif text-4xl tracking-tight">{view.name}</h1>
             <StatusPill status={view.status} />
           </div>
         </div>

@@ -463,7 +463,7 @@ export function VideoEditor(p: VideoEditorProps) {
               type="button"
               onClick={() => void save(draft, "user")}
               disabled={busy !== null || !dirty || locked}
-              className="rounded-md bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-white disabled:opacity-50"
+              className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent disabled:opacity-50"
             >
               {busy === "save" ? "Saving…" : changedLines > 0 ? `Save · re-voices ${changedLines} line${changedLines === 1 ? "" : "s"} ${usd(savePrice)}` : "Save"}
             </button>
@@ -517,7 +517,7 @@ export function VideoEditor(p: VideoEditorProps) {
                     type="button"
                     onClick={() => void save(proposal.spec, "change_request", proposal.baseSpecId)}
                     disabled={busy !== null}
-                    className="rounded-md bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-white disabled:opacity-50"
+                    className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent disabled:opacity-50"
                   >
                     {busy === "save" ? "Saving…" : "Apply and save"}
                   </button>

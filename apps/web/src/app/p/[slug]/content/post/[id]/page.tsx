@@ -6,10 +6,8 @@ import { productBySlug } from "@mkt/core/ingest";
 import { getWorkspace } from "@mkt/core/tenancy";
 import { PostEditor, type EditorVariant } from "@/components/content/post-editor";
 import { StatusChip, when } from "@/components/content/status";
-import { ProjectTabs } from "@/components/project-tabs";
 import { getDb } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
-import { Header } from "../../../../../header";
 
 export const dynamic = "force-dynamic";
 
@@ -50,15 +48,13 @@ export default async function PostEditorPage({ params }: { params: Promise<{ slu
 
   return (
     <>
-      <Header workspaceId={s.workspaceId} limitMicros={ws.monthlyLimitMicros} />
-      <ProjectTabs slug={product.slug} />
-      <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8">
+      <main className="flex max-w-5xl flex-col gap-6 px-4 md:px-10 py-8">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <Link href={board} className="text-sm text-zinc-500 hover:text-zinc-300">
               ← Campaign board
             </Link>
-            <h1 className="text-2xl font-semibold">
+            <h1 className="font-serif text-4xl tracking-tight">
               {KIND_LABELS[view.kind]}
               {view.day !== null && <span className="text-zinc-500"> · day {view.day}</span>}
             </h1>

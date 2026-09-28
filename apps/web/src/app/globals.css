@@ -1,11 +1,56 @@
 @import "tailwindcss";
-
 @custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Studio, dark. Warm charcoal ground, a paper-cream ink, one pine-green accent and one amber for
+ * "needs you". The zinc scale is remapped to the same warm neutrals so every page picks it up.
+ */
+@theme {
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-instrument-serif), Georgia, serif;
+
+  --color-zinc-50: #f7f5f0;
+  --color-zinc-100: #ede9e1;
+  --color-zinc-200: #dcd7cc;
+  --color-zinc-300: #c3bdb0;
+  --color-zinc-400: #a19b8e;
+  --color-zinc-500: #7e796e;
+  --color-zinc-600: #5c5850;
+  --color-zinc-700: #3f3c36;
+  --color-zinc-800: #2e2c28;
+  --color-zinc-900: #1f1e1b;
+  --color-zinc-950: #151412;
+
+  --color-ground: #151412;
+  --color-rail: #1a1917;
+  --color-surface: #201f1c;
+  --color-raised: #292724;
+  --color-line: #2e2c28;
+  --color-ink: #ede9e1;
+  --color-muted: #a19b8e;
+  --color-faint: #7e796e;
+
+  --color-accent: #6fae93;
+  --color-accent-strong: #3f7a63;
+  --color-accent-soft: #1d2d27;
+  --color-warn: #e3a064;
+  --color-warn-soft: #33241a;
+}
 
 :root {
   color-scheme: dark;
 }
 
 body {
-  @apply bg-zinc-950 text-zinc-100 antialiased;
+  @apply bg-ground text-ink antialiased;
+}
+
+::selection {
+  background: var(--color-accent-strong);
+  color: var(--color-zinc-50);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }

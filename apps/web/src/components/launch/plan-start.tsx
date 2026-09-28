@@ -52,7 +52,7 @@ export function PlanStart({
   }
 
   return (
-    <section className="flex flex-col gap-5 rounded-lg border border-zinc-800 p-5" aria-label="Make my launch checklist">
+    <section className="flex flex-col gap-5 rounded-xl border border-zinc-800 p-5 bg-surface" aria-label="Make my launch checklist">
       <div>
         <h2 className="text-lg font-semibold">Make my launch checklist</h2>
         <p className="text-sm text-zinc-400">
@@ -97,7 +97,7 @@ export function PlanStart({
           type="button"
           onClick={() => void make()}
           disabled={busy}
-          className="rounded-md bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-white disabled:opacity-60"
+          className="rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent disabled:opacity-60"
         >
           {busy ? "Making it…" : "Make my launch checklist · free"}
         </button>

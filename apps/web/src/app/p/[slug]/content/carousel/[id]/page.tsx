@@ -7,10 +7,8 @@ import { productBySlug } from "@mkt/core/ingest";
 import { getWorkspace } from "@mkt/core/tenancy";
 import { CarouselEditor, type CarouselVariantView } from "@/components/content/carousel-editor";
 import { StatusChip, when } from "@/components/content/status";
-import { ProjectTabs } from "@/components/project-tabs";
 import { getDb } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
-import { Header } from "../../../../../header";
 
 export const dynamic = "force-dynamic";
 
@@ -49,15 +47,13 @@ export default async function CarouselEditorPage({ params }: { params: Promise<{
 
   return (
     <>
-      <Header workspaceId={s.workspaceId} limitMicros={ws.monthlyLimitMicros} />
-      <ProjectTabs slug={product.slug} />
-      <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8">
+      <main className="flex max-w-5xl flex-col gap-6 px-4 md:px-10 py-8">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <Link href={`/p/${encodeURIComponent(product.slug)}/content`} className="text-sm text-zinc-500 hover:text-zinc-300">
               ← Campaign board
             </Link>
-            <h1 className="text-2xl font-semibold">
+            <h1 className="font-serif text-4xl tracking-tight">
               Swipe post
               {view.day !== null && <span className="text-zinc-500"> · day {view.day}</span>}
             </h1>

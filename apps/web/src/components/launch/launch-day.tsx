@@ -121,7 +121,7 @@ export function LaunchDay({
       {view.todayTasks.length > 0 && (
         <div className="flex flex-col gap-2">
           <h3 className="text-sm font-semibold text-zinc-300">{c.isLaunchDay ? "To do today" : "Due today or late"}</h3>
-          <ul className="divide-y divide-zinc-800 overflow-hidden rounded-lg border border-zinc-800">
+          <ul className="divide-y divide-zinc-800 overflow-hidden rounded-xl border border-zinc-800 bg-surface">
             {view.todayTasks.map((t) => (
               <TaskRow key={t.id} slug={slug} task={t} today={c.today} />
             ))}
@@ -134,7 +134,7 @@ export function LaunchDay({
         {view.publishedToday.length + view.nextPostsToday.length === 0 ? (
           <p className="text-sm text-zinc-500">Nothing is set to go out today.</p>
         ) : (
-          <ul className="divide-y divide-zinc-800 overflow-hidden rounded-lg border border-zinc-800">
+          <ul className="divide-y divide-zinc-800 overflow-hidden rounded-xl border border-zinc-800 bg-surface">
             {view.publishedToday.map((p) => (
               <PostLine key={p.postId} p={p} tz={tz} />
             ))}

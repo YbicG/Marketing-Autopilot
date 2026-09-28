@@ -75,7 +75,7 @@ export function GapQuestion({ runId, q }: { runId: string; q: QuestionState }) {
         <button
           type="submit"
           disabled={busy || !text.trim()}
-          className="rounded-md bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-900 disabled:opacity-60"
+          className="rounded-lg bg-accent-strong px-3 py-1.5 text-xs font-medium text-zinc-50 disabled:opacity-60 hover:bg-accent"
         >
           Send
         </button>
