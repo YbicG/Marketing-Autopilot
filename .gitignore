@@ -10,3 +10,7 @@ coverage/
 *.tsbuildinfo
 next-env.d.ts
 .remotion
+
+# Local Claude settings and the Impeccable binary (downloaded on first run)
+.claude/settings.local.json
+.claude/skills/impeccable/scripts/bin/
