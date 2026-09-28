@@ -1,10 +1,16 @@
 // §8 "Private and third-party sources": internal sources feed strategy only (never a public claim);
 // pains are paraphrased without usernames; competitor review quotes never appear in ads.
 import { describe, expect, it } from "vitest";
-import type { AdCopy, FieldMetaMap, ProductDna } from "@mkt/contracts";
+import type { AdCopy, FieldMetaMap, ProductDna, RecordPain } from "@mkt/contracts";
+import { schema, uuidv7 } from "@mkt/db";
+import { createTestDb } from "@mkt/db/testing";
+import { fakeClient, jsonReply, text, toolUse } from "../ai/testing.ts";
 import { checkAdCopy, type AdsCheckCtx } from "../ads/validate.ts";
+import { ensurePeriods } from "../cost/ledger.ts";
+import { loadRateCards, rateLookup, seedPricingRates } from "../cost/rates.ts";
 import { buildEvidenceBundle, claimIsPublic } from "../ingest/evidence.ts";
 import { buildClaims } from "../ingest/profile.ts";
+import { research, stripUsernames } from "../ingest/steps.ts";
 
 const artifacts = [
   {
@@ -88,7 +94,35 @@ describe("§8 Private and third-party sources", () => {
     expect(codes("Drop your syllabus in, get your semester back.")).toEqual([]);
   });
 
-  it.todo(
-    "pains are stored without usernames — GAP: prompt-only (ingest/steps.ts:164); no code strips u/name or @handle from research pains before they're saved (fix at ingest/steps.ts:171)",
-  );
+  it("pains are stored without usernames, even when Claude leaves them in", async () => {
+    expect(stripUsernames("u/jane_doe and /u/Sam-99 said it; @studyhacks agreed")).toBe("someone and someone said it; someone agreed");
+    expect(stripUsernames("Email help@syllacal.com or post in r/college")).toBe("Email help@syllacal.com or post in r/college");
+
+    const { db, close } = await createTestDb();
+    try {
+      await seedPricingRates(db);
+      const ws = uuidv7();
+      await db.insert(schema.workspaces).values({ id: ws, name: "t" });
+      const budgetPeriodIds = await ensurePeriods(db, ws, [{ scope: "global_month", capMicros: 50_000_000 }]);
+      const url = "https://www.reddit.com/r/college/comments/abc";
+      const { client } = fakeClient([
+        { stop_reason: "tool_use", content: [toolUse("t1", "record_pain", { text: "u/jane_doe says typing every deadline in by hand takes all weekend", audience: "students", sourceUrl: url })] },
+        { stop_reason: "end_turn", content: [text("done")] },
+        jsonReply({ findings: [], competitors: [], pains: [{ text: "@studyhacks: syllabus week means copying dates for hours", audience: null, sourceUrl: url }] }),
+      ]);
+      const live: RecordPain[] = [];
+      const out = await research(
+        { ai: { db, rates: rateLookup(await loadRateCards(db)), client }, workspaceId: ws, budgetPeriodIds, runId: uuidv7() },
+        {
+          productBrief: "SyllaCal turns a syllabus into a calendar.",
+          fetchText: async () => ({ ok: false }) as never,
+          sink: { finding: async () => {}, competitor: async () => {}, pain: async (p) => void live.push(p) },
+        },
+      );
+      expect(live.map((p) => p.text)).toEqual(["someone says typing every deadline in by hand takes all weekend"]);
+      expect(out.pains.map((p) => p.text)).toEqual(["someone: syllabus week means copying dates for hours"]);
+    } finally {
+      await close();
+    }
+  });
 });

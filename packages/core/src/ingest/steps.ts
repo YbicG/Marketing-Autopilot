@@ -82,6 +82,16 @@ export interface ResearchSink {
 
 export const RESEARCH_MAX_SEARCHES = 10;
 
+// Reddit u/name and /u/name, and @handles (not the @ inside an email address).
+const USERNAME = /(?<![\w/])\/?u\/[A-Za-z0-9_-]{2,}|(?<![\w.@])@[A-Za-z0-9_](?:[A-Za-z0-9_.-]*[A-Za-z0-9_])?/g;
+
+/** §8: pains are stored without usernames. The prompt asks for that too; this makes sure in code. */
+export function stripUsernames(text: string): string {
+  return text.replace(USERNAME, "someone").replace(/[ \t]{2,}/g, " ").trim();
+}
+
+export const scrubPain = (p: RecordPain): RecordPain => ({ ...p, text: stripUsernames(p.text), audience: p.audience === null ? null : stripUsernames(p.audience) });
+
 export function hnSearchTool(fetchText: FetchText) {
   return clientTool({
     name: "hn_search",
@@ -134,7 +144,7 @@ export async function research(
       description:
         "Save one complaint or frustration real people have about the problem this product solves. Paraphrase it in your own words; never include usernames or copy their text verbatim.",
       schema: RecordPain,
-      run: async (p) => (await input.sink.pain(p), "saved"),
+      run: async (p) => (await input.sink.pain(scrubPain(p)), "saved"),
     }),
     hnSearchTool(input.fetchText),
   ];
@@ -169,7 +179,7 @@ ${UNTRUSTED}`,
       },
     ],
   });
-  return value;
+  return { ...value, pains: value.pains.map(scrubPain) };
 }
 
 // ── dna.synthesize.<section>: three parallel calls over the same evidence bundle ──

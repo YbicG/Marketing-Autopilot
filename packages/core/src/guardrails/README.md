@@ -49,5 +49,4 @@ Shared helpers: `harness.ts` (a seeded product and a post on the real publish pa
 |---|---|
 | Testimonials have no source-date or consent columns | `packages/db/src/schema.ts:462` |
 | No claim-verification action exists (it must take a UiSession) | not built |
-| Usernames in pains are removed only by a prompt rule | `packages/core/src/ingest/steps.ts:164` (prompt), fix at `:171` |
 | Sound effects aren't wired (no license receipt path yet) | `packages/core/src/video/deps.ts:39` |
