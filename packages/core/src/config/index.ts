@@ -44,7 +44,8 @@ let cached: Env | undefined;
 
 export function env(): Env {
   if (cached) return cached;
-  const parsed = Env.parse(process.env);
+  // Compose passes unset optional vars as "" (`${X:-}`); treat those as unset, not as bad values.
+  const parsed = Env.parse(Object.fromEntries(Object.entries(process.env).filter(([, v]) => v !== "")));
   if (parsed.NODE_ENV === "production" && parsed.SSRF_ALLOWLIST) {
     throw new Error("SSRF_ALLOWLIST is for tests only and is refused in production");
   }
