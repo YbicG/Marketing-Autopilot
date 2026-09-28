@@ -79,6 +79,14 @@ See `docs/m3b-demo-capture.md`. The steps are:
 - Make a Resend list of past buyers. On the project's **Email** tab, pick that list and fill in the sender and the postal address.
 - In January only, add Upload-Post's **X links add-on** ($19/mo). Then set the launch-week window on the Launch tab.
 
+## 10. Cheaper models (optional): OpenRouter
+Everything runs on Anthropic until you move a feature. To try cheaper models:
+1. Create an OpenRouter key and set `OPENROUTER_API_KEY` in the Environment tab. In OpenRouter's privacy settings, allow zero-data-retention endpoints; every request asks for ZDR and no data collection.
+2. Set `AI_CAPTURE_PROMPTS=1`, use the app normally for a few days, then set it back to empty. That keeps real prompts (no tool calls) in `prompt_captures` as eval samples.
+3. In the worker container, run `pnpm --filter @mkt/worker eval:models`. It replays the samples on GLM-5.3 Flash, DeepSeek V4.1 Flash and GPT-6 Luna, has Opus judge each answer blind against the current one, and prints a suggested `AI_MODEL_OVERRIDES` line. `EVAL_CANDIDATES`, `EVAL_PER_FEATURE`, `EVAL_FEATURES` and `EVAL_CAP_USD` (default $5) change what it runs.
+4. Paste the lines you agree with into `AI_MODEL_OVERRIDES`, e.g. `ingest.label_asset=openrouter:z-ai/glm-5.3-flash;dna.gaps=openrouter:openai/gpt-6-luna`, and redeploy. Clear the variable to go back.
+- If you move `ingest.research`, add an Exa or Brave key first; OpenRouter has no web search of its own.
+
 ## Checks before launch (M4-LC "done when")
 1. On the Launch tab:
    - Make the checklist. It should run D1 Wed Jan 6 → launch Tue Jan 19.

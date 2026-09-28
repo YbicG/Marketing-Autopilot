@@ -67,7 +67,7 @@ Approval then happens in weekly batches. The server publishes posts on schedule,
 | Products | Web/SaaS, mobile, dev tools/desktop/CLI | Recipes per kind. Mobile and CLI capture comes in M7 |
 | Hosting | **Your Dokploy server** (4+ vCPU, 8+ GB free) | Everything runs there from M0: web, worker, renders, capture, Postgres and Redis. The laptop is only for development. Pushing to `main` deploys automatically. No tunnel and no later VPS move |
 | Domain | On Cloudflare | DNS points `app.<domain>` to the server. R2, Pages and (optionally) Access use the same domain |
-| LLM | Opus for strategy, Sonnet 5 for bulk | `claude-opus-5` handles strategy, scripts and opening lines. `claude-sonnet-5` handles posts, extraction, vision and QA. The model per feature is configurable |
+| LLM | Opus for strategy, Sonnet 5 for bulk | `claude-opus-5-5` handles strategy, scripts and opening lines. `claude-sonnet-5` handles posts, extraction, vision and QA. The model per feature is configurable |
 | First test | SyllaCal | Every milestone ends with something used on SyllaCal |
 
 ### 1.2 Design decisions (binding)
@@ -94,16 +94,17 @@ Approval then happens in weekly batches. The server publishes posts on schedule,
 | D19 | **Keys:** read only from env through `secret()` until M2. The vault arrives with the first key CJ pastes (Upload-Post). Lookup order is vault, then env |
 | D20 | **Pre-publish checks:** they warn in M2–M3 and become hard gates for launch day (M4-LC) and ads (M6) |
 | D21 | **Default launch date:** the seasonality anchor from the product DNA, else the first Tuesday at least 14 days out |
-| D22 | **Model IDs:** kept in one constant and in `ai_feature_config`. Thinking is `adaptive` with an explicit effort. **Never use `budget_tokens`**, and **never force `tool_choice`**: only `auto`/`none` work with thinking. Switching to `claude-opus-5-5` is a one-row change (open question 3) |
+| D22 | **Model IDs:** kept in one constant and in `ai_feature_config`. Thinking is `adaptive` with an explicit effort. **Never use `budget_tokens`**, and **never force `tool_choice`**: only `auto`/`none` work with thinking. Opus is `claude-opus-5-5` (answered 2026-09-28: cheaper at $4/$20 and stronger) |
 | D23 | **Runtime:**<br>- **Production** is one Dokploy Compose service built from `compose.prod.yml` (migrate, web, worker, postgres, redis, smokescreen), deployed automatically on every push to `main`.<br>- Only `web` joins `dokploy-network`, for Traefik. Everything else sits on a private `mkt` network.<br>- **No local runtime:** the laptop only edits, typechecks, unit-tests and builds. Every run happens on Dokploy. |
 | D24 | **X and Bluesky before M8:** both go through Upload-Post.<br>- X links are allowed only in launch week, via the $19/mo add-on. Otherwise use the bio link.<br>- Direct adapters stay in M8, per your "direct later" decision. The always-on server removes the old hosting blocker, so they can move earlier if Upload-Post's gaps hurt. |
 | D25 | **One renderer:** swipe posts, statics and storyboards are Remotion stills (`renderStill`) built from the video components. LinkedIn PDFs are built with pdf-lib. Satori is used only for OG images |
 | D26 | **Capture safety:**<br>- Capture prefers a **trusted origin with seeded demo data**. For SyllaCal, that is a demo instance on Dokploy, reachable only on the internal network.<br>- Login uses `storageState` and is never recorded.<br>- An action denylist blocks risky clicks, and non-GET requests are blocked.<br>- Frames are scanned for personal data. |
 | D27 | **Freeze:** Dec 18 → Jan 29. Work after launch starts Feb 1 |
+| D28 | **Second AI provider (OpenRouter), per feature and opt-in:**<br>- Every feature defaults to Anthropic. `AI_MODEL_OVERRIDES` (`feature=openrouter:model[@effort]`) moves single features to an OpenRouter model; the Opus judge (`eval.judge`) can't be moved.<br>- OpenRouter requests require zero data retention, `data_collection: deny` and providers that support every parameter sent. Calls settle at OpenRouter's reported `usage.cost`.<br>- Research on OpenRouter swaps the server web tools for client `web_search` (Exa, else Brave) and `web_fetch` (through safe-fetch).<br>- A feature only moves after the model eval (`AI_CAPTURE_PROMPTS=1`, then `eval:models`) shows the cheaper model holding up against the current one, judged blind by Opus. |
 
 ### 1.3 Open questions (each answer changes only the decisions named)
 1. Will there be EU audiences? This affects the consent rules and how strictly the AI Act's marking rules apply (§8).
-2. `claude-opus-5` or the newer `claude-opus-5-5`? (D22)
+2. ~~`claude-opus-5` or the newer `claude-opus-5-5`? (D22)~~ Answered: `claude-opus-5-5`.
 3. What are the target schools' spring start dates? (D1 Jan 6)
 4. Should SyllaCal use PH, BetaList or Uneed at all? The default is no, because the audience is students.
 
@@ -477,18 +478,18 @@ Any re-voice, auto-fix or re-render after approval voids the approval.
 | Extract facts from pages and docs | `ingest.extract` | sonnet-5 | interactive |
 | Research loop | `ingest.research` | sonnet-5 | streaming, server + client tools, no output format |
 | Gap questions / DNA sections / corrections | `dna.gaps` / `dna.synthesize.<section>` / `dna.correct` | sonnet-5 | interactive, parallel per section |
-| One-liner options | `dna.one_liner` | opus-5 | interactive |
-| Strategy + messaging (3 angles, objections, channel plan, launch window) | `strategy.positioning` | opus-5, effort high | streaming |
-| Campaign briefs for planned slots | `campaign.plan` | opus-5 | interactive |
-| Video scripts + 3 opening lines | `video.script` | opus-5 | hero first, then 3 at a time |
+| One-liner options | `dna.one_liner` | opus-5-5 | interactive |
+| Strategy + messaging (3 angles, objections, channel plan, launch window) | `strategy.positioning` | opus-5-5, effort high | streaming |
+| Campaign briefs for planned slots | `campaign.plan` | opus-5-5 | interactive |
+| Video scripts + 3 opening lines | `video.script` | opus-5-5 | hero first, then 3 at a time |
 | VideoSpec compile, demo flow planner (M3b) | `video.spec`, `capture.flow_plan` | sonnet-5 | interactive |
-| Posts / swipe posts / launch kit | `copy.posts` / `copy.carousel` / `launch.kit.*` | sonnet-5 (hero lines on opus-5) | interactive |
+| Posts / swipe posts / launch kit | `copy.posts` / `copy.carousel` / `launch.kit.*` | sonnet-5 (hero lines on opus-5-5) | interactive |
 | QA vision / text judge | `qa.vision` / `qa.text_judge` | sonnet-5 | interactive in the package; batch for refills (M5) |
 | Repair | `*.repair` | same as the generator | ≤2; stop if the gain is <0.5 |
 | Weekly report, listening scores, SEO, email sequences | `analytics.weekly`, `listen.score_draft`, `copy.seo`, `copy.email` | sonnet-5 | batch (M5) |
-| D30 retro + next 30 days | `strategy.retro` | opus-5 | interactive (M5) |
-| Ad concepts / ad copy | `ads.concepts` / `ads.copy` | opus-5 / sonnet-5 | interactive (M4 export, M6) |
-| In-app agent | `agent.chat` | sonnet-5 (opus-5 for strategy tools) | worker tool loop (M7) |
+| D30 retro + next 30 days | `strategy.retro` | opus-5-5 | interactive (M5) |
+| Ad concepts / ad copy | `ads.concepts` / `ads.copy` | opus-5-5 / sonnet-5 | interactive (M4 export, M6) |
+| In-app agent | `agent.chat` | sonnet-5 (opus-5-5 for strategy tools) | worker tool loop (M7) |
 
 ### 5.2 Ingest → ProductDNA (about $0.80; run cap $1.50)
 1. **Classify** (`core/src/ingest/classify.ts`).
