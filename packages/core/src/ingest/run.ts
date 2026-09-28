@@ -10,6 +10,8 @@ import { fetchGithubRepo, GithubUnavailable, repoMetaText } from "./github.ts";
 import { loadEvidence, writeProfile } from "./profile.ts";
 import { gapQuestions, labelScreenshot, research, type CallCtx } from "./steps.ts";
 import type { IngestDeps, SiteCapture } from "./types.ts";
+import { resolveWebSearch } from "./web-search.ts";
+import { feature } from "../ai/features.ts";
 
 const { generationRuns, products, sources, sourceArtifacts, assets, folderUploads, researchItems, dnaGapQuestions } = schema;
 
@@ -298,6 +300,7 @@ export async function executeIngestRun(
           productBrief: brief,
           loopBudgetPeriodIds,
           fetchText: deps.fetchText,
+          webSearch: feature("ingest.research").provider === "openrouter" ? await resolveWebSearch(db, ws, { fetchText: deps.fetchText }) : null,
           sink: {
             finding: async (f) => void (await publish({ type: "fact_found", text: f.text.slice(0, 300) })),
             competitor: async (c) => void (await publish({ type: "competitor_found", name: c.name, url: c.url })),

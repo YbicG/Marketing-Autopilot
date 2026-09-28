@@ -12,10 +12,13 @@ import {
   sectionOutput,
   type DnaSectionId,
 } from "@mkt/contracts";
+import { z } from "zod";
 import { callClaudeJson, textOf, type ClaudeDeps } from "../ai/call.ts";
+import { feature } from "../ai/features.ts";
 import { clientTool, runToolLoop } from "../ai/tool-loop.ts";
 import type { SectionResult } from "./merge-evidence.ts";
 import type { FetchText } from "./types.ts";
+import { pageText, type WebSearch } from "./web-search.ts";
 
 /** Who pays for a step: the workspace's month plus the run's own cap. */
 export interface CallCtx {
@@ -117,14 +120,67 @@ export function hnSearchTool(fetchText: FetchText) {
   });
 }
 
+export class ResearchSearchMissing extends Error {
+  readonly code = "research_search_missing";
+  constructor() {
+    super("Research runs on OpenRouter, which has no web search of its own. Add an Exa or Brave key in Settings → Keys.");
+    this.name = "ResearchSearchMissing";
+  }
+}
+
+/**
+ * Client-side web_search and web_fetch with the same names and limits as Anthropic's server tools,
+ * for when research runs on OpenRouter. Pages come through fetchText (safe-fetch + Smokescreen).
+ */
+export function clientWebTools(webSearch: WebSearch, fetchText: FetchText) {
+  let searches = 0;
+  let fetches = 0;
+  return [
+    clientTool({
+      name: "web_search",
+      description: `Search the web. Returns up to 8 results with title, url and a snippet. At most ${RESEARCH_MAX_SEARCHES} searches.`,
+      schema: z.object({ query: z.string().min(2).max(200) }),
+      run: async ({ query }) => {
+        if (++searches > RESEARCH_MAX_SEARCHES) return "Search limit reached. Work with what you have.";
+        try {
+          return JSON.stringify(await webSearch(query));
+        } catch (err) {
+          return `Search failed: ${err instanceof Error ? err.message : String(err)}`;
+        }
+      },
+    }),
+    clientTool({
+      name: "web_fetch",
+      description: `Read one web page as plain text (first 20,000 characters). At most ${RESEARCH_MAX_SEARCHES} pages.`,
+      schema: z.object({ url: z.string().url().max(2_000) }),
+      run: async ({ url }) => {
+        if (++fetches > RESEARCH_MAX_SEARCHES) return "Page limit reached. Work with what you have.";
+        try {
+          const res = await fetchText(url, { timeoutMs: 15_000, maxBytes: 3_000_000 });
+          if (res.status >= 400) return `Couldn't read that page (${res.status}).`;
+          return `<source_text url="${res.url}">
+${pageText(res.text)}
+</source_text>`;
+        } catch (err) {
+          return `Couldn't read that page: ${err instanceof Error ? err.message : String(err)}`;
+        }
+      },
+    }),
+  ];
+}
+
 export async function research(
   ctx: CallCtx,
-  input: { productBrief: string; fetchText: FetchText; sink: ResearchSink; loopBudgetPeriodIds?: string[] },
+  input: { productBrief: string; fetchText: FetchText; sink: ResearchSink; loopBudgetPeriodIds?: string[]; webSearch?: WebSearch | null },
 ): Promise<ResearchFindings> {
-  const serverTools = [
-    { type: "web_search_20260209", name: "web_search", max_uses: RESEARCH_MAX_SEARCHES },
-    { type: "web_fetch_20260209", name: "web_fetch", max_uses: RESEARCH_MAX_SEARCHES },
-  ] as unknown as Anthropic.ToolUnion[];
+  const onOpenRouter = feature("ingest.research").provider === "openrouter";
+  if (onOpenRouter && !input.webSearch) throw new ResearchSearchMissing();
+  const serverTools = onOpenRouter
+    ? []
+    : ([
+        { type: "web_search_20260209", name: "web_search", max_uses: RESEARCH_MAX_SEARCHES },
+        { type: "web_fetch_20260209", name: "web_fetch", max_uses: RESEARCH_MAX_SEARCHES },
+      ] as unknown as Anthropic.ToolUnion[]);
 
   const tools = [
     clientTool({
@@ -147,6 +203,7 @@ export async function research(
       run: async (p) => (await input.sink.pain(scrubPain(p)), "saved"),
     }),
     hnSearchTool(input.fetchText),
+    ...(onOpenRouter ? clientWebTools(input.webSearch!, input.fetchText) : []),
   ];
 
   const loop = await runToolLoop(ctx.ai, {
@@ -155,7 +212,7 @@ export async function research(
     budgetPeriodIds: input.loopBudgetPeriodIds ?? ctx.budgetPeriodIds,
     stopOnBudget: true,
     feature: "ingest.research",
-    maxSearches: RESEARCH_MAX_SEARCHES * 2,
+    maxSearches: onOpenRouter ? 0 : RESEARCH_MAX_SEARCHES * 2,
     maxIterations: 14,
     serverTools,
     clientTools: tools,
