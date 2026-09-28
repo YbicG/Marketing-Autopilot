@@ -33,6 +33,13 @@ describe("workspaces", () => {
 
     await db.insert(schema.generationRuns).values({ id: uuidv7(), workspaceId: ws, kind: "m0_summary", status: "queued", input: {}, capMicros: 1 });
     await db.insert(schema.sessions).values({ id: "s1", userId: "u1", token: "t1", expiresAt: new Date(Date.now() + 60_000) });
+    const patId = uuidv7();
+    await db.insert(schema.personalAccessTokens).values({ id: patId, workspaceId: ws, name: "agent", prefix: "0badcafe", tokenHash: "h", scopes: ["read"], createdBy: "u1" });
+    const productId = uuidv7();
+    const dnaVersionId = uuidv7();
+    await db.insert(schema.products).values({ id: productId, workspaceId: ws, slug: "p", name: "P", urls: {} });
+    await db.insert(schema.productDnaVersions).values({ id: dnaVersionId, workspaceId: ws, productId, version: 1, dna: {}, fields: {}, sourceMap: {} });
+    await db.insert(schema.dnaChangeRequests).values({ id: uuidv7(), workspaceId: ws, productId, dnaVersionId, path: "identity.oneLiner", value: "x", patId });
 
     await deleteWorkspace(db, ws, "u1");
     for (const t of [
@@ -42,6 +49,8 @@ describe("workspaces", () => {
       schema.spendLedger,
       schema.auditLog,
       schema.generationRuns,
+      schema.personalAccessTokens,
+      schema.dnaChangeRequests,
     ]) {
       expect(await db.select().from(t).where(eq(t.workspaceId, ws))).toHaveLength(0);
     }

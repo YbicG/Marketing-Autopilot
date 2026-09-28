@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 import { env } from "@mkt/core/config";
 import { ensureWorkspaceForUser, workspaceIdForUser } from "@mkt/core/tenancy";
+import { hasBearer } from "./agent-guard";
 import { getAuth } from "./auth";
 import { getDb } from "./db";
 
@@ -33,8 +34,9 @@ export async function requireWorkspace(): Promise<SessionWorkspace> {
   return s;
 }
 
-/** API routes: null means 401. */
+/** API routes: null means 401. A request with an agent token is never a cookie session (agent-guard.ts). */
 export function sessionFromRequest(req: Request): Promise<SessionWorkspace | null> {
+  if (hasBearer(req)) return Promise.resolve(null);
   return load(req.headers);
 }
 

@@ -2,6 +2,7 @@
 // data. Each prompt says so, and the untrusted text sits inside a tag it can't close early. The
 // capture planner is the model to copy (capture/flow-plan.ts:64 wrapPageText).
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { eq } from "drizzle-orm";
 import { uuidv7, schema, type Db } from "@mkt/db";
 import { createTestDb } from "@mkt/db/testing";
 import { fakeClient, jsonReply } from "../ai/testing.ts";
@@ -9,8 +10,13 @@ import type { RateLookup } from "../ai/usage.ts";
 import { planCaptureFlows } from "../capture/flow-plan.ts";
 import { loadRateCards, rateLookup, seedPricingRates } from "../cost/rates.ts";
 import { buildEvidenceBundle, type EvidenceArtifact } from "../ingest/evidence.ts";
+import { uiSessionFromCookie } from "../publishing/approvals.ts";
 import { seedWorkspace } from "../publishing/test-fixtures.ts";
 import { createSummaryRun, executeSummaryRun } from "../runs/summary.ts";
+import { invokeTool } from "../tools/invoke.ts";
+import { TOOL_MAP, TOOLS } from "../tools/mcp.ts";
+import { mintPat, verifyPat } from "../tools/pat.ts";
+import { FORBIDDEN_TOOL_VERBS } from "../tools/registry.ts";
 
 let db: Db;
 let close: () => Promise<void>;
@@ -93,5 +99,18 @@ describe("§8 Prompt injection", () => {
     expect(count(JSON.stringify(calls[0]!.messages), /<\/page_text>/g)).toBe(1);
   });
 
-  it.todo("agent and MCP tools can't approve, publish or spend (PAT scopes) — M5 (agent API not built)");
+  it("agent and MCP tools can't approve, publish or spend past their limits (tools/registry.ts, tools/invoke.ts)", async () => {
+    const s = await seedWorkspace(db);
+    const ui = uiSessionFromCookie({ userId: "user-1", workspaceId: s.workspaceId, originChecked: true, csrfChecked: true });
+    const deps = { db, baseUrl: "https://mkt.example.com", confirmSecret: () => "x".repeat(32), enqueueOrchestrate: async () => {} };
+    // No tool approves or publishes, whatever an injected instruction asks for.
+    expect(TOOLS.filter((t) => FORBIDDEN_TOOL_VERBS.test(t.name))).toEqual([]);
+    const drafter = (await verifyPat(db, (await mintPat(db, ui, { name: "d", scopes: ["read", "draft"] })).token))!;
+    expect(await invokeTool({ pat: drafter, deps, tools: TOOL_MAP }, "approve_posts", { postIds: [] })).toMatchObject({ status: "error", code: "unknown_tool" });
+    // Spending needs the generate scope, and then a person's confirm over $0.50.
+    const [p] = await db.select().from(schema.products).where(eq(schema.products.id, s.productId));
+    expect(await invokeTool({ pat: drafter, deps, tools: TOOL_MAP }, "run_package", { product: p!.slug })).toMatchObject({ status: "error", code: "forbidden" });
+    const spender = (await verifyPat(db, (await mintPat(db, ui, { name: "g", scopes: ["read", "generate"] })).token))!;
+    expect(await invokeTool({ pat: spender, deps, tools: TOOL_MAP }, "run_package", { product: p!.slug })).toMatchObject({ status: "pending_confirmation" });
+  });
 });

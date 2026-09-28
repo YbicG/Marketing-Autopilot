@@ -688,7 +688,8 @@ export const contentItems = pgTable(
     /** Stable key inside a campaign, e.g. "post:threads:d03:1" (the orchestrator's jobId suffix). */
     deliverableKey: text("deliverable_key").notNull(),
     kind: text("kind", { enum: ["post", "thread", "carousel", "video", "email", "bio", "pinned"] }).notNull(),
-    slotKind: text("slot_kind", { enum: ["pre", "open", "refill"] }).notNull().default("pre"),
+    /** agent = written by an agent through the create_post_variants tool (M5), outside the plan's slots. */
+    slotKind: text("slot_kind", { enum: ["pre", "open", "refill", "agent"] }).notNull().default("pre"),
     day: integer("day"),
     brief: jsonb("brief").$type<Record<string, unknown>>(),
     status: text("status", {
@@ -1260,4 +1261,68 @@ export const emailSuppressions = pgTable(
     createdAt: createdAt(),
   },
   (t) => [uniqueIndex("email_suppressions_key").on(t.workspaceId, t.emailHash)],
+);
+
+// ── agent surfaces (§9, M5) ──
+
+export const PAT_SCOPES = ["read", "draft", "generate"] as const;
+export type PatScope = (typeof PAT_SCOPES)[number];
+
+/**
+ * Personal access tokens for MCP and the CLI (§8 PATs, D9/D10). The token is `mkt_pat_{prefix}_{secret}`;
+ * only its sha256 is stored, found by the prefix. There is no approve, publish, verify or activate
+ * scope: a token can read, draft and (within its limits) spend, never approve.
+ */
+export const personalAccessTokens = pgTable(
+  "personal_access_tokens",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    /** The 8 hex characters after `mkt_pat_`: the lookup key, and what the settings page shows. */
+    prefix: text("prefix").notNull(),
+    /** sha256 (hex) of the whole token. The plaintext is shown once, at creation, and never stored. */
+    tokenHash: text("token_hash").notNull(),
+    scopes: text("scopes", { enum: PAT_SCOPES }).array().notNull(),
+    /** Always a UI session user: tokens are made only in Settings. */
+    createdBy: text("created_by").notNull(),
+    createdAt: createdAt(),
+    lastUsedAt: ts("last_used_at"),
+    revokedAt: ts("revoked_at"),
+    expiresAt: ts("expires_at"),
+  },
+  (t) => [uniqueIndex("personal_access_tokens_prefix").on(t.prefix), index("personal_access_tokens_ws").on(t.workspaceId)],
+);
+
+/**
+ * D10: an agent's edit to the product profile waits here and changes nothing until a person accepts
+ * it in the UI, which then applies it like an inline fix on the plan screen.
+ */
+export const dnaChangeRequests = pgTable(
+  "dna_change_requests",
+  {
+    id: uuid("id").primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    /** The version the agent saw; accepting refuses if the profile was rewritten since. */
+    dnaVersionId: uuid("dna_version_id")
+      .notNull()
+      .references(() => productDnaVersions.id, { onDelete: "cascade" }),
+    /** Top-level field path, e.g. "identity.oneLiner". */
+    path: text("path").notNull(),
+    value: jsonb("value").$type<unknown>().notNull(),
+    reason: text("reason"),
+    status: text("status", { enum: ["pending", "accepted", "rejected"] }).notNull().default("pending"),
+    patId: uuid("pat_id").references(() => personalAccessTokens.id, { onDelete: "set null" }),
+    decidedBy: text("decided_by"),
+    decidedAt: ts("decided_at"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("dna_change_requests_product").on(t.productId, t.status)],
 );

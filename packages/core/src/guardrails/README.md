@@ -39,6 +39,7 @@ pnpm --filter @mkt/video exec vitest run src/guardrails
 | Secrets (vault, upload scanning) | `secrets.test.ts` |
 | Launch-day gates (D20) | `launch-gates.test.ts` |
 | X links add-on window (D24) | `x-links.test.ts` |
+| Agent tokens (PATs: hashed, scoped, never approve; spend over limits needs a UI confirm) | `secrets.test.ts`, `prompt-injection.test.ts`, `claims.test.ts` (agent profile edits are pending requests); end to end over MCP in `packages/core/src/tools/mcp.test.ts` |
 | Untrusted rendering (D8) | `packages/video/src/guardrails/untrusted-rendering.test.ts`; email HTML escaping in `email-law.test.ts` |
 
 Shared helpers: `harness.ts` (a seeded product and a post on the real publish path) and `video-harness.ts` (the core video pipeline on fakes, with a renderer that logs the order of file edits).

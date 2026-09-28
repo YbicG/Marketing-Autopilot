@@ -11,7 +11,11 @@ import { claimIssues, validateVariant, type ClaimInfo } from "../engine/validate
 import { validateKitBody } from "../launch/kit/checks.ts";
 import { claimProblem } from "../publishing/claims.ts";
 import { handlePublishDue } from "../publishing/due.ts";
-import { approvedPost, postRow, SLOT, world } from "./harness.ts";
+import { pendingDnaChanges } from "../tools/dna-changes.ts";
+import { invokeTool } from "../tools/invoke.ts";
+import { TOOL_MAP, TOOLS } from "../tools/mcp.ts";
+import { mintPat, verifyPat } from "../tools/pat.ts";
+import { approvedPost, postRow, sessionFor, SLOT, world } from "./harness.ts";
 
 let db: Db;
 let close: () => Promise<void>;
@@ -134,5 +138,26 @@ describe("§8 No fake testimonials, reviews or numbers", () => {
 
   it.todo("testimonials carry a source date and the person's consent — GAP: claims has no date/consent columns (packages/db/src/schema.ts:462); needs a schema change");
   it.todo("only a UI session can verify a claim — GAP: no claim-verification action exists yet (planned with the M5 tool registry; must take a UiSession like approvePosts)");
-  it.todo("agent edits to claims become pending requests — M5 (PATs/MCP tools, propose_dna_change)");
+  it("agent edits to claims become pending requests: propose_dna_change changes nothing until the owner accepts (tools/dna-changes.ts)", async () => {
+    const w = await world(db);
+    const ui = sessionFor(w.s);
+    const { token } = await mintPat(db, ui, { name: "agent", scopes: ["read", "draft"] }, SLOT);
+    const pat = (await verifyPat(db, token, SLOT))!;
+    const [product] = await db.select().from(schema.products).where(eq(schema.products.id, w.s.productId));
+    const proof = [{ kind: "testimonial", text: "Saved my semester", sourceIds: ["S1"], quote: "Saved my semester" }];
+    const r = await invokeTool({ pat, deps: { db, baseUrl: "https://mkt.example.com", confirmSecret: () => "", enqueueOrchestrate: async () => {}, now: () => SLOT }, tools: TOOL_MAP }, "propose_dna_change", {
+      product: product!.slug,
+      path: "offer.proof",
+      value: proof,
+    });
+    expect(r.status).toBe("ok");
+    const before = await db.select().from(schema.claims).where(eq(schema.claims.dnaVersionId, w.s.dnaVersionId));
+    expect(before.map((c) => c.ref)).toEqual(["C1"]);
+    const [dna] = await db.select().from(schema.productDnaVersions).where(eq(schema.productDnaVersions.id, w.s.dnaVersionId));
+    expect((dna!.dna as { offer?: { proof?: unknown } }).offer?.proof).toBeUndefined();
+    const reqs = await pendingDnaChanges(db, w.s.workspaceId, w.s.productId);
+    expect(reqs.map((x) => [x.path, x.status, x.patId])).toEqual([["offer.proof", "pending", pat.patId]]);
+    // No tool can accept it; the accept action takes a UiSession, which a token never becomes.
+    expect(TOOLS.some((t) => /accept|verify/.test(t.name))).toBe(false);
+  });
 });

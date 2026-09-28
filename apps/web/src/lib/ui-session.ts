@@ -1,4 +1,5 @@
 import { uiSessionFromCookie, type UiSession } from "@mkt/core/publishing";
+import { bearerRefused, hasBearer } from "./agent-guard";
 import { isSameOrigin, json, sessionFromRequest, type SessionWorkspace } from "./session";
 
 export const CSRF_HEADER = "x-mkt-csrf";
@@ -10,6 +11,7 @@ export const CSRF_HEADER = "x-mkt-csrf";
  * we never answer. Returns the UiSession brand, or the Response to send back.
  */
 export async function requireUiSession(req: Request): Promise<{ ok: true; s: SessionWorkspace; ui: UiSession } | { ok: false; res: Response }> {
+  if (hasBearer(req)) return { ok: false, res: bearerRefused() };
   const s = await sessionFromRequest(req);
   if (!s) return { ok: false, res: json(401, { error: "Sign in again." }) };
   if (!isSameOrigin(req)) return { ok: false, res: json(403, { error: "Cross-origin request refused." }) };

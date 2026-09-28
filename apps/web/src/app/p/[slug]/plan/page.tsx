@@ -6,6 +6,7 @@ import { latestCampaign, packageOptions } from "@mkt/core/engine";
 import { assetsFor, planView, productBySlug, type SourceRef } from "@mkt/core/ingest";
 import { getWorkspace } from "@mkt/core/tenancy";
 import { PLATFORM_NAME } from "@/components/content/status";
+import { DnaChangeRequests } from "@/components/plan/dna-change-requests";
 import { SourceLink } from "@/components/source-link";
 import { getDb } from "@/lib/db";
 import { requireWorkspace } from "@/lib/session";
@@ -115,6 +116,8 @@ export default async function PlanPage({ params }: { params: Promise<{ slug: str
                 value: valueAt(dna.dna, u.path),
               }))}
             />
+
+            <DnaChangeRequests workspaceId={s.workspaceId} productId={product.id} slug={product.slug} labelFor={labelFor} valueAt={(p) => valueAt(dna.dna, p)} />
 
             <section className="flex flex-col gap-4" aria-label="Your angles">
               <div>

@@ -4,9 +4,12 @@
 import { randomBytes } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { classifyIntakePath } from "@mkt/contracts";
-import { type Db } from "@mkt/db";
+import { eq } from "drizzle-orm";
+import { schema, type Db } from "@mkt/db";
 import { createTestDb } from "@mkt/db/testing";
 import { processFolderUpload } from "../ingest/folder.ts";
+import { uiSessionFromCookie } from "../publishing/approvals.ts";
+import { hashPat, listPats, mintPat } from "../tools/pat.ts";
 import { seedWorkspace } from "../publishing/test-fixtures.ts";
 import { looksLikeCredentialFile, scanSecrets } from "../security/secret-scan.ts";
 import { decryptSecret, encryptSecret, envKeyring, getSecret, listSecrets, putSecret, secretAad, VaultKeyError } from "../security/vault.ts";
@@ -102,5 +105,16 @@ describe("§8 Secrets: uploaded files", () => {
     await expect(processFolderUpload(db, store, s.workspaceId, { rootName: "x", files: [{ path: ".env", size: 1, kind: "doc" }] }, new Map())).rejects.toThrow(/didn't pass our checks/);
   });
 
-  it.todo("agent personal access tokens are stored hashed, shown once — M5 (PATs not built)");
+  it("agent personal access tokens are stored hashed, shown once (tools/pat.ts)", async () => {
+    const s = await seedWorkspace(db);
+    const ui = uiSessionFromCookie({ userId: "user-1", workspaceId: s.workspaceId, originChecked: true, csrfChecked: true });
+    const m = await mintPat(db, ui, { name: "agent", scopes: ["read"] });
+    const rows = await db.select().from(schema.personalAccessTokens).where(eq(schema.personalAccessTokens.workspaceId, s.workspaceId));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.tokenHash).toBe(hashPat(m.token));
+    const everything = JSON.stringify([rows, await db.select().from(schema.auditLog).where(eq(schema.auditLog.workspaceId, s.workspaceId))]);
+    expect(everything).not.toContain(m.token.split("_").at(-1));
+    // After creation, the list only ever shows the prefix.
+    expect(JSON.stringify(await listPats(db, s.workspaceId))).not.toContain(m.token);
+  });
 });
