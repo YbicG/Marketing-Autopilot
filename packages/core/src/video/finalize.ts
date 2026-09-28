@@ -13,7 +13,7 @@ import { nowOf, type VideoDeps } from "./deps.ts";
 import { hashOf, specHash } from "./hash.ts";
 import { computeTier, digitalSourceType, type Ingredient, type ProvenanceTier } from "./provenance.ts";
 import { recentSheetHashes, scanFootageForPii, sheetHashesFor, stage0, stage1Transcript, stage2Vision, stage3Judge, type BlurBox, type WerResult } from "./qa.ts";
-import { encodeSheetHash, hasBlock } from "./qa-rules.ts";
+import { encodeSheetHash, hasBlock, platformIssues } from "./qa-rules.ts";
 import type { AdPropsLike, ProbePlatform } from "./renderer.ts";
 import { latestSpec, lintContextFor, updateSpecMeta, type SpecMeta, type VideoSpecRow } from "./spec.ts";
 import { linkLineage, storeAsset } from "./store.ts";
@@ -645,7 +645,7 @@ async function writePlatformVariants(
     };
     // Same hash the publishing engine re-checks at publish.prepare: text + final media sha256s.
     const contentHash = variantContentHash({ platform: h.platform, body, mediaSha256s: media.map((m) => m.sha256) });
-    const qa = { issues: (r.qa as { issues?: unknown } | null)?.issues ?? [], rank: ranking.indexOf(h.hookIdx), wer: final.wer };
+    const qa = { issues: platformIssues((r.qa as { issues?: SpecIssue[] } | null)?.issues ?? [], h.platform), rank: ranking.indexOf(h.hookIdx), wer: final.wer };
     if (prev) {
       if (prev.contentHash !== contentHash && prev.assetIds.length) await deps.voidApprovalsFor([prev.id], "The final video file changed.");
       await db

@@ -12,6 +12,8 @@ export const WER_LIMIT_BP = 500;
 export const TEXT_COVERAGE_WARN = 0.5;
 /** Masters sharing more than half their scenes go ≥7 days apart on an account (§2.5). */
 export const SCENE_OVERLAP_WARN = 0.5;
+/** §8 Unique content: on these platforms a scene overlap blocks the post instead of warning. */
+export const SCENE_OVERLAP_BLOCKS_ON: ReadonlySet<string> = new Set(["x"]);
 export const DHASH_MATCH_BITS = 10;
 
 const issue = (severity: SpecIssue["severity"], code: string, message: string, sceneId?: string): SpecIssue =>
@@ -228,6 +230,17 @@ export function overlapIssues(mine: string[], recent: { label: string; hashes: s
   return hits.length
     ? [issue("warn", "scene_overlap", `This video shares most of its scenes with ${hits.map((h) => h.label).join(", ")} from the last 7 days. Post them at least 7 days apart on the same account.`)]
     : [];
+}
+
+/**
+ * A render's stage 0 issues as they apply to one platform's variant. The render covers every
+ * platform, so scene overlap is a warn there; on X (§8) it blocks that platform's post.
+ */
+export function platformIssues(issues: SpecIssue[], platform: string): SpecIssue[] {
+  if (!SCENE_OVERLAP_BLOCKS_ON.has(platform)) return issues;
+  return issues.map((i) =>
+    i.code === "scene_overlap" ? { ...i, severity: "block" as const, message: `X treats near-duplicate videos as spam, so this one can't go out there yet. ${i.message}` } : i,
+  );
 }
 
 export const hasBlock = (issues: SpecIssue[]) => issues.some((i) => i.severity === "block");

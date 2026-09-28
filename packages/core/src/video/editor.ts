@@ -10,11 +10,13 @@ import { feature } from "../ai/features.ts";
 import type { RateLookup } from "../ai/usage.ts";
 import { estimateClaudeMicros } from "../cost/pricing.ts";
 import type { AudioOps } from "./deps.ts";
+import { syncDraftStates } from "../engine/editor.ts";
 import { runSpentMicros } from "../runs/summary.ts";
 import { HOOK_KEY, type AudioPlan, type VoicedLine } from "./audio.ts";
 import { loadVideoContext } from "./context.ts";
 import { finalizeHash, finalSpecOf, type FinalMeta } from "./finalize.ts";
 import { specHash } from "./hash.ts";
+import { hasBlock } from "./qa-rules.ts";
 import type { SpecTools } from "./renderer.ts";
 import { latestSpec, proposeSpecChange, type SpecChange, type SpecMeta } from "./spec.ts";
 import { scopeForRun } from "./video-item.ts";
@@ -326,8 +328,10 @@ export async function askForChanges(
 /**
  * writePlatformVariants (finalize.ts) writes the final variants but no posts. This adds one
  * pending_approval post per variant whose platform has a slot in the item's brief (scheduled at the
- * slot, like the text posts in engine/package.ts writeDrafts). Idempotent: a variant that already
- * has a post keeps it. Returns the approvable post ids and the platforms with no slot.
+ * slot, like the text posts in engine/package.ts writeDrafts). A variant with a blocking check (scene
+ * overlap on X) gets a draft post instead. Idempotent: a variant that already has a post keeps it,
+ * moved between draft and pending_approval to match its checks. Returns the approvable post ids and
+ * the platforms with no slot.
  */
 export async function ensureVideoPosts(db: Db, workspaceId: string, contentItemId: string): Promise<{ postIds: string[]; unscheduled: string[] }> {
   const [item] = await db.select().from(contentItems).where(and(eq(contentItems.id, contentItemId), eq(contentItems.workspaceId, workspaceId)));
@@ -345,7 +349,10 @@ export async function ensureVideoPosts(db: Db, workspaceId: string, contentItemI
   const existing = await db.select().from(posts).where(and(eq(posts.workspaceId, workspaceId), inArray(posts.variantId, vs.map((x) => x.id))));
   const unscheduled: string[] = [];
   for (const x of vs) {
-    if (existing.some((p) => p.variantId === x.id)) continue;
+    if (existing.some((p) => p.variantId === x.id)) {
+      await syncDraftStates(db, workspaceId, x.id);
+      continue;
+    }
     const slot = slots.find((s) => s.platform === x.platform);
     if (!slot) {
       unscheduled.push(x.platform);
@@ -362,14 +369,15 @@ export async function ensureVideoPosts(db: Db, workspaceId: string, contentItemI
         connectionId: slot.connectionId,
         platform: x.platform,
         scheduledAt: new Date(slot.scheduledAt),
-        state: "pending_approval",
+        state: hasBlock((x.qa as { issues?: SpecIssue[] } | null)?.issues ?? []) ? "draft" : "pending_approval",
         generation: 1,
         idempotencyKey: `pst_${postId}_g1`,
       })
       .returning();
     if (inserted) existing.push(inserted);
   }
-  return { postIds: existing.filter((p) => p.state === "pending_approval").map((p) => p.id), unscheduled };
+  const states = await db.select({ id: posts.id, state: posts.state }).from(posts).where(and(eq(posts.workspaceId, workspaceId), inArray(posts.variantId, vs.map((x) => x.id))));
+  return { postIds: states.filter((p) => p.state === "pending_approval").map((p) => p.id), unscheduled };
 }
 
 // ── prices on the editor's buttons ──
