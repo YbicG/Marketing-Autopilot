@@ -1,6 +1,7 @@
 // Shared by the demo capture routes (W4). Not a route: no route.ts here.
 
 import { CaptureFlowError } from "@mkt/core/capture";
+import type { UiSession } from "@mkt/core/publishing";
 import { productBySlug } from "@mkt/core/ingest";
 import { getDb } from "@/lib/db";
 import { isSameOrigin, json, sessionFromRequest, type SessionWorkspace } from "@/lib/session";
@@ -10,20 +11,23 @@ export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{1
 
 type Product = NonNullable<Awaited<ReturnType<typeof productBySlug>>>;
 
+type CaptureAuth<Ui> = { ok: true; s: SessionWorkspace; product: Product; ui: Ui } | { ok: false; res: Response };
+
 /**
  * Session + Origin (+ the CSRF header and UI session when `ui`) + the product. setTrustedOrigin,
- * the demo login and confirmFlow are UI-only (D9/D26), so their routes pass `ui: true`.
+ * the demo login and confirmFlow are UI-only (D9/D26), so their routes pass `ui: true` and hand
+ * core the returned UiSession.
  */
-export async function captureAuth(
-  req: Request,
-  slug: string,
-  opts: { ui?: boolean } = {},
-): Promise<{ ok: true; s: SessionWorkspace; product: Product } | { ok: false; res: Response }> {
+export async function captureAuth(req: Request, slug: string, opts: { ui: true }): Promise<CaptureAuth<UiSession>>;
+export async function captureAuth(req: Request, slug: string, opts?: { ui?: false }): Promise<CaptureAuth<null>>;
+export async function captureAuth(req: Request, slug: string, opts: { ui?: boolean } = {}): Promise<CaptureAuth<UiSession | null>> {
   let s: SessionWorkspace;
+  let ui: UiSession | null = null;
   if (opts.ui) {
     const auth = await requireUiSession(req);
     if (!auth.ok) return auth;
     s = auth.s;
+    ui = auth.ui;
   } else {
     if (!isSameOrigin(req)) return { ok: false, res: json(403, { error: "Cross-origin request refused." }) };
     const got = await sessionFromRequest(req);
@@ -32,7 +36,7 @@ export async function captureAuth(
   }
   const product = await productBySlug(getDb(), s.workspaceId, slug);
   if (!product) return { ok: false, res: json(404, { error: "Project not found." }) };
-  return { ok: true, s, product };
+  return { ok: true, s, product, ui };
 }
 
 /** Where the page's own words differ from core's (the address lives on this page, not Settings). */

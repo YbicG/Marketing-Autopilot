@@ -28,6 +28,7 @@ import {
   updateFlow,
 } from "./flows.ts";
 import { scanRecordingPii, storeRecording } from "./recording.ts";
+import { uiSessionFromCookie } from "../publishing/approvals.ts";
 
 let db: Db;
 let close: () => Promise<void>;
@@ -37,6 +38,9 @@ let store: Storage;
 let ws: string;
 let otherWs: string;
 let productId: string;
+
+/** A UI session as apps/web mints it after the cookie, Origin and CSRF checks. */
+const ui = (workspaceId: string, userId = "user-1") => uiSessionFromCookie({ userId, workspaceId, originChecked: true, csrfChecked: true });
 
 beforeAll(async () => {
   ({ db, close } = await createTestDb());
@@ -181,10 +185,10 @@ describe("capture.flow_plan call", () => {
 
 describe("capture_flows", () => {
   it("sets and validates the trusted origin (UI-only helper)", async () => {
-    await expect(setTrustedOrigin(db, ws, productId, "https://syllacal.com", [])).rejects.toBeInstanceOf(CaptureFlowError);
-    await expect(setTrustedOrigin(db, ws, productId, "http://postgres:5432", [])).rejects.toMatchObject({ code: "bad_origin" });
-    await expect(setTrustedOrigin(db, otherWs, productId, "http://syllacal-demo:3000", [])).rejects.toMatchObject({ code: "not_found" });
-    const r = await setTrustedOrigin(db, ws, productId, "http://syllacal-demo:3000/", [...SYLLACAL_ROUTE_DENYLIST_SUGGESTION]);
+    await expect(setTrustedOrigin(db, ui(ws), productId, "https://syllacal.com", [])).rejects.toBeInstanceOf(CaptureFlowError);
+    await expect(setTrustedOrigin(db, ui(ws), productId, "http://postgres:5432", [])).rejects.toMatchObject({ code: "bad_origin" });
+    await expect(setTrustedOrigin(db, ui(otherWs), productId, "http://syllacal-demo:3000", [])).rejects.toMatchObject({ code: "not_found" });
+    const r = await setTrustedOrigin(db, ui(ws), productId, "http://syllacal-demo:3000/", [...SYLLACAL_ROUTE_DENYLIST_SUGGESTION]);
     expect(r.origin).toBe("http://syllacal-demo:3000");
     const [p] = await db.select().from(schema.products).where(eq(schema.products.id, productId));
     expect(p?.trustedCaptureOrigin).toBe("http://syllacal-demo:3000");
@@ -223,8 +227,8 @@ describe("capture_flows", () => {
 
     const gateway = { jobs: [] as { data: { flowId: string }; jobId: string }[], async enqueueCaptureFlow(data: { flowId: string }, jobId: string) { this.jobs.push({ data, jobId }); } };
     await expect(refreshFootage({ db, gateway }, ws, formId)).rejects.toMatchObject({ code: "needs_confirm" });
-    expect(await confirmFlow(db, otherWs, "user-2", formId)).toBe(false);
-    expect(await confirmFlow(db, ws, "user-1", formId)).toBe(true);
+    expect(await confirmFlow(db, ui(otherWs, "user-2"), formId)).toBe(false);
+    expect(await confirmFlow(db, ui(ws), formId)).toBe(true);
     const confirmed = (await getFlow(db, ws, formId))!;
     expect(confirmed.confirmedBy).toBe("user-1");
     expect(flowBlocker(confirmed, "http://syllacal-demo:3000")).toBeNull();

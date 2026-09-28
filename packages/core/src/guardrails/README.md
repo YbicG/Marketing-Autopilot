@@ -53,4 +53,3 @@ Shared helpers: `harness.ts` (a seeded product and a post on the real publish pa
 | Scene overlap is only a warning on X | `packages/core/src/video/qa-rules.ts:226` |
 | A music track without a license on file can be used | `packages/core/src/video/audio.ts:262`, `packages/video/src/spec/lint.ts:7` and `:89` |
 | Sound effects aren't wired (no license receipt path yet) | `packages/core/src/video/deps.ts:39` |
-| `confirmFlow` and `setTrustedOrigin` are UI-only but take a plain user id, not a UiSession | `packages/core/src/capture/flows.ts:139` and `:152` |

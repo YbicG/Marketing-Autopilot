@@ -15,6 +15,6 @@ export async function POST(req: Request, ctx: { params: Promise<{ slug: string; 
   const db = getDb();
   const flow = await getFlow(db, auth.s.workspaceId, flowId);
   if (!flow || flow.productId !== auth.product.id) return json(404, { error: "That flow isn't there any more." });
-  await confirmFlow(db, auth.s.workspaceId, auth.s.userId, flowId);
+  await confirmFlow(db, auth.ui, flowId);
   return json(200, { confirmed: true });
 }

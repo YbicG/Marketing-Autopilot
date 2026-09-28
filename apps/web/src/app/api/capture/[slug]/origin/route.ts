@@ -15,7 +15,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ slug: string }
   const origin = typeof body.origin === "string" ? body.origin : null;
   const denylist = Array.isArray(body.denylist) ? body.denylist.filter((x): x is string => typeof x === "string") : [];
   try {
-    const out = await setTrustedOrigin(getDb(), auth.s.workspaceId, auth.product.id, origin, denylist);
+    const out = await setTrustedOrigin(getDb(), auth.ui, auth.product.id, origin, denylist);
     return json(200, out);
   } catch (err) {
     return captureError(err);

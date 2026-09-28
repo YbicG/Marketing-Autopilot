@@ -8,6 +8,7 @@ import { createTestDb } from "@mkt/db/testing";
 import { confirmFlow, createFlow, CaptureFlowError, flowBlocker, getFlow, setTrustedOrigin, updateFlow } from "../capture/flows.ts";
 import { checkActionLabels, flowNeedsConfirm, isAllowedRequest, screenFlow, screenStep, validateTrustedOrigin } from "../capture/guard.ts";
 import { seedWorkspace } from "../publishing/test-fixtures.ts";
+import { sessionFor } from "./harness.ts";
 
 let db: Db;
 let close: () => Promise<void>;
@@ -50,8 +51,8 @@ describe("§8 Capture safety: what the capture browser may load", () => {
 
   it("setTrustedOrigin refuses a bad origin before saving", async () => {
     const s = await seedWorkspace(db);
-    await expect(setTrustedOrigin(db, s.workspaceId, s.productId, "http://169.254.169.254:80", [])).rejects.toBeInstanceOf(CaptureFlowError);
-    expect(await setTrustedOrigin(db, s.workspaceId, s.productId, `${ORIGIN}/`, ["/api/checkout"])).toEqual({ origin: ORIGIN, denylist: ["/api/checkout"] });
+    await expect(setTrustedOrigin(db, sessionFor(s), s.productId, "http://169.254.169.254:80", [])).rejects.toBeInstanceOf(CaptureFlowError);
+    expect(await setTrustedOrigin(db, sessionFor(s), s.productId, `${ORIGIN}/`, ["/api/checkout"])).toEqual({ origin: ORIGIN, denylist: ["/api/checkout"] });
   });
 });
 
@@ -91,17 +92,31 @@ describe("§8 Capture safety: steps and clicks", () => {
     const input = { name: "Add a course", needsLogin: false, steps: [{ kind: "type" as const, field: { by: "label" as const, label: "Course name" }, text: "BIO 101" }] };
     const id = await createFlow(db, s.workspaceId, s.productId, input);
     expect(flowBlocker((await getFlow(db, s.workspaceId, id))!, ORIGIN)?.code).toBe("needs_confirm");
-    expect(await confirmFlow(db, s.workspaceId, "user-1", id)).toBe(true);
+    expect(await confirmFlow(db, sessionFor(s), id)).toBe(true);
     expect(flowBlocker((await getFlow(db, s.workspaceId, id))!, ORIGIN)).toBeNull();
     await updateFlow(db, s.workspaceId, id, { ...input, name: "Add a class" });
     expect(flowBlocker((await getFlow(db, s.workspaceId, id))!, ORIGIN)?.code).toBe("needs_confirm");
     // Another workspace can't confirm it.
     const other = await seedWorkspace(db);
-    expect(await confirmFlow(db, other.workspaceId, "user-2", id)).toBe(false);
+    expect(await confirmFlow(db, sessionFor(other, "user-2"), id)).toBe(false);
   });
 
-  it.todo(
-    "GAP: confirmFlow and setTrustedOrigin are marked UI-only but take a plain userId/workspaceId, not a UiSession, so a worker or agent could call them (core/src/capture/flows.ts:139 and :152; take a UiSession like approvePosts does)",
-  );
+  it("only a UiSession can confirm a flow or set the trusted origin (type level)", () => {
+    // Never called: these lines exist so tsc fails if a worker or agent could pass plain ids.
+    const forged = () => {
+      // @ts-expect-error a PAT/MCP handler or the worker has only ids, not a UiSession
+      void confirmFlow(db, { userId: "agent", workspaceId: "ws" }, "flow");
+      // @ts-expect-error the trusted origin is UI-only too (D26)
+      void setTrustedOrigin(db, { userId: "agent", workspaceId: "ws" }, "product", "http://demo:3000", []);
+    };
+    expect(typeof forged).toBe("function");
+  });
+
+  it("a confirm records the session's user", async () => {
+    const s = await seedWorkspace(db);
+    const id = await createFlow(db, s.workspaceId, s.productId, { name: "Log in", needsLogin: true, steps: [{ kind: "goto", path: "/" }] });
+    expect(await confirmFlow(db, sessionFor(s, "user-7"), id)).toBe(true);
+    expect((await getFlow(db, s.workspaceId, id))!.confirmedBy).toBe("user-7");
+  });
   it.todo("the recorder aborts requests and refuses clicks on the live page — apps/worker/src/capture/demo/recorder.ts:198/:297 (needs Chromium; server check)");
 });

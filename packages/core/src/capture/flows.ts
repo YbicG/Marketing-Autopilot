@@ -1,11 +1,13 @@
 // capture_flows CRUD (§5.6 step 1). Every query is workspace-scoped. confirmFlow and setTrustedOrigin
-// are UI-only (cookie session): API routes for PATs/agents must not expose them (D9/D26).
+// are UI-only (D9/D26): they take a UiSession, which only apps/web mints from a cookie session, so
+// PAT/agent handlers and the worker can't call them.
 
 import { and, desc, eq } from "drizzle-orm";
 import { CaptureFlow, CaptureFlowStep, type CaptureFlow as Flow } from "@mkt/contracts";
 import { schema, uuidv7, type Db } from "@mkt/db";
 import { flowNeedsConfirm, screenFlow, validateRouteDenylist, validateTrustedOrigin } from "./guard.ts";
 import type { PlannedFlow } from "./flow-plan.ts";
+import type { UiSession } from "../publishing/approvals.ts";
 
 const { captureFlows, products } = schema;
 
@@ -136,11 +138,11 @@ export async function deleteFlow(db: Db, workspaceId: string, flowId: string): P
 }
 
 /** UI-only: the one confirm click for flows that log in or submit a form (§5.6). */
-export async function confirmFlow(db: Db, workspaceId: string, userId: string, flowId: string): Promise<boolean> {
+export async function confirmFlow(db: Db, session: UiSession, flowId: string): Promise<boolean> {
   const res = await db
     .update(captureFlows)
-    .set({ confirmedAt: new Date(), confirmedBy: userId })
-    .where(and(eq(captureFlows.id, flowId), eq(captureFlows.workspaceId, workspaceId)))
+    .set({ confirmedAt: new Date(), confirmedBy: session.userId })
+    .where(and(eq(captureFlows.id, flowId), eq(captureFlows.workspaceId, session.workspaceId)))
     .returning({ id: captureFlows.id });
   return res.length > 0;
 }
@@ -151,7 +153,7 @@ export async function confirmFlow(db: Db, workspaceId: string, userId: string, f
  */
 export async function setTrustedOrigin(
   db: Db,
-  workspaceId: string,
+  session: UiSession,
   productId: string,
   origin: string | null,
   denylist: readonly string[],
@@ -167,7 +169,7 @@ export async function setTrustedOrigin(
   const res = await db
     .update(products)
     .set({ trustedCaptureOrigin: normalized, captureRouteDenylist: d.entries })
-    .where(and(eq(products.id, productId), eq(products.workspaceId, workspaceId)))
+    .where(and(eq(products.id, productId), eq(products.workspaceId, session.workspaceId)))
     .returning({ id: products.id });
   if (!res.length) throw new CaptureFlowError("Product not found.", "not_found");
   return { origin: normalized, denylist: d.entries };

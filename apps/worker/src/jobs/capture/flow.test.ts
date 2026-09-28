@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { confirmFlow, createFlow, getFlow, setTrustedOrigin, SYLLACAL_ROUTE_DENYLIST_SUGGESTION } from "@mkt/core/capture";
 import { loadRateCards, rateLookup, seedPricingRates } from "@mkt/core/cost";
 import { fsStorage, type Storage } from "@mkt/core/media";
+import { uiSessionFromCookie } from "@mkt/core/publishing";
 import { schema, uuidv7, type Db } from "@mkt/db";
 import { createTestDb } from "@mkt/db/testing";
 import { CaptureBlocked, type RecordFlowOptions, type RecordFlowResult } from "../../capture/demo/recorder.ts";
@@ -17,6 +18,9 @@ let dir: string;
 let store: Storage;
 let ws: string;
 let productId: string;
+
+/** A UI session as apps/web mints it after the cookie, Origin and CSRF checks. */
+const ui = (workspaceId: string, userId = "user-1") => uiSessionFromCookie({ userId, workspaceId, originChecked: true, csrfChecked: true });
 let deps: CaptureFlowDeps;
 const recorded: RecordFlowOptions[] = [];
 let screenTexts: string[] = ["Calendar"];
@@ -87,7 +91,7 @@ describe("capture.flow job", () => {
   });
 
   it("records, stores the asset + click log and points the flow at it", async () => {
-    await setTrustedOrigin(db, ws, productId, "http://syllacal-demo:3000", [...SYLLACAL_ROUTE_DENYLIST_SUGGESTION]);
+    await setTrustedOrigin(db, ui(ws), productId, "http://syllacal-demo:3000", [...SYLLACAL_ROUTE_DENYLIST_SUGGESTION]);
     const flowId = await createFlow(db, ws, productId, { name: "Month view", needsLogin: false, steps: [{ kind: "goto", path: "/calendar" }] });
     await captureFlow(deps, { flowId });
     expect(heavyCalls).toBe(1);
@@ -110,7 +114,7 @@ describe("capture.flow job", () => {
     expect(recorded).toHaveLength(before);
     expect((await getFlow(db, ws, flowId))!.lastError).toMatch(/confirm/);
 
-    await confirmFlow(db, ws, "user-1", flowId);
+    await confirmFlow(db, ui(ws), flowId);
     await captureFlow(deps, { flowId });
     expect(secrets.at(-1)).toEqual({ ws, purpose: loginPurpose(productId) });
     expect(recorded.at(-1)!.login).toEqual({ username: "demo", password: "not-logged" });
