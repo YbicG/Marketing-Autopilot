@@ -2,6 +2,7 @@ import { and, eq, inArray, isNull } from "drizzle-orm";
 import { IntakeInput, type RunEvent } from "@mkt/contracts";
 import { schema, uuidv7, type Db } from "@mkt/db";
 import { sha256, workspacePrefix } from "../media/storage.ts";
+import { ensurePeriods } from "../cost/ledger.ts";
 import { budgetScopesForRun, describeFailure, runSpentMicros } from "../runs/summary.ts";
 import { classifyInput, linkedSources, githubRepoUrl, parseGithubRepo, sameSite, slugify } from "./classify.ts";
 import { InvalidUpload } from "./folder.ts";
@@ -15,6 +16,8 @@ const { generationRuns, products, sources, sourceArtifacts, assets, folderUpload
 /** §7.2: an ingest run is capped at $1.50. */
 export const INGEST_RUN_CAP_MICROS = 1_500_000;
 export const STRATEGY_RUN_CAP_MICROS = 1_500_000;
+/** The research loop's share of the ingest cap; what's left pays for the summary, questions and profile. */
+export const RESEARCH_LOOP_CAP_MICROS = 700_000;
 const MAX_LABELED = 12;
 const LABEL_CONCURRENCY = 4;
 
@@ -287,8 +290,13 @@ export async function executeIngestRun(
         const brief = (await loadEvidence(db, product.id, runId, product.name)).markdown.slice(0, 24_000);
         const save = (kind: "finding" | "competitor" | "pain", data: Record<string, unknown>, sourceUrl: string | null) =>
           db.insert(researchItems).values({ id: uuidv7(), workspaceId: ws, productId: product.id, runId, kind, data, sourceUrl });
+        const loopBudgetPeriodIds = [
+          ...budgetPeriodIds,
+          ...(await ensurePeriods(db, ws, [{ scope: "run", scopeRef: `${runId}:research`, capMicros: RESEARCH_LOOP_CAP_MICROS }])),
+        ];
         const out = await research(ctx, {
           productBrief: brief,
+          loopBudgetPeriodIds,
           fetchText: deps.fetchText,
           sink: {
             finding: async (f) => void (await publish({ type: "fact_found", text: f.text.slice(0, 300) })),

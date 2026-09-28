@@ -1,5 +1,6 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
+import { BudgetExceeded } from "../cost/errors.ts";
 import { callClaude, type ClaudeCall, type ClaudeDeps } from "./call.ts";
 import { claudeFormat } from "./structured.ts";
 
@@ -35,6 +36,8 @@ export interface ToolLoopInput extends Omit<ClaudeCall, "tools" | "outputFormat"
   /** Paid model turns, including pause_turn resumes. */
   maxIterations?: number;
   maxPauseResumes?: number;
+  /** A budget stop after the first turn ends the loop (stoppedEarly) instead of throwing, keeping the turns so far. */
+  stopOnBudget?: boolean;
   onToolCall?: (name: string, input: unknown) => void;
 }
 
@@ -54,16 +57,27 @@ export interface ToolLoopResult {
  * pause_turn: re-send the conversation with the paused assistant turn and no extra user message.
  */
 export async function runToolLoop(deps: ClaudeDeps, input: ToolLoopInput): Promise<ToolLoopResult> {
-  const { serverTools = [], clientTools, maxIterations = 12, maxPauseResumes = 4, onToolCall, ...call } = input;
+  const { serverTools = [], clientTools, maxIterations = 12, maxPauseResumes = 4, stopOnBudget = false, onToolCall, ...call } = input;
   const byName = new Map(clientTools.map((t) => [t.name, t]));
   const tools = [...serverTools, ...clientTools.map(toToolParam)];
   const messages: Anthropic.MessageParam[] = [...call.messages];
   const callIds: string[] = [];
   let pauseResumes = 0;
   let toolCalls = 0;
+  let last: Anthropic.Message | undefined;
 
   for (let i = 1; ; i++) {
-    const { message, callIds: ids } = await callClaude(deps, { ...call, messages, tools });
+    let reply: Awaited<ReturnType<typeof callClaude>>;
+    try {
+      reply = await callClaude(deps, { ...call, messages, tools });
+    } catch (err) {
+      if (stopOnBudget && last && err instanceof BudgetExceeded) {
+        return { messages, final: last, iterations: i - 1, pauseResumes, toolCalls, stoppedEarly: true, callIds };
+      }
+      throw err;
+    }
+    const { message, callIds: ids } = reply;
+    last = message;
     callIds.push(...ids);
     messages.push({ role: "assistant", content: message.content as Anthropic.ContentBlockParam[] });
 

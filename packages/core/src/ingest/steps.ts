@@ -119,7 +119,7 @@ export function hnSearchTool(fetchText: FetchText) {
 
 export async function research(
   ctx: CallCtx,
-  input: { productBrief: string; fetchText: FetchText; sink: ResearchSink },
+  input: { productBrief: string; fetchText: FetchText; sink: ResearchSink; loopBudgetPeriodIds?: string[] },
 ): Promise<ResearchFindings> {
   const serverTools = [
     { type: "web_search_20260209", name: "web_search", max_uses: RESEARCH_MAX_SEARCHES },
@@ -151,6 +151,9 @@ export async function research(
 
   const loop = await runToolLoop(ctx.ai, {
     ...base(ctx),
+    // The loop runs under its own sub-cap and stops there, so the summary and profile still fit the run.
+    budgetPeriodIds: input.loopBudgetPeriodIds ?? ctx.budgetPeriodIds,
+    stopOnBudget: true,
     feature: "ingest.research",
     maxSearches: RESEARCH_MAX_SEARCHES * 2,
     maxIterations: 14,

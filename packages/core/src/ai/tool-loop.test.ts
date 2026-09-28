@@ -85,6 +85,27 @@ describe("runToolLoop", () => {
     expect(out).toMatchObject({ iterations: 3, pauseResumes: 2, stoppedEarly: true });
   });
 
+  it("stopOnBudget ends the loop at a sub-cap and keeps the turns so far", async () => {
+    const [sub] = await ensurePeriods(db, ws, [{ scope: "run", scopeRef: `loop-${uuidv7()}`, capMicros: 1_000_000 }]);
+    const t = clientTool({ name: "record_finding", description: "save", schema: z.object({ text: z.string() }), run: async () => "saved" });
+    // Turn 1 costs more than the whole sub-cap, so turn 2 can't be reserved.
+    const { client } = fakeClient([
+      { stop_reason: "tool_use", content: [toolUse("t1", "record_finding", { text: "a fact" })], usage: fakeUsage(1_000_000, 10) },
+      { stop_reason: "end_turn", content: [text("never reached")] },
+    ]);
+    const out = await runToolLoop({ db, rates, client }, { ...base(), budgetPeriodIds: [...periods, sub!], stopOnBudget: true, clientTools: [t] });
+    expect(out).toMatchObject({ iterations: 1, toolCalls: 1, stoppedEarly: true });
+    expect(out.messages.map((m) => m.role)).toEqual(["user", "assistant", "user"]);
+  });
+
+  it("stopOnBudget still throws when not even the first turn fits", async () => {
+    const [sub] = await ensurePeriods(db, ws, [{ scope: "run", scopeRef: `loop-${uuidv7()}`, capMicros: 1 }]);
+    const { client } = fakeClient([{ stop_reason: "end_turn", content: [text("x")] }]);
+    await expect(
+      runToolLoop({ db, rates, client }, { ...base(), budgetPeriodIds: [...periods, sub!], stopOnBudget: true, clientTools: [] }),
+    ).rejects.toMatchObject({ code: "budget_exceeded" });
+  });
+
   it("never runs tools from a refused turn", async () => {
     let ran = false;
     const t = clientTool({ name: "x", description: "x", schema: z.object({}), run: async () => ((ran = true), "") });
