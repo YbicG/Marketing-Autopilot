@@ -11,6 +11,8 @@ FROM base AS builder
 COPY --from=pruned /repo/out/json/ ./
 RUN pnpm install --frozen-lockfile
 COPY --from=pruned /repo/out/full/ ./
+# turbo prune leaves out root files that aren't workspace packages; every tsconfig extends this one.
+COPY --from=pruned /repo/tsconfig.base.json ./
 ENV NEXT_TELEMETRY_DISABLED=1 NODE_ENV=production
 RUN pnpm --filter @mkt/web build
 
