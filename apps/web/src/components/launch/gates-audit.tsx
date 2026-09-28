@@ -105,7 +105,8 @@ export function LandingAudit({ slug, initial, price, website }: { slug: string; 
                     <img
                       src={`/api/media/${id}`}
                       alt={`Your landing page, first screen ${shotLabels[i]?.toLowerCase() ?? ""}`}
-                      className={`rounded border border-zinc-800 object-cover object-top ${shotLabels[i] === "On a phone" ? "h-72 w-36" : "h-48 w-80"}`}
+                      loading="lazy"
+                      className={`max-w-full rounded border border-zinc-800 object-cover object-top ${shotLabels[i] === "On a phone" ? "h-72 w-36" : "h-48 w-80"}`}
                     />
                   </a>
                   <figcaption className="text-xs text-zinc-500">{shotLabels[i]}</figcaption>

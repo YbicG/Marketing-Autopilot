@@ -36,8 +36,8 @@ export function SidebarNav({ items, label }: { items: NavItem[]; label: string }
           <div key={it.href}>
             <Link
               href={it.href}
-              aria-current={active ? "page" : undefined}
-              className={`flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
+              aria-current={active && !it.children ? "page" : undefined}
+              className={`flex min-h-11 items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm md:min-h-9 transition-colors ${
                 active ? "bg-raised text-ink" : "text-muted hover:bg-surface hover:text-ink"
               }`}
             >
@@ -54,7 +54,7 @@ export function SidebarNav({ items, label }: { items: NavItem[]; label: string }
                     key={c.href}
                     href={c.href}
                     aria-current={under(path, c.href) ? "page" : undefined}
-                    className={`rounded-md px-2 py-1 text-[13px] ${under(path, c.href) ? "text-ink" : "text-faint hover:text-ink"}`}
+                    className={`flex min-h-10 items-center rounded-md px-2 py-1 text-[13px] md:min-h-8 ${under(path, c.href) ? "text-ink" : "text-faint hover:text-ink"}`}
                   >
                     {c.label}
                   </Link>

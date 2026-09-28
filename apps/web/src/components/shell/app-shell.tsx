@@ -6,6 +6,7 @@ import { BudgetToast } from "@/app/budget-toast";
 import { getDb } from "@/lib/db";
 import { loadProjects, loadReconnects } from "@/lib/projects";
 import { Icon } from "./icons";
+import { MobileMenu } from "./mobile-menu";
 import { SidebarNav, type NavItem } from "./sidebar-nav";
 import { projectState, ProjectTile } from "./tile";
 
@@ -88,7 +89,7 @@ export async function AppShell({ workspaceId, limitMicros, userName, projectSlug
       {current ? (
         <>
           <div className="flex flex-col gap-3">
-            <Link href="/" className="flex items-center gap-1.5 px-1.5 text-xs text-faint hover:text-ink">
+            <Link href="/" className="flex min-h-10 items-center gap-1.5 px-1.5 text-xs text-faint hover:text-ink md:min-h-7">
               <Icon name="back" className="size-3.5" /> All projects
             </Link>
             <div className="flex items-center gap-3 rounded-xl border border-line bg-surface px-3 py-2.5">
@@ -120,14 +121,14 @@ export async function AppShell({ workspaceId, limitMicros, userName, projectSlug
               <Link
                 key={p.id}
                 href={`/p/${p.slug}`}
-                className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm text-muted hover:bg-surface hover:text-ink"
+                className="flex min-h-11 items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm text-muted hover:bg-surface hover:text-ink md:min-h-9"
               >
                 <ProjectTile slug={p.slug} name={p.name} />
                 <span className="min-w-0 flex-1 truncate">{p.name}</span>
                 <span title={projectState(p).label} className={`size-1.5 rounded-full ${projectState(p).dot}`} />
               </Link>
             ))}
-            <Link href="/#new" className="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm text-faint hover:bg-surface hover:text-ink">
+            <Link href="/#new" className="flex min-h-11 items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm text-faint hover:bg-surface hover:text-ink md:min-h-9">
               <span className="flex size-6 items-center justify-center rounded-md border border-dashed border-zinc-700">
                 <Icon name="plus" className="size-3.5" />
               </span>
@@ -155,7 +156,7 @@ export async function AppShell({ workspaceId, limitMicros, userName, projectSlug
         <div className="flex items-center gap-2.5 px-1.5">
           <span className="flex size-7 items-center justify-center rounded-full bg-raised text-xs font-medium text-ink">{initials(userName)}</span>
           <span className="min-w-0 flex-1 truncate text-sm text-muted">{userName}</span>
-          <Link href="/settings" aria-label="Settings" className="rounded-md p-1 text-faint hover:bg-surface hover:text-ink">
+          <Link href="/settings" aria-label="Settings" className="flex size-11 items-center justify-center rounded-md text-faint hover:bg-surface hover:text-ink md:size-8">
             <Icon name="gear" />
           </Link>
         </div>
@@ -165,18 +166,33 @@ export async function AppShell({ workspaceId, limitMicros, userName, projectSlug
 
   return (
     <div className="md:flex">
+      <a
+        href="#content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-accent-strong focus:px-3 focus:py-2 focus:text-sm focus:text-zinc-50"
+      >
+        Skip to content
+      </a>
       <aside className="sticky top-0 hidden h-screen w-[248px] shrink-0 overflow-y-auto border-r border-line bg-rail md:block">{body}</aside>
-      <details className="border-b border-line bg-rail md:hidden">
-        <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3">
-          <span className="font-serif text-xl">{current?.name ?? "Autopilot"}</span>
-          <span className="flex items-center gap-2 text-sm text-muted">
-            {needs > 0 && <span className="rounded-full bg-warn-soft px-1.5 text-xs text-warn">{needs}</span>}
-            <Icon name="menu" className="size-5" />
-          </span>
-        </summary>
+      <MobileMenu
+        summary={
+          <>
+            <span className="font-serif text-xl">{current?.name ?? "Autopilot"}</span>
+            <span className="flex items-center gap-2 text-sm text-muted">
+              {needs > 0 && (
+                <span className="rounded-full bg-warn-soft px-1.5 text-xs text-warn">
+                  {needs}
+                  <span className="sr-only"> need you</span>
+                </span>
+              )}
+              <Icon name="menu" className="size-5" />
+              <span className="sr-only">Menu</span>
+            </span>
+          </>
+        }
+      >
         {body}
-      </details>
-      <div className="min-w-0 flex-1">
+      </MobileMenu>
+      <div id="content" tabIndex={-1} className="min-w-0 flex-1 outline-none">
         {alert && <BudgetToast thresholdPct={alert.thresholdPct} limitLabel={formatUsd(alert.capMicros).replace(/\.00$/, "")} />}
         {children}
       </div>

@@ -35,7 +35,7 @@ export function LaunchDate({ slug, strategyId, initial, reason }: { slug: string
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="rounded-md border border-zinc-800 bg-zinc-900 px-2.5 py-1.5 text-sm outline-none focus:border-zinc-600"
+          className="rounded-md border border-edge bg-zinc-900 px-2.5 py-1.5 text-sm outline-none focus:border-zinc-400"
         />
         <button
           type="submit"

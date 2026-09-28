@@ -31,7 +31,7 @@ export function DeleteWorkspace() {
         onChange={(e) => setText(e.target.value)}
         placeholder='Type "delete"'
         aria-label="Type delete to confirm"
-        className="rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 outline-none focus:border-zinc-600"
+        className="rounded-md border border-edge bg-zinc-900 px-3 py-2 outline-none focus:border-zinc-400"
       />
       <button
         type="submit"

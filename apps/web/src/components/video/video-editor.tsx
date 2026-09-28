@@ -463,7 +463,7 @@ export function VideoEditor(p: VideoEditorProps) {
               type="button"
               onClick={() => void save(draft, "user")}
               disabled={busy !== null || !dirty || locked}
-              className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent disabled:opacity-50"
+              className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50"
             >
               {busy === "save" ? "Saving…" : changedLines > 0 ? `Save · re-voices ${changedLines} line${changedLines === 1 ? "" : "s"} ${usd(savePrice)}` : "Save"}
             </button>
@@ -517,7 +517,7 @@ export function VideoEditor(p: VideoEditorProps) {
                     type="button"
                     onClick={() => void save(proposal.spec, "change_request", proposal.baseSpecId)}
                     disabled={busy !== null}
-                    className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent disabled:opacity-50"
+                    className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50"
                   >
                     {busy === "save" ? "Saving…" : "Apply and save"}
                   </button>
@@ -546,7 +546,7 @@ export function VideoEditor(p: VideoEditorProps) {
                   type="button"
                   onClick={() => void finalize()}
                   disabled={busy !== null || !!finalizeBlocked || !p.finalizeHash}
-                  className="rounded-md bg-sky-500 px-3 py-1.5 text-sm font-medium text-zinc-950 hover:bg-sky-400 disabled:opacity-50"
+                  className="rounded-md bg-sky-500 px-3 py-1.5 text-sm font-medium text-sky-950 hover:bg-sky-400 disabled:opacity-50"
                 >
                   {busy === "finalize" ? "Starting…" : `Finalize 3 versions · ~${p.prices.finalize}`}
                 </button>

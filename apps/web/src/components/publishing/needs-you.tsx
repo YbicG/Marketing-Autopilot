@@ -26,7 +26,7 @@ export function NeedsYouList({ items, empty }: { items: NeedsYouJson[]; empty?: 
   }
 
   if (!items.length) return empty ? <p className="text-sm text-zinc-500">{empty}</p> : null;
-  const btn = "rounded-md border border-zinc-700 px-2.5 py-1 text-xs text-zinc-200 hover:border-zinc-500 disabled:opacity-50";
+  const btn = "inline-flex min-h-11 items-center rounded-lg border border-zinc-700 px-3 py-1.5 text-sm md:min-h-8 text-zinc-200 hover:border-zinc-500 disabled:opacity-50";
   return (
     <>
       <ul className="flex flex-col divide-y divide-zinc-800 rounded-xl border border-zinc-800 bg-surface">

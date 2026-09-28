@@ -66,7 +66,7 @@ export function FieldEditor({ slug, dnaVersionId, path, label, value, onDone, au
     router.refresh();
   }
 
-  const box = "w-full rounded-md border border-zinc-800 bg-zinc-900 px-2.5 py-1.5 text-sm outline-none focus:border-zinc-600";
+  const box = "w-full rounded-md border border-edge bg-zinc-900 px-2.5 py-1.5 text-sm outline-none focus:border-zinc-400";
   return (
     <form onSubmit={save} className="flex flex-col gap-2">
       <label htmlFor={id} className="sr-only">
@@ -90,7 +90,7 @@ export function FieldEditor({ slug, dnaVersionId, path, label, value, onDone, au
         <button
           type="submit"
           disabled={busy}
-          className="rounded-lg bg-accent-strong px-3 py-1.5 text-xs font-medium text-zinc-50 hover:bg-accent disabled:opacity-60"
+          className="rounded-lg bg-accent-strong px-3 py-1.5 text-xs font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60"
         >
           {busy ? "Saving…" : "Save"}
         </button>

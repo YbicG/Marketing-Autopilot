@@ -8,7 +8,7 @@ interface XWindow {
   until: string;
 }
 
-const INPUT = "rounded-md border border-zinc-800 bg-zinc-900 px-2.5 py-1.5 text-sm outline-none focus:border-zinc-600";
+const INPUT = "rounded-md border border-edge bg-zinc-900 px-2.5 py-1.5 text-sm outline-none focus:border-zinc-400";
 const BTN = "rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-500 disabled:opacity-60";
 
 const nice = (d: string) => new Intl.DateTimeFormat("en-US", { timeZone: "UTC", weekday: "short", month: "short", day: "numeric" }).format(new Date(`${d}T12:00:00Z`));

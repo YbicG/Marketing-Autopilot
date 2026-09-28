@@ -18,7 +18,7 @@ export interface SenderSettingsValue {
 type Audience = { id: string; name: string };
 type Count = { subscribed: number; unsubscribed: number; more: boolean };
 
-const input = "w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm outline-none focus:border-zinc-600 disabled:opacity-60";
+const input = "w-full rounded-md border border-edge bg-zinc-900 px-3 py-2 text-sm outline-none focus:border-zinc-400 disabled:opacity-60";
 const labelCls = "flex flex-col gap-1 text-sm";
 
 function countLine(c: Count): string {
@@ -234,7 +234,7 @@ export function SenderSettings({
       </label>
 
       <div className="flex items-center gap-3">
-        <button type="submit" disabled={busy} className="rounded-lg bg-accent-strong px-3 py-2 text-sm font-medium text-zinc-50 hover:bg-accent disabled:opacity-50">
+        <button type="submit" disabled={busy} className="rounded-lg bg-accent-strong px-3 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50">
           {busy ? "Saving…" : "Save sender settings"}
         </button>
         {saved && !error && <span className="text-xs text-emerald-400">Saved.</span>}

@@ -70,12 +70,12 @@ export function GapQuestion({ runId, q }: { runId: string; q: QuestionState }) {
           onChange={(e) => setText(e.target.value)}
           maxLength={2_000}
           placeholder="Or type your own answer"
-          className="min-w-0 flex-1 rounded-md border border-zinc-800 bg-zinc-900 px-2.5 py-1.5 text-xs outline-none focus:border-zinc-600"
+          className="min-w-0 flex-1 rounded-md border border-edge bg-zinc-900 px-2.5 py-1.5 text-xs outline-none focus:border-zinc-400"
         />
         <button
           type="submit"
           disabled={busy || !text.trim()}
-          className="rounded-lg bg-accent-strong px-3 py-1.5 text-xs font-medium text-zinc-50 disabled:opacity-60 hover:bg-accent"
+          className="rounded-lg bg-accent-strong px-3 py-1.5 text-xs font-medium text-zinc-50 disabled:opacity-60 hover:bg-accent-hover"
         >
           Send
         </button>

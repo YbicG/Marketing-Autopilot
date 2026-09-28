@@ -29,7 +29,7 @@ export function LimitForm({ initialUsd, next }: { initialUsd: number; next: stri
 
   return (
     <form onSubmit={save} className="flex flex-col gap-3">
-      <label className="flex items-center gap-2 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2">
+      <label className="flex items-center gap-2 rounded-md border border-edge bg-zinc-900 px-3 py-2 focus-within:border-zinc-400">
         <span className="text-zinc-400">$</span>
         <input
           type="number"
@@ -46,7 +46,7 @@ export function LimitForm({ initialUsd, next }: { initialUsd: number; next: stri
       <button
         type="submit"
         disabled={busy}
-        className="rounded-lg bg-accent-strong px-4 py-2.5 text-sm font-medium text-zinc-50 hover:bg-accent disabled:opacity-60"
+        className="rounded-lg bg-accent-strong px-4 py-2.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60"
       >
         {busy ? "Saving…" : "Save and continue"}
       </button>

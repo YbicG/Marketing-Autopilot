@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { postJson } from "@/lib/post-json";
 
-const input = "w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm outline-none focus:border-zinc-600";
+const input = "w-full rounded-md border border-edge bg-zinc-900 px-3 py-2 text-sm outline-none focus:border-zinc-400";
 const primary = "rounded-md bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-900 hover:bg-white disabled:opacity-50";
 const quiet = "rounded-md border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:border-zinc-500 disabled:opacity-50";
 

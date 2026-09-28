@@ -97,7 +97,7 @@ export function RunProgress({ slug, runId, status, label }: { slug: string; runI
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-sky-900/70 bg-sky-950/20 px-4 py-3 text-sm" aria-live="polite">
       <p>
-        <span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-sky-400" />
+        <span className="mr-2 inline-block h-2 w-2 motion-safe:animate-pulse rounded-full bg-sky-400" />
         {label}: {line}
         {done > 0 && <span className="text-zinc-400"> · {done} written so far</span>}
       </p>

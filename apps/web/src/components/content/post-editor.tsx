@@ -123,7 +123,7 @@ function VariantColumn({ slug, v, rewritePrice }: { slug: string; v: EditorVaria
     router.refresh();
   }
 
-  const field = "w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-zinc-400 focus:outline-none disabled:opacity-60";
+  const field = "w-full rounded-md border border-edge bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-zinc-400 focus:outline-none disabled:opacity-60";
   return (
     <section className="flex flex-col gap-3 rounded-md border border-zinc-800 p-4" aria-label={v.platformLabel}>
       <div className="flex items-baseline justify-between gap-2">
@@ -193,7 +193,7 @@ function VariantColumn({ slug, v, rewritePrice }: { slug: string; v: EditorVaria
               type="button"
               onClick={() => void save()}
               disabled={busy !== null || !dirty}
-              className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent disabled:opacity-50"
+              className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50"
             >
               {busy === "save" ? "Saving…" : "Save"}
             </button>

@@ -38,7 +38,7 @@ export function StrategyWaiting({ runId }: { runId: string }) {
       ) : (
         <>
           <p className="flex items-center gap-2 font-medium">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-sky-400" aria-hidden />
+            <span className="h-2 w-2 motion-safe:animate-pulse rounded-full bg-sky-400" aria-hidden />
             Picking your angles…
           </p>
           <p className="text-xs text-zinc-500">{note ?? "This takes a minute or two. You can close this tab."}</p>

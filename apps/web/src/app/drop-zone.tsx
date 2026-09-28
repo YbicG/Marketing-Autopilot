@@ -7,7 +7,7 @@ import { LINK_LABEL, MAX_LINKS, splitLinks } from "@/lib/link-chips";
 import { postJson } from "@/lib/post-json";
 
 const field =
-  "w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2.5 text-sm outline-none focus:border-zinc-600";
+  "w-full rounded-md border border-edge bg-zinc-900 px-3 py-2.5 text-sm outline-none focus:border-zinc-400";
 
 /** "What are we marketing?" (§2.3): links, a project folder and notes, then one button. */
 export function DropZone() {
@@ -128,7 +128,7 @@ export function DropZone() {
         <button
           type="submit"
           disabled={!!busy || !hasInput || tooMany}
-          className="shrink-0 rounded-lg bg-accent-strong px-4 py-2.5 text-sm font-medium text-zinc-50 hover:bg-accent disabled:opacity-60"
+          className="shrink-0 rounded-lg bg-accent-strong px-4 py-2.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60"
         >
           {busy ?? "Read my product"}
         </button>

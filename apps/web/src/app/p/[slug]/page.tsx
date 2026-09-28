@@ -131,8 +131,8 @@ export default async function OverviewPage({ params }: { params: Promise<{ slug:
   const now = new Date();
   const today = localDay(now, tz);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(today, i));
-  const [qv, week, counts, tasks, yesterday, backup, projects] = await Promise.all([
-    queueView(db, s.workspaceId, { from: now, to: now, productId: product.id, now }),
+  // One queue read covers the week strip; the status line and Needs you don't depend on the range.
+  const [week, counts, tasks, yesterday, backup, projects] = await Promise.all([
     queueView(db, s.workspaceId, { from: dayBounds(today, tz).from, to: dayBounds(weekDays[6]!, tz).to, productId: product.id, now }),
     approvalCounts(db, s.workspaceId, { productId: product.id, now }),
     assistedCards(db, s.workspaceId, { productId: product.id, dueBy: dayBounds(today, tz).to, now }),
@@ -158,9 +158,9 @@ export default async function OverviewPage({ params }: { params: Promise<{ slug:
               {state.label}
             </span>
           )}
-          <h1 className="font-serif text-5xl leading-[1.05] tracking-tight">
+          <h1 className="font-serif text-4xl leading-[1.05] tracking-tight text-balance md:text-5xl">
             {product.name}
-            <span className="text-muted"> · {qv.statusLine.charAt(0).toLowerCase() + qv.statusLine.slice(1)}</span>
+            <span className="text-muted"> · {week.statusLine.charAt(0).toLowerCase() + week.statusLine.slice(1)}</span>
           </h1>
           {summary && (
             <div className="max-w-md">
@@ -172,7 +172,7 @@ export default async function OverviewPage({ params }: { params: Promise<{ slug:
           <Link href={`/p/${product.slug}/plan`} className="rounded-lg border border-zinc-700 px-3 py-1.5 text-sm hover:border-zinc-500">
             Edit plan
           </Link>
-          <Link href={`/p/${product.slug}/content`} className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent">
+          <Link href={`/p/${product.slug}/content`} className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover">
             Make more content
           </Link>
         </div>
@@ -212,7 +212,7 @@ export default async function OverviewPage({ params }: { params: Promise<{ slug:
           <h2 id="needs" className="font-serif text-2xl">
             Needs you
           </h2>
-          <NeedsYouList items={qv.needsYou} empty="Nothing needs you right now." />
+          <NeedsYouList items={week.needsYou} empty="Nothing needs you right now." />
         </section>
 
         {tasks.length > 0 && (

@@ -76,7 +76,7 @@ export default async function Home() {
     <AppShell workspaceId={s.workspaceId} limitMicros={ws.monthlyLimitMicros} userName={s.name}>
       <main className="flex max-w-6xl flex-col gap-12 px-4 py-10 md:px-10">
         <header>
-          <h1 className="font-serif text-5xl tracking-tight">
+          <h1 className="font-serif text-4xl tracking-tight text-balance md:text-5xl">
             {greeting(new Date(), ws.timezone)}, <span className="italic text-accent">{firstName}</span>
           </h1>
           <p className="mt-2 text-muted">{summary}</p>

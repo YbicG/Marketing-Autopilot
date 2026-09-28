@@ -7,7 +7,7 @@ import type { BroadcastView } from "@mkt/core/email";
 import { postJson } from "@/lib/post-json";
 import { sendTime, tzName } from "./labels";
 
-const input = "w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm outline-none focus:border-zinc-600 disabled:opacity-60";
+const input = "w-full rounded-md border border-edge bg-zinc-900 px-3 py-2 text-sm outline-none focus:border-zinc-400 disabled:opacity-60";
 const primary = "rounded-md bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-900 hover:bg-white disabled:opacity-50";
 const quiet = "rounded-md border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:border-zinc-500 disabled:opacity-50";
 const PREVIEW_DEBOUNCE_MS = 500;

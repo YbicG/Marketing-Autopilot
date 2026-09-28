@@ -22,7 +22,7 @@ export function SettingsTabs() {
             key={t.href}
             href={t.href}
             aria-current={active ? "page" : undefined}
-            className={`whitespace-nowrap rounded-full px-3 py-1 text-sm ${active ? "bg-raised text-ink" : "text-muted hover:text-ink"}`}
+            className={`flex min-h-11 items-center whitespace-nowrap rounded-full px-3 py-1 text-sm md:min-h-8 ${active ? "bg-raised text-ink" : "text-muted hover:text-ink"}`}
           >
             {t.label}
           </Link>

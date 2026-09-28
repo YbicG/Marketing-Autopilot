@@ -66,7 +66,7 @@ export function KitLive({ runIds }: { runIds: string[] }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-sky-900/70 bg-sky-950/20 px-4 py-3 text-sm" role="status">
       <span className="flex items-center gap-2">
-        <span className="h-2 w-2 animate-pulse rounded-full bg-sky-400" />
+        <span className="h-2 w-2 motion-safe:animate-pulse rounded-full bg-sky-400" />
         Writing your launch kit. {line}
       </span>
       <span className="flex items-center gap-3 text-xs text-zinc-400">

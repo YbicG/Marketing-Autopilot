@@ -27,7 +27,7 @@ export function NewBroadcast({ slug, priceLabel, disabled }: { slug: string; pri
         type="button"
         onClick={() => void start()}
         disabled={busy || disabled}
-        className="self-start rounded-lg bg-accent-strong px-3 py-2 text-sm font-medium text-zinc-50 hover:bg-accent disabled:opacity-50"
+        className="self-start rounded-lg bg-accent-strong px-3 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50"
       >
         {busy ? "Starting…" : `Write the seasonal email · ~${priceLabel}`}
       </button>

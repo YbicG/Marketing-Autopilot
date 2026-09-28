@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { postJson } from "@/lib/post-json";
 
-export const field = "w-full rounded-md border border-zinc-700 bg-zinc-950 px-2.5 py-1.5 text-sm text-zinc-100 focus:border-zinc-400 focus:outline-none disabled:opacity-60";
+export const field = "w-full rounded-md border border-edge bg-zinc-950 px-2.5 py-1.5 text-sm text-zinc-100 focus:border-zinc-400 focus:outline-none disabled:opacity-60";
 export const primary = "rounded-md bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-white disabled:opacity-50";
 export const secondary = "rounded-md border border-zinc-600 px-3 py-1.5 text-sm text-zinc-200 hover:border-zinc-400 disabled:opacity-50";
 

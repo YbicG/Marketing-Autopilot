@@ -21,7 +21,7 @@ export function SignInButton() {
       <button
         onClick={go}
         disabled={busy}
-        className="rounded-lg bg-accent-strong px-4 py-2.5 text-sm font-medium text-zinc-50 hover:bg-accent disabled:opacity-60"
+        className="rounded-lg bg-accent-strong px-4 py-2.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60"
       >
         {busy ? "Opening GitHub…" : "Continue with GitHub"}
       </button>

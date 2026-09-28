@@ -21,7 +21,7 @@ const STATE_LABEL: Record<StepState, string> = {
 };
 const STATE_DOT: Record<StepState, string> = {
   waiting: "bg-zinc-700",
-  working: "bg-sky-400 animate-pulse",
+  working: "bg-sky-400 motion-safe:animate-pulse",
   done: "bg-emerald-500",
   warning: "bg-amber-500",
   skipped: "bg-zinc-600",
@@ -181,7 +181,7 @@ export function IngestFeed({ runId, kind, stages, initialStatus, initialQuestion
                 type="button"
                 onClick={() => void retry()}
                 disabled={retrying}
-                className="rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent disabled:opacity-60"
+                className="rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60"
               >
                 {retrying ? "Starting…" : "Try again"}
               </button>

@@ -19,7 +19,7 @@ export const SCENE_LABEL: Record<SceneType, string> = {
 
 const IMAGE_TYPES = new Set<SceneType>(["ScreenshotKenBurns", "FullPageScroll", "DeviceMockup", "FeatureCallout", "SplitCompare"]);
 
-export const field = "w-full rounded-md border border-zinc-700 bg-zinc-950 px-2.5 py-1.5 text-sm text-zinc-100 focus:border-zinc-400 focus:outline-none disabled:opacity-60";
+export const field = "w-full rounded-md border border-edge bg-zinc-950 px-2.5 py-1.5 text-sm text-zinc-100 focus:border-zinc-400 focus:outline-none disabled:opacity-60";
 
 /** Picking a picture can change what kind of scene it is (a recording plays; a screenshot zooms). */
 export function withPicture(scene: Scene, asset: FootageItem | null): Scene {

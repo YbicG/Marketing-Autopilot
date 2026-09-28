@@ -119,7 +119,7 @@ function CopyOpenCard({ task }: { task: AssistedCard }) {
           type="button"
           onClick={() => void posted()}
           disabled={!ready || busy || !url.trim()}
-          className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 disabled:opacity-50 hover:bg-accent"
+          className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 disabled:opacity-50 hover:bg-accent-hover"
         >
           Mark as posted
         </button>

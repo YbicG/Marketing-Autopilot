@@ -136,7 +136,7 @@ export function FinalFiles({
               onClick={() => void approve()}
               disabled={busy || blocked}
               title={blocked ? "Fix the problems marked “Must fix” first" : undefined}
-              className="rounded-md bg-emerald-500 px-3 py-1.5 text-sm font-medium text-zinc-950 hover:bg-emerald-400 disabled:opacity-50"
+              className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-50"
             >
               {busy ? "Approving…" : pending.length || !posts.length ? "Approve to post" : "Approve any new files"}
             </button>

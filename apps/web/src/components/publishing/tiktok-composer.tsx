@@ -291,7 +291,7 @@ export function TikTokComposer({ post, onSaved }: { post: PostDetailJson; onSave
           type="button"
           onClick={() => void save()}
           disabled={busy || !local.success || blockedByAccount}
-          className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 disabled:opacity-50 hover:bg-accent"
+          className="rounded-lg bg-accent-strong px-3 py-1.5 text-sm font-medium text-zinc-50 disabled:opacity-50 hover:bg-accent-hover"
         >
           {busy ? "Saving…" : "Save TikTok settings"}
         </button>

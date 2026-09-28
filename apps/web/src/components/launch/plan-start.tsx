@@ -97,7 +97,7 @@ export function PlanStart({
           type="button"
           onClick={() => void make()}
           disabled={busy}
-          className="rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent disabled:opacity-60"
+          className="rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60"
         >
           {busy ? "Making it…" : "Make my launch checklist · free"}
         </button>

@@ -2,8 +2,10 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
- * Studio, dark. Warm charcoal ground, a paper-cream ink, one pine-green accent and one amber for
- * "needs you". The zinc scale is remapped to the same warm neutrals so every page picks it up.
+ * Studio, dark. Warm charcoal ground, a paper-cream ink, one pine-green accent, amber for
+ * "needs you", clay for "didn't work" and a dusty blue for "in progress". The zinc, emerald,
+ * amber, red and sky scales are remapped onto those families, so every page speaks the same
+ * palette whichever class it uses. Text shades here all clear 4.5:1 on ground, rail and surface.
  */
 @theme {
   --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
@@ -14,35 +16,95 @@
   --color-zinc-200: #dcd7cc;
   --color-zinc-300: #c3bdb0;
   --color-zinc-400: #a19b8e;
-  --color-zinc-500: #7e796e;
+  --color-zinc-500: #948f83;
   --color-zinc-600: #5c5850;
   --color-zinc-700: #3f3c36;
   --color-zinc-800: #2e2c28;
   --color-zinc-900: #1f1e1b;
   --color-zinc-950: #151412;
 
+  /* go / done: pine */
+  --color-emerald-200: #bfdccd;
+  --color-emerald-300: #93c4ad;
+  --color-emerald-400: #6fae93;
+  --color-emerald-500: #5a9a7f;
+  --color-emerald-600: #478a6f;
+  --color-emerald-800: #2d5a49;
+  --color-emerald-900: #22433a;
+  --color-emerald-950: #1d2d27;
+
+  /* needs you: amber */
+  --color-amber-200: #f0c79e;
+  --color-amber-300: #e3a064;
+  --color-amber-400: #d88e4c;
+  --color-amber-500: #c97a38;
+  --color-amber-700: #8a5226;
+  --color-amber-800: #6b3f1e;
+  --color-amber-900: #4a2d18;
+  --color-amber-950: #33241a;
+
+  /* didn't work: clay */
+  --color-red-100: #fbe3dc;
+  --color-red-200: #f2c1b4;
+  --color-red-300: #e8998a;
+  --color-red-400: #de7a68;
+  --color-red-500: #c9604e;
+  --color-red-600: #a84b3c;
+  --color-red-800: #6e2f25;
+  --color-red-900: #4d231c;
+  --color-red-950: #2e1714;
+
+  /* in progress / info: dusty blue */
+  --color-sky-200: #c6d6ea;
+  --color-sky-300: #9fb9da;
+  --color-sky-400: #8fb1dd;
+  --color-sky-500: #6f95c4;
+  --color-sky-600: #5a7fae;
+  --color-sky-700: #466690;
+  --color-sky-800: #34506f;
+  --color-sky-900: #263a51;
+  --color-sky-950: #19232f;
+
   --color-ground: #151412;
   --color-rail: #1a1917;
   --color-surface: #201f1c;
   --color-raised: #292724;
   --color-line: #2e2c28;
+  /* form control edges: 3:1 against fields and cards (WCAG 1.4.11) */
+  --color-edge: #716d63;
   --color-ink: #ede9e1;
   --color-muted: #a19b8e;
-  --color-faint: #7e796e;
+  --color-faint: #948f83;
 
   --color-accent: #6fae93;
   --color-accent-strong: #3f7a63;
+  --color-accent-hover: #356a55;
   --color-accent-soft: #1d2d27;
   --color-warn: #e3a064;
   --color-warn-soft: #33241a;
+  --color-danger: #de7a68;
+  --color-danger-soft: #2e1714;
+  --color-info: #8fb1dd;
+  --color-info-soft: #19232f;
+  --color-rose: #d99bb2;
+  --color-rose-soft: #2e1f26;
+  --color-olive: #b9c67e;
+  --color-olive-soft: #262a1c;
 }
 
 :root {
   color-scheme: dark;
+  scrollbar-color: var(--color-zinc-700) var(--color-ground);
+  accent-color: var(--color-accent);
+  caret-color: var(--color-accent);
 }
 
 body {
   @apply bg-ground text-ink antialiased;
+}
+
+a {
+  text-underline-offset: 3px;
 }
 
 ::selection {
@@ -53,4 +115,16 @@ body {
 :focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
+}
+
+/* The skip-link target takes focus so the next Tab starts in the page; it needs no ring. */
+#content:focus-visible {
+  outline: none;
+}
+
+/* Pulses use motion-safe:, so reduced motion keeps the colour and drops the throb. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }

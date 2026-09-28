@@ -108,7 +108,7 @@ export function CarouselEditor({
   }
 
   const pending = variants.flatMap((v) => v.posts.filter((p) => p.state === "pending_approval").map((p) => p.id));
-  const field = "w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-zinc-400 focus:outline-none disabled:opacity-60";
+  const field = "w-full rounded-md border border-edge bg-zinc-950 px-3 py-2 text-sm text-zinc-100 focus:border-zinc-400 focus:outline-none disabled:opacity-60";
 
   return (
     <div className="flex flex-col gap-8">
@@ -292,7 +292,7 @@ export function CarouselEditor({
         <p className="text-sm text-zinc-400">{locked}</p>
       ) : (
         <div className="flex flex-wrap items-center gap-3">
-          <button type="button" onClick={() => void save()} disabled={busy} className="rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent disabled:opacity-60">
+          <button type="button" onClick={() => void save()} disabled={busy} className="rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-accent-hover disabled:opacity-60">
             {busy ? "Saving…" : "Save and remake the images"}
           </button>
           <span className="text-xs text-zinc-500">Images are made on your server for free. Saving sends approved versions back for approval.</span>
