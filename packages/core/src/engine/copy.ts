@@ -20,7 +20,7 @@ import { schema, uuidv7, type Db } from "@mkt/db";
 import { isAssistedOnly, type AssistedVenue } from "@mkt/providers";
 import { z } from "zod";
 import { callClaudeJson, type ClaudeDeps } from "../ai/call.ts";
-import { feature, type FeatureId } from "../ai/features.ts";
+import { feature, MODELS, type FeatureId } from "../ai/features.ts";
 import { withBundle } from "./bundle.ts";
 import { KeyedLimit } from "./hash.ts";
 
@@ -43,7 +43,8 @@ export interface CopyResult<T> {
 }
 
 /** One limiter per process: Opus 3, Sonnet 6 in flight. */
-export const MODEL_LIMIT = new KeyedLimit({ "claude-opus-5": 3, "claude-sonnet-5": 6 });
+/** Per-model concurrency; other models (OpenRouter overrides) get the KeyedLimit fallback of 4. */
+export const MODEL_LIMIT = new KeyedLimit({ [MODELS.opus]: 3, [MODELS.sonnet]: 6 });
 
 async function call<S extends z.ZodType>(ctx: CopyCtx, feat: FeatureId, system: string, task: string, schema: S) {
   const run = () =>

@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { ADS_LIMITS, ADS_SPEND_STATEMENT, AdsExportBody, type AdCopy, type RunEvent } from "@mkt/contracts";
 import { schema, uuidv7, type Db } from "@mkt/db";
 import { createTestDb } from "@mkt/db/testing";
+import { MODELS } from "../ai/features.ts";
 import { fakeClient, jsonReply } from "../ai/testing.ts";
 import type { RateLookup } from "../ai/usage.ts";
 import { loadRateCards, rateLookup, seedPricingRates } from "../cost/rates.ts";
@@ -220,7 +221,7 @@ describe("executeAdsKit", () => {
     const out = await executeAdsKit({ ai: { db, rates, client }, publish: async (e) => void events.push(e) }, { runId, workspaceId: s.workspaceId, kitId });
     expect(out).toBe("ready");
     // Opus once for the ideas, Sonnet once per platform; Apple Search Ads is skipped for a web product.
-    expect(calls.map((c) => c.model)).toEqual(["claude-opus-5", ...Array(5).fill("claude-sonnet-5")]);
+    expect(calls.map((c) => c.model)).toEqual([MODELS.opus, ...Array(5).fill("claude-sonnet-5")]);
     // Every call carries the cached campaign bundle.
     expect(calls.every((c) => flat(c).includes("Campaign bundle v1"))).toBe(true);
 
