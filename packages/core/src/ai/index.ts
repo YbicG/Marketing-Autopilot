@@ -5,3 +5,5 @@ export * from "./stop-reasons.ts";
 export * from "./stream-watchdog.ts";
 export * from "./structured.ts";
 export * from "./usage.ts";
+export * from "./openrouter.ts";
+export * from "./model-eval.ts";

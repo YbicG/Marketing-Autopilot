@@ -8,6 +8,7 @@
     "smoke": "tsx src/smoke/index.ts",
     "ensure-browser": "tsx src/smoke/ensure-browser.ts",
     "spike": "tsx src/spike/models.ts",
+    "eval:models": "tsx src/spike/eval-models.ts",
     "typecheck": "tsc -p .",
     "test": "vitest run --passWithNoTests",
     "lint": "eslint ."
