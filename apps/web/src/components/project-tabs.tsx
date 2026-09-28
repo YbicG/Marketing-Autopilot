@@ -8,6 +8,7 @@ const SETTINGS_TABS = [
   { href: "/settings/accounts", label: "Where to post" },
   { href: "/settings/keys", label: "Keys" },
   { href: "/settings/spending", label: "Spending" },
+  { href: "/settings/tokens", label: "Agent access" },
 ] as const;
 
 /** Settings sections as pills under the page eyebrow (projects use the sidebar instead). */

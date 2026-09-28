@@ -145,3 +145,24 @@ The worker's `ImageDecoder` (phash on contact sheets) and `ImageResizer` (small 
 
   A missing EU consent acknowledgement is a warning, not a block.
 - **Status:** Resend webhooks (Svix-signed) mark sent, bounces, complaints and unsubscribes. The hourly launch tick reconciles scheduled broadcasts in case a webhook was missed. Keys are `resend.api_key` and `resend.webhook_secret` (vault first, then `RESEND_API_KEY` / `RESEND_WEBHOOK_SECRET`).
+
+## 2026-09-28 · Agent surfaces (M5 slice): tool registry, PATs, MCP
+- **Tokens:** `mkt_pat_{prefix8}_{secret32}` (lower-case hex). The table `personal_access_tokens` (migration `0007`) keeps the name, the prefix, the scopes, the creator and the created, last-used, revoked and expiry times. The token itself is shown once and never stored. Only the tokens page makes or revokes one, and it takes a UiSession.
+- **Hashing (differs from §8):** a plain sha256 of the whole token, compared in constant time, not HMAC with `PAT_PEPPER`. The secret part is 128 random bits, so a pepper adds little and would be one more env var to lose. `PAT_PEPPER` isn't needed.
+- **Scopes:** `read`, `draft` and `generate`. `capture` comes with the M7 agent. There is no approve, publish, verify, accept or activate scope or tool, and `defineTool` refuses a tool name that suggests one.
+- **One registry** (`@mkt/core/tools`): each tool has a zod input, an effect (read, draft, publish_request or spend), scopes and a run function. `invokeTool` validates the input, checks the scopes and writes an `audit_log` row with actor `pat` for every call, including refused ones. MCP only lists and calls registry tools, and the CLI will do the same.
+- **Tools wired:**
+  - read: `list_products`, `get_product_dna`, `get_calendar`, `get_launch_tasks`, `list_content`, `get_results`, `get_job`, `get_spend`, and `estimate_package` (free, so it counts as read)
+  - draft: `create_post_variants` (drafts only) and `propose_dna_change` (a pending request)
+  - publish_request: `schedule_posts` (posts in `pending_approval`, or `draft` while a check blocks, never approved)
+  - spend: `run_package`
+- **Agent drafts:** each call to `create_post_variants` makes one content item in the product's newest campaign. The item has slot kind `agent` and no slot or day, with one variant per text platform. The variants go through the same sanitize and validate checks as generated copy. The date-bound fact checks run again in `schedule_posts`, together with the volume caps.
+- **Profile changes:** `propose_dna_change` writes a row to `dna_change_requests`, and the profile and its facts stay as they are. The plan screen shows the pending requests with Accept and Reject. Accepting takes a UiSession and applies the change as the owner's own pinned edit. If the profile was rewritten since the agent looked, the request is set aside instead.
+- **Spend (D10):** the estimate is the run's high estimate. A call runs straight away only if it is at most $0.50 and fits what's left of the token's $10 this month. Otherwise it returns `pending_confirmation` with a `/confirm` link.
+  - The $10 is tracked in budget_periods scope `pat` (scope_ref = the token id). A run the token started unconfirmed carries `input.agent`, so `budgetScopesForRun` reserves every paid call against that scope too. A confirmed run skips the token's scope, but the workspace limit always applies.
+  - On `/confirm` the price is worked out again from the link's input. Confirm mints the confirm token (HMAC over the tool, a hash of the workspace, token and input, and the estimate, valid 10 minutes). The agent passes it back as `confirmToken`, and each one works once: its nonce is saved in the call's audit row.
+- **Transport:** `POST/GET/DELETE /api/mcp`, MCP Streamable HTTP, stateless, with JSON responses. It uses the SDK's low-level `Server` so that every call goes through `invokeTool`. `@modelcontextprotocol/sdk` is pinned to `~1.30.1`, because 1.31 is newer than the release-age window.
+- **Auth:** the endpoint only reads `Authorization: Bearer`, never cookies. Everywhere else a request with a bearer token counts as signed out. `requireUiSession`, which guards approve, void, finalize, verify and accept, answers it with 403.
+- **Env:** no new variables. `/confirm` uses the existing `CONFIRM_TOKEN_SECRET`, which must be at least 32 characters.
+- **Setup:** `claude mcp add --transport http mkt https://<host>/api/mcp --header "Authorization: Bearer <token>"`, shown in Settings → Agent access.
+- **Left for later M5 work:** the CLI, the SEO generator, capture PATs, and a claim-verification action (which must take a UiSession).

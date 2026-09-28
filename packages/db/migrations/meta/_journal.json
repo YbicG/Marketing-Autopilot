@@ -50,6 +50,13 @@
       "when": 1790610606754,
       "tag": "0006_supreme_masked_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790623940986,
+      "tag": "0007_marvelous_titanium_man",
+      "breakpoints": true
     }
   ]
 }

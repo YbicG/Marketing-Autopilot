@@ -8,6 +8,7 @@ import { claudeFormat } from "../ai/structured.ts";
 import type { RateLookup } from "../ai/usage.ts";
 import { BudgetExceeded } from "../cost/errors.ts";
 import { ensurePeriods } from "../cost/ledger.ts";
+import { PAT_MONTHLY_CAP_MICROS } from "../cost/pat-limits.ts";
 import { formatUsd } from "../cost/pricing.ts";
 import { BlockedUrl } from "../security/ssrf.ts";
 
@@ -44,16 +45,26 @@ export async function createSummaryRun(db: Db, workspaceId: string, url: string)
   return id;
 }
 
-/** The global monthly scope (at the workspace's limit) plus the run's own cap. */
+/**
+ * The global monthly scope (at the workspace's limit) plus the run's own cap. A run an agent token
+ * started within its limits (input.agent, not confirmed in the UI) also reserves against that
+ * token's monthly scope (D10), so the $10 a month is counted by the same ledger as everything else.
+ */
 export async function budgetScopesForRun(db: Db, workspaceId: string, runId: string, capMicros: number): Promise<string[]> {
   const [ws] = await db
     .select({ limit: workspaces.monthlyLimitMicros })
     .from(workspaces)
     .where(eq(workspaces.id, workspaceId));
   if (!ws) throw new Error("workspace not found");
+  const [run] = await db
+    .select({ input: generationRuns.input })
+    .from(generationRuns)
+    .where(and(eq(generationRuns.id, runId), eq(generationRuns.workspaceId, workspaceId)));
+  const agent = run?.input.agent as { patId?: string; confirmed?: boolean } | undefined;
   const ids = await ensurePeriods(db, workspaceId, [
     { scope: "global_month", capMicros: ws.limit },
     { scope: "run", scopeRef: runId, capMicros },
+    ...(agent?.patId && !agent.confirmed ? [{ scope: "pat" as const, scopeRef: agent.patId, capMicros: PAT_MONTHLY_CAP_MICROS }] : []),
   ]);
   // A limit raised in Settings applies to this month's row straight away.
   await db
