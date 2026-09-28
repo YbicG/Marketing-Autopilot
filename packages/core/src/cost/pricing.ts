@@ -44,7 +44,7 @@ function anthropic(model: string, inUsd: number, outUsd: number, verified: boole
  */
 export const SEED_RATES: SeedRate[] = [
   anthropic("claude-opus-5", 5, 25, true, "claude-api skill models.md: Opus 4.8 pricing, $5/$25 per MTok"),
-  anthropic("claude-sonnet-5", 3, 15, false, "assumed Sonnet-tier $3/$15 per MTok; confirm in the M0 spike"),
+  anthropic("claude-sonnet-5", 2, 10, true, "platform.claude.com pricing, 2026-09-28: $2/$10 per MTok is the standard price (the $3/$15 increase was cancelled)"),
 ];
 
 /** The subset of Anthropic `Usage` we price. Field names match the API response. */

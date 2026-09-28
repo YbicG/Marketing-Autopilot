@@ -1,10 +1,13 @@
-import { desc } from "drizzle-orm";
+import { desc, sql } from "drizzle-orm";
 import { schema, uuidv7, type Db } from "@mkt/db";
 import { SEED_RATES, type RateCard, type RateUnit } from "./pricing.ts";
 
 const { pricingRates } = schema;
 
-/** Insert the seed rate card once. Existing rows (e.g. corrected by the M0 spike) are never overwritten. */
+/**
+ * Write the seed rate card at its effective date. Seed-dated rows follow the code; a correction made
+ * by hand goes in as a row with a later effectiveFrom, which this never touches.
+ */
 export async function seedPricingRates(db: Db, effectiveFrom = new Date("2026-01-01T00:00:00Z")): Promise<void> {
   const rows = SEED_RATES.flatMap((s) =>
     Object.entries(s.rates).map(([unit, micros]) => ({
@@ -18,7 +21,14 @@ export async function seedPricingRates(db: Db, effectiveFrom = new Date("2026-01
       effectiveFrom,
     })),
   );
-  await db.insert(pricingRates).values(rows).onConflictDoNothing();
+  // Upsert, so a corrected seed row reaches an existing database on the next worker boot.
+  await db
+    .insert(pricingRates)
+    .values(rows)
+    .onConflictDoUpdate({
+      target: [pricingRates.provider, pricingRates.model, pricingRates.unit, pricingRates.effectiveFrom],
+      set: { microsPerUnit: sql`excluded.micros_per_unit`, verified: sql`excluded.verified`, source: sql`excluded.source` },
+    });
 }
 
 /** Current rate card per model: the newest effective row for each (model, unit). */
